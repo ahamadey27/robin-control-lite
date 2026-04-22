@@ -94,7 +94,7 @@ Then confirm with the user before committing or discarding anything else. Do NOT
 - **The layout lives in `PluginEditor.cpp`.** The `paint()` and `resized()` layout constants are duplicated across both methods — keep them in sync.
 - The audio-engine files (PluginProcessor, RRvoice, DSP/, Data/) should generally NOT be touched during UI redesigns — changes there should be ported from / to `round-robin-lite` instead.
 - Param IDs are frozen (preset compatibility with the sibling project). Don't rename them in `ParametersIDs.h`.
-- User-visible identity strings say "Robin Design" — header in `PluginEditor.cpp` (split "Robin" / "Design"), About dialog in `PluginEditor.h`, init log in `PluginProcessor.cpp`. Update these if the redesign takes on yet another name.
+- User-visible identity strings say "Robin Control Lite" — header in `PluginEditor.cpp` (split "Robin Control" / "Lite" with "Lite" in a warmer amber shade), About dialog in `PluginEditor.h`, init log in `PluginProcessor.cpp`. Update these if the redesign takes on yet another name.
 
 ## Randomization UI
 

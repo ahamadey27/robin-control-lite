@@ -62,13 +62,13 @@ juce::String SampleManagerPanel::truncateName(const juce::String& name, int maxC
 void SampleManagerPanel::paint(juce::Graphics& g)
 {
     // ── Section title ────────────────────────────────────────────────────────
-    g.setColour(juce::Colour(0xff4a5a50));
-    g.setFont(juce::Font(juce::FontOptions(9.0f)).boldened());
-    g.drawText("SAMPLE POOL", 8, 7, getWidth() - 16, 10, juce::Justification::left);
+    g.setColour(RRColors::ampCol);
+    g.setFont(juce::Font(juce::FontOptions(16.0f)).boldened());
+    g.drawText("SAMPLE POOL", 8, 6, getWidth() - 16, 18, juce::Justification::left);
 
     // ── Playback type label above toggle ─────────────────────────────────────
-    g.setColour(juce::Colour(0xff555555));
-    g.setFont(juce::Font(juce::FontOptions(8.0f)));
+    g.setColour(juce::Colour(0xff4a4030));
+    g.setFont(juce::Font(juce::FontOptions(8.0f)).boldened());
     g.drawText("PLAYBACK TYPE", getWidth() - 168, 16, 160, 10, juce::Justification::centred);
 
     // ── LED Screen area ─────────────────────────────────────────────────────
@@ -79,38 +79,38 @@ void SampleManagerPanel::paint(juce::Graphics& g)
                                                   getWidth() - screenPad * 2, screenH);
 
     // Outer bezel (recessed look)
-    g.setColour(juce::Colour(0xff0a0a0a));
+    g.setColour(juce::Colour(0xff080810));
     g.fillRoundedRectangle(screenRect.toFloat().expanded(1.0f), 3.0f);
 
-    // Screen background — dark green-black like H3000
-    g.setColour(juce::Colour(0xff0a150e));
+    // Screen background — deep blue LCD (matches LED Scren.png reference)
+    g.setColour(RRColors::lcdBg);
     g.fillRoundedRectangle(screenRect.toFloat(), 2.0f);
 
     // Subtle inner shadow (top edge darker)
     {
         juce::ColourGradient shadow(
-            juce::Colours::black.withAlpha(0.3f), 0.0f, (float)screenRect.getY(),
-            juce::Colours::transparentBlack,      0.0f, (float)screenRect.getY() + 8.0f,
+            RRColors::lcdBgDark.withAlpha(0.6f), 0.0f, (float)screenRect.getY(),
+            juce::Colours::transparentBlack,     0.0f, (float)screenRect.getY() + 8.0f,
             false);
         g.setGradientFill(shadow);
         g.fillRect(screenRect.getX() + 1, screenRect.getY() + 1,
                    screenRect.getWidth() - 2, 8);
     }
 
-    // Scanline overlay (subtle horizontal lines for CRT/LED texture)
-    g.setColour(juce::Colours::black.withAlpha(0.08f));
+    // Scanline overlay (darker blue lines for LCD texture)
+    g.setColour(RRColors::lcdBgDark.withAlpha(0.18f));
     for (int sy = screenRect.getY(); sy < screenRect.getBottom(); sy += 2)
         g.fillRect(screenRect.getX(), sy, screenRect.getWidth(), 1);
 
-    // Screen border highlight (subtle green edge glow)
-    g.setColour(juce::Colour(0xff1a3020));
+    // Screen border highlight (subtle lighter blue rim)
+    g.setColour(juce::Colour(0xff5a80c8));
     g.drawRoundedRectangle(screenRect.toFloat(), 2.0f, 1.0f);
 
-    // ── LED colors ──────────────────────────────────────────────────────────
-    const juce::Colour ledGreen    (0xff40b858);   // bright LED green
-    const juce::Colour ledDim      (0xff1a4028);   // dim/inactive LED
-    const juce::Colour ledAmber    (0xffa89030);   // amber for icons
-    const juce::Colour ledRed      (0xffb04838);   // red for delete
+    // ── LCD colors (white-on-blue scheme) ───────────────────────────────────
+    const juce::Colour ledGreen    = RRColors::lcdText;        // sample names (white)
+    const juce::Colour ledDim      = RRColors::lcdTextDim;     // dim state
+    const juce::Colour ledAmber    = RRColors::lcdHighlight;   // icons (pale blue highlight)
+    const juce::Colour ledRed      = RRColors::lcdRed;         // delete warning
 
     // ── Sample list (two columns, 10 rows each) ────────────────────────────
     constexpr int listY      = 62;     // inside the screen
@@ -146,7 +146,7 @@ void SampleManagerPanel::paint(juce::Graphics& g)
             // Highlight drop target (swap)
             if (isDragging && !dragIsInsert && dragTargetSlot == i)
             {
-                g.setColour(juce::Colour(0xff1a3820));
+                g.setColour(RRColors::lcdBgDark.brighter(0.15f));
                 g.fillRect(colX, y, halfW, rowH);
             }
 

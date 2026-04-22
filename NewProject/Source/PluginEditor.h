@@ -88,13 +88,31 @@ private:
 
         void paint(juce::Graphics& g) override
         {
-            g.setColour(juce::Colour(40, 40, 50));
-            g.fillRoundedRectangle(getLocalBounds().toFloat(), 8.f);
-            g.setColour(juce::Colour(100, 180, 255));
-            g.setFont(juce::Font(13.f).boldened());
-            g.drawText("Robin Design", 0, 18, getWidth(), 20, juce::Justification::centred);
-            g.setColour(juce::Colour(180, 180, 195));
-            g.setFont(juce::Font(13.f));
+            // Matte black dialog on brushed dark panel — matches main UI
+            g.setColour(juce::Colour(0xff14110e));
+            g.fillRoundedRectangle(getLocalBounds().toFloat(), 6.f);
+            g.setColour(juce::Colour(0xff3a2e20));
+            g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(0.5f), 6.f, 0.8f);
+
+            // "Robin Control" + "Lite" title — Lite in amber
+            juce::Font titleFont(juce::FontOptions(17.f));
+            titleFont = titleFont.boldened();
+            g.setFont(titleFont);
+            const juce::String mainTitle = "Robin Control";
+            const int titleW = titleFont.getStringWidth(mainTitle);
+            const int liteW  = 42;
+            const int totalW = titleW + 6 + liteW;
+            const int tx = (getWidth() - totalW) / 2;
+
+            g.setColour(juce::Colour(0xffe6e1d4));
+            g.drawText(mainTitle, tx, 16, titleW, 22, juce::Justification::left);
+
+            g.setFont(juce::Font(juce::FontOptions(13.f)).italicised());
+            g.setColour(juce::Colour(0xffffb84a));
+            g.drawText("Lite", tx + titleW + 6, 20, liteW, 18, juce::Justification::left);
+
+            g.setColour(juce::Colour(0xffc0b8a8));
+            g.setFont(juce::Font(juce::FontOptions(13.f)));
             juce::String body =
                 "Load up to 20 one-shot samples. Each sample is\n"
                 "mapped to all white keys and played back randomly\n"

@@ -9,66 +9,67 @@ void RRKnobLAF::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int
     const float cx = x + width  * 0.5f;
     const float cy = y + height * 0.5f;
 
-    const float bodyRadius  = juce::jmin((float)width, (float)height) * 0.5f - 2.5f;
-    const float trackRadius = bodyRadius * 0.92f;
+    const float bodyRadius = juce::jmin((float)width, (float)height) * 0.5f - 3.0f;
 
-    // ── Drop shadow ─────────────────────────────────────────────────────────
-    g.setColour(juce::Colours::black.withAlpha(0.5f));
-    g.fillEllipse(cx - bodyRadius + 1.0f, cy - bodyRadius + 2.5f,
+    // ── Recessed well behind the knob (dark ring) ───────────────────────────
+    g.setColour(juce::Colours::black.withAlpha(0.35f));
+    g.fillEllipse(cx - bodyRadius - 2.0f, cy - bodyRadius - 1.0f,
+                  (bodyRadius + 2.0f) * 2.0f, (bodyRadius + 2.0f) * 2.0f);
+
+    // ── Drop shadow under cap ───────────────────────────────────────────────
+    g.setColour(juce::Colours::black.withAlpha(0.45f));
+    g.fillEllipse(cx - bodyRadius + 0.5f, cy - bodyRadius + 2.0f,
                   bodyRadius * 2.0f, bodyRadius * 2.0f);
 
-    // ── Outer rim (subtle metallic ring) ────────────────────────────────────
+    // ── Dark rim (collar around cap) ────────────────────────────────────────
     g.setColour(RRColors::knobRim);
     g.fillEllipse(cx - bodyRadius, cy - bodyRadius,
                   bodyRadius * 2.0f, bodyRadius * 2.0f);
 
-    // ── Knob body — radial gradient for metallic depth ──────────────────────
+    // ── Warm stone-gray cap body ────────────────────────────────────────────
     {
-        const float inner = bodyRadius - 1.5f;
+        const float inner = bodyRadius - 2.0f;
         juce::ColourGradient grad(
-            juce::Colour(0xff2a2a2a), cx, cy - inner * 0.4f,   // lighter top
-            juce::Colour(0xff111111), cx, cy + inner * 0.8f,    // darker bottom
+            RRColors::knobBody.brighter(0.18f), cx, cy - inner * 0.6f,
+            RRColors::knobBody.darker(0.35f),   cx, cy + inner * 0.9f,
             false);
         g.setGradientFill(grad);
         g.fillEllipse(cx - inner, cy - inner, inner * 2.0f, inner * 2.0f);
     }
 
-    // ── Subtle top highlight (metallic sheen) ───────────────────────────────
+    // ── Soft top highlight (plastic sheen) ──────────────────────────────────
     {
-        const float hl = bodyRadius * 0.65f;
+        const float hl = bodyRadius * 0.7f;
         juce::ColourGradient sheen(
-            juce::Colours::white.withAlpha(0.06f), cx, cy - bodyRadius * 0.5f,
-            juce::Colours::transparentBlack,       cx, cy + bodyRadius * 0.1f,
+            juce::Colours::white.withAlpha(0.22f), cx, cy - bodyRadius * 0.6f,
+            juce::Colours::transparentWhite,       cx, cy + bodyRadius * 0.1f,
             false);
         g.setGradientFill(sheen);
-        g.fillEllipse(cx - hl, cy - bodyRadius + 2.0f, hl * 2.0f, hl * 1.4f);
+        g.fillEllipse(cx - hl, cy - bodyRadius + 1.5f, hl * 2.0f, hl * 1.3f);
     }
 
-    // ── Inner ring (dark edge around body) ──────────────────────────────────
-    g.setColour(juce::Colour(0xff0a0a0a));
-    g.drawEllipse(cx - bodyRadius + 1.5f, cy - bodyRadius + 1.5f,
-                  (bodyRadius - 1.5f) * 2.0f, (bodyRadius - 1.5f) * 2.0f, 0.8f);
+    // ── Inner ring (subtle dark edge line) ──────────────────────────────────
+    g.setColour(juce::Colour(0xff2a2418).withAlpha(0.55f));
+    g.drawEllipse(cx - bodyRadius + 2.0f, cy - bodyRadius + 2.0f,
+                  (bodyRadius - 2.0f) * 2.0f, (bodyRadius - 2.0f) * 2.0f, 0.8f);
 
-    // ── Track arc (recessed groove) ─────────────────────────────────────────
-    juce::Path track;
-    track.addArc(cx - trackRadius, cy - trackRadius,
-                 trackRadius * 2.0f, trackRadius * 2.0f,
-                 rotaryStartAngle, rotaryEndAngle, true);
-    g.setColour(juce::Colour(0xff1a1a1a));
-    g.strokePath(track, juce::PathStrokeType(3.0f,
-        juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-
-    // ── Indicator line (from center to edge) ───────────────────────────────
-    const juce::Colour lineCol = slider.findColour(juce::Slider::rotarySliderFillColourId);
+    // ── Indicator: section-color line from mid-radius to edge (no black) ────
+    const juce::Colour tipCol = slider.findColour(juce::Slider::rotarySliderFillColourId);
     const float angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
-    const float lineInner = bodyRadius * 0.20f;
-    const float lineOuter = bodyRadius - 2.0f;    // extends to knob edge
-    g.setColour(lineCol);
-    g.drawLine(cx + std::sin(angle) * lineInner,
-               cy - std::cos(angle) * lineInner,
-               cx + std::sin(angle) * lineOuter,
-               cy - std::cos(angle) * lineOuter,
-               2.4f);
+    const float lineInner = bodyRadius * 0.5f;   // halfway down the knob
+    const float lineOuter = bodyRadius - 3.0f;   // just inside the rim
+    const float sinA = std::sin(angle);
+    const float cosA = std::cos(angle);
+
+    // Subtle shadow for depth
+    g.setColour(juce::Colours::black.withAlpha(0.25f));
+    g.drawLine(cx + sinA * lineInner + 0.5f, cy - cosA * lineInner + 0.5f,
+               cx + sinA * lineOuter + 0.5f, cy - cosA * lineOuter + 0.5f, 3.6f);
+
+    // Main indicator — section color, thick
+    g.setColour(tipCol);
+    g.drawLine(cx + sinA * lineInner, cy - cosA * lineInner,
+               cx + sinA * lineOuter, cy - cosA * lineOuter, 3.2f);
 }
 
 //==============================================================================
@@ -78,41 +79,68 @@ void RRButtonLAF::drawButtonBackground(juce::Graphics& g, juce::Button& button,
     const juce::Colour& baseColour, bool isMouseOver, bool isButtonDown)
 {
     auto b = button.getLocalBounds().toFloat().reduced(0.5f);
-    auto col = baseColour;
+    auto accent = baseColour;   // S612-style accent strip color comes from buttonColourId
 
     if (isButtonDown)
-        col = col.brighter(0.15f);
+        accent = accent.brighter(0.2f);
     else if (isMouseOver)
-        col = col.brighter(0.07f);
+        accent = accent.brighter(0.1f);
 
-    // Recessed background
-    g.setColour(juce::Colours::black.withAlpha(0.3f));
-    g.fillRoundedRectangle(b.translated(0.0f, 1.0f), 3.0f);
+    // Drop shadow beneath (sits on panel)
+    g.setColour(juce::Colours::black.withAlpha(0.45f));
+    g.fillRoundedRectangle(b.translated(0.0f, 1.5f), 2.5f);
 
-    // Button body gradient
-    juce::ColourGradient grad(col.brighter(0.1f), b.getX(), b.getY(),
-                               col.darker(0.15f),  b.getX(), b.getBottom(),
-                               false);
-    g.setGradientFill(grad);
-    g.fillRoundedRectangle(b, 3.0f);
+    // Dark button body — charcoal with slight top-to-bottom gradient
+    {
+        juce::ColourGradient body(
+            juce::Colour(0xff2a2622), b.getX(), b.getY(),
+            juce::Colour(0xff14110e), b.getX(), b.getBottom(),
+            false);
+        g.setGradientFill(body);
+        g.fillRoundedRectangle(b, 2.5f);
+    }
 
-    // Top highlight
-    g.setColour(juce::Colours::white.withAlpha(isButtonDown ? 0.02f : 0.08f));
-    g.fillRoundedRectangle(b.removeFromTop(b.getHeight() * 0.45f), 3.0f);
+    // Colored accent strip on top (the S612 label-box treatment)
+    {
+        auto strip = b.reduced(2.5f, 0.0f);
+        strip = strip.removeFromTop(juce::jmin(strip.getHeight() * 0.38f, 9.0f));
+        strip.translate(0.0f, 2.0f);
 
-    // Border
-    g.setColour(col.darker(0.4f));
-    g.drawRoundedRectangle(button.getLocalBounds().toFloat().reduced(0.5f), 3.0f, 0.8f);
+        juce::ColourGradient stripGrad(
+            accent.brighter(0.15f), strip.getX(), strip.getY(),
+            accent.darker(0.1f),    strip.getX(), strip.getBottom(),
+            false);
+        g.setGradientFill(stripGrad);
+        g.fillRoundedRectangle(strip, 1.5f);
+
+        // Tiny highlight line along top of strip
+        g.setColour(juce::Colours::white.withAlpha(isButtonDown ? 0.1f : 0.25f));
+        g.fillRect(strip.getX() + 1.0f, strip.getY() + 0.5f,
+                   strip.getWidth() - 2.0f, 0.8f);
+    }
+
+    // Outer border (warm dark bevel)
+    g.setColour(juce::Colour(0xff0a0806));
+    g.drawRoundedRectangle(b, 2.5f, 1.0f);
+
+    // Pressed-in shadow when held
+    if (isButtonDown)
+    {
+        g.setColour(juce::Colours::black.withAlpha(0.35f));
+        g.drawRoundedRectangle(b.reduced(1.0f), 2.0f, 1.2f);
+    }
 }
 
 void RRButtonLAF::drawButtonText(juce::Graphics& g, juce::TextButton& button,
     bool isMouseOver, bool isButtonDown)
 {
+    // Text sits below the colored accent strip (S612 screen-print label)
+    auto area = button.getLocalBounds();
+    area.removeFromTop(juce::jmin(area.getHeight() / 3, 10));
+
     g.setFont(juce::Font(juce::FontOptions(10.0f)).boldened());
-    g.setColour(button.findColour(juce::TextButton::textColourOnId)
-                    .withAlpha(button.isEnabled() ? 1.0f : 0.5f));
-    g.drawText(button.getButtonText(), button.getLocalBounds(),
-               juce::Justification::centred);
+    g.setColour(RRColors::screenPrint.withAlpha(button.isEnabled() ? 0.92f : 0.4f));
+    g.drawText(button.getButtonText(), area, juce::Justification::centred);
 }
 
 //==============================================================================
@@ -120,36 +148,50 @@ static void drawRndSlider(juce::Graphics& g, int x, int y, int width, int height
     float sliderPos, bool isNeg)
 {
     const float trackY = y + height * 0.5f;
-    const float trackH = 3.5f;
-    const float thumbR = 6.0f;
+    const float trackH = 4.0f;
+    const float thumbW = 10.0f;   // S612 slider thumb — elongated, like the START/SPLICE cap
+    const float thumbH = 10.0f;
 
-    // Track background
-    g.setColour(juce::Colour(38, 38, 48));
+    // Groove (dark recessed channel with inner shadow)
+    g.setColour(juce::Colour(0xff0a0806));
     g.fillRoundedRectangle((float)x, trackY - trackH * 0.5f, (float)width, trackH, 2.0f);
+    g.setColour(juce::Colours::black.withAlpha(0.4f));
+    g.drawRoundedRectangle((float)x + 0.5f, trackY - trackH * 0.5f + 0.5f,
+        (float)width - 1.0f, trackH - 1.0f, 2.0f, 0.6f);
 
-    // Fill
+    // Fill — amber for neg, teal for pos (S612 hardware palette)
     if (isNeg)
     {
-        // Neg: fill from thumb rightward (shows how much negative range is set)
-        g.setColour(juce::Colour(140, 35, 35));
+        g.setColour(RRColors::s612Red.withAlpha(0.75f));
         g.fillRoundedRectangle(sliderPos, trackY - trackH * 0.5f,
             (float)(x + width) - sliderPos, trackH, 2.0f);
     }
     else
     {
-        // Pos: fill from left to thumb
-        g.setColour(juce::Colour(35, 75, 165));
+        g.setColour(RRColors::s612Teal.withAlpha(0.75f));
         g.fillRoundedRectangle((float)x, trackY - trackH * 0.5f,
             sliderPos - (float)x, trackH, 2.0f);
     }
 
-    // Thumb ball
-    const juce::Colour thumbCol = isNeg ? juce::Colour(210, 65, 65)
-        : juce::Colour(65, 135, 235);
-    g.setColour(thumbCol);
-    g.fillEllipse(sliderPos - thumbR, trackY - thumbR, thumbR * 2.0f, thumbR * 2.0f);
-    g.setColour(juce::Colours::white.withAlpha(0.35f));
-    g.drawEllipse(sliderPos - thumbR, trackY - thumbR, thumbR * 2.0f, thumbR * 2.0f, 1.0f);
+    // Cream thumb (S612_Slider.png reference — bone-colored oval cap)
+    const float tx = sliderPos - thumbW * 0.5f;
+    const float ty = trackY - thumbH * 0.5f;
+
+    // Thumb shadow
+    g.setColour(juce::Colours::black.withAlpha(0.55f));
+    g.fillRoundedRectangle(tx + 0.5f, ty + 1.5f, thumbW, thumbH, 2.0f);
+
+    // Thumb body — cream gradient
+    juce::ColourGradient thumbGrad(
+        RRColors::knobBody.brighter(0.12f), tx, ty,
+        RRColors::knobBody.darker(0.2f),    tx, ty + thumbH,
+        false);
+    g.setGradientFill(thumbGrad);
+    g.fillRoundedRectangle(tx, ty, thumbW, thumbH, 2.0f);
+
+    // Thumb rim
+    g.setColour(juce::Colour(0xff5a4a38).withAlpha(0.7f));
+    g.drawRoundedRectangle(tx, ty, thumbW, thumbH, 2.0f, 0.8f);
 }
 
 void RRNegSliderLAF::drawLinearSlider(juce::Graphics& g, int x, int y, int width, int height,
@@ -184,29 +226,43 @@ void RRToggleLAF::drawButtonBackground(juce::Graphics& g, juce::Button& button,
 
     // SERIES label — left of pill, bright when active
     g.setFont(juce::Font(juce::FontOptions(9.0f)).boldened());
-    g.setColour(isRandom ? juce::Colour(0xff484848) : RRColors::algoCol.withAlpha(0.8f));
+    g.setColour(isRandom ? juce::Colour(0xff4a4238) : RRColors::amber.withAlpha(0.85f));
     g.drawText("SERIES", pillX - pillGap - textW, b.getY(), textW, b.getHeight(),
                juce::Justification::centredRight);
 
     // RANDOM label — right of pill, bright when active
-    g.setColour(isRandom ? RRColors::algoCol.withAlpha(0.8f) : juce::Colour(0xff484848));
+    g.setColour(isRandom ? RRColors::amber.withAlpha(0.85f) : juce::Colour(0xff4a4238));
     g.drawText("RANDOM", pillX + pillW + pillGap, b.getY(), textW, b.getHeight(),
                juce::Justification::centredLeft);
 
-    // Pill track
-    g.setColour(juce::Colour(0xff0e1610));
+    // Pill track (recessed dark channel)
+    g.setColour(juce::Colour(0xff07060a));
     g.fillRoundedRectangle(pillX, pillY, pillW, pillH, pillH * 0.5f);
-    g.setColour(RRColors::sectionBorder);
+    g.setColour(juce::Colour(0xff3a2e20));
     g.drawRoundedRectangle(pillX, pillY, pillW, pillH, pillH * 0.5f, 1.0f);
 
-    // Knob inside pill — left = SERIES, right = RANDOM
+    // Cream thumb inside pill — left = SERIES, right = RANDOM
     const float knobD = pillH - 4.0f;
     const float knobY = pillY + 2.0f;
     const float knobX = isRandom
-        ? pillX + pillW - 2.0f - knobD   // right
-        : pillX + 2.0f;                  // left
-    g.setColour(RRColors::algoCol);
+        ? pillX + pillW - 2.0f - knobD
+        : pillX + 2.0f;
+
+    // Thumb shadow
+    g.setColour(juce::Colours::black.withAlpha(0.5f));
+    g.fillEllipse(knobX + 0.5f, knobY + 1.0f, knobD, knobD);
+
+    // Thumb body (cream gradient)
+    juce::ColourGradient thumbGrad(
+        RRColors::knobBody.brighter(0.15f), knobX, knobY,
+        RRColors::knobBody.darker(0.2f),    knobX, knobY + knobD,
+        false);
+    g.setGradientFill(thumbGrad);
     g.fillEllipse(knobX, knobY, knobD, knobD);
+
+    // Amber accent dot (active-state indicator)
+    g.setColour(RRColors::amber);
+    g.fillEllipse(knobX + knobD * 0.3f, knobY + knobD * 0.3f, knobD * 0.4f, knobD * 0.4f);
 }
 
 void RRToggleLAF::drawButtonText(juce::Graphics&, juce::TextButton&, bool, bool)

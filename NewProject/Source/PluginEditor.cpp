@@ -97,48 +97,49 @@ NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioPr
             audioProcessor.auditionSample(slotIndex);
         };
 
-    // Trigger button
+    // Trigger button — original muted red
     triggerButton.setButtonText("Trigger");
-    triggerButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff8a3030));
-    triggerButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xffe0d0d0));
+    triggerButton.setColour(juce::TextButton::buttonColourId, RRColors::s612RedDim);
+    triggerButton.setColour(juce::TextButton::textColourOnId, RRColors::screenPrint);
     triggerButton.setLookAndFeel(&buttonLAF);
     triggerButton.onClick = [this]() { audioProcessor.requestTrigger(); };
     addAndMakeVisible(triggerButton);
 
+    // Panic — original bright red
     panicButton.setButtonText("!");
-    panicButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xffd83030));
-    panicButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xffffe0e0));
+    panicButton.setColour(juce::TextButton::buttonColourId, RRColors::s612Red);
+    panicButton.setColour(juce::TextButton::textColourOnId, RRColors::screenPrint);
     panicButton.setLookAndFeel(&buttonLAF);
     panicButton.onClick = [this]() { audioProcessor.requestPanic(); };
     addAndMakeVisible(panicButton);
 
-    // About button
+    // About button — muted warm gray accent strip
     aboutButton.setButtonText("?");
-    aboutButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff2a3530));
-    aboutButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xff808880));
+    aboutButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff5a5448));
+    aboutButton.setColour(juce::TextButton::textColourOnId, RRColors::screenPrint);
     aboutButton.setLookAndFeel(&buttonLAF);
     aboutButton.onClick = [this]
         {
-            aboutWindow.setTopLeftPosition(getWidth() / 2 - 170, getHeight() / 2 - 100); 
+            aboutWindow.setTopLeftPosition(getWidth() / 2 - 170, getHeight() / 2 - 100);
             addAndMakeVisible(aboutWindow);
             aboutWindow.toFront(true);
-            repaint();   // ← ADD: hides dots immediately when window opens
+            repaint();
         };
-    
-    addAndMakeVisible(aboutButton);
-    aboutWindow.addComponentListener(this);   // ← ADD: watch for visibility changes
 
-    // User Presets
+    addAndMakeVisible(aboutButton);
+    aboutWindow.addComponentListener(this);
+
+    // User Presets — muted dark green accent (distinct from red actions)
     savePresetButton.setButtonText("Save");
-    savePresetButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff2a3a30));
-    savePresetButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xffa0b0a0));
+    savePresetButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff3e5a40));
+    savePresetButton.setColour(juce::TextButton::textColourOnId, RRColors::screenPrint);
     savePresetButton.setLookAndFeel(&buttonLAF);
     savePresetButton.onClick = [this]() { savePreset(); };
     addAndMakeVisible(savePresetButton);
 
     loadPresetButton.setButtonText("Load");
-    loadPresetButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff2a3a30));
-    loadPresetButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xffa0b0a0));
+    loadPresetButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff3e5a40));
+    loadPresetButton.setColour(juce::TextButton::textColourOnId, RRColors::screenPrint);
     loadPresetButton.setLookAndFeel(&buttonLAF);
     loadPresetButton.onClick = [this]() { loadPreset(); };
     addAndMakeVisible(loadPresetButton);
@@ -509,54 +510,125 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
     constexpr int secKx0   = (secW - 2 * knobW - knobGap) / 2;
     constexpr int secKx1   = secKx0 + knobW + knobGap;
 
-    // ── Background ────────────────────────────────────────────────────────────
+    // ── Background (warm cream panel with faint horizontal brush grain) ────
     g.fillAll(RRColors::background);
+    {
+        // Soft brush grain — darker warm tone
+        g.setColour(RRColors::backgroundLo.withAlpha(0.35f));
+        for (int by = 0; by < getHeight(); by += 3)
+            g.fillRect(0, by, getWidth(), 1);
+        // Gentle edge vignette
+        juce::ColourGradient vignette(
+            juce::Colours::transparentBlack,       getWidth() * 0.5f, getHeight() * 0.5f,
+            juce::Colours::black.withAlpha(0.15f), 0.0f, 0.0f, true);
+        g.setGradientFill(vignette);
+        g.fillRect(getLocalBounds());
+    }
 
-    // ── Header bar (subtle gradient) ────────────────────────────────────────
+    // ── Header bar (darker warm gray strip) ────────────────────────────────
     {
         juce::ColourGradient hdrGrad(
             RRColors::headerBg.brighter(0.05f), 0.0f, 0.0f,
-            RRColors::headerBg,                 0.0f, (float)headerH,
+            RRColors::headerBg.darker(0.2f),    0.0f, (float)headerH,
             false);
         g.setGradientFill(hdrGrad);
         g.fillRect(0, 0, getWidth(), headerH);
     }
-    // Divider: dark line + subtle highlight below
-    g.setColour(juce::Colours::black.withAlpha(0.4f));
+    // Divider: dark ink line
+    g.setColour(juce::Colour(0xff3c3428));
     g.fillRect(0, headerH, getWidth(), 1);
-    g.setColour(juce::Colours::white.withAlpha(0.03f));
+    g.setColour(juce::Colours::white.withAlpha(0.08f));
     g.fillRect(0, headerH + 1, getWidth(), 1);
 
-    juce::Font rrFont(juce::FontOptions(26.0f));
+    // Brushed nameplate behind the title — darker warm tone
+    {
+        juce::Rectangle<float> plate(8.0f, 6.0f, 260.0f, 36.0f);
+        juce::ColourGradient plateGrad(
+            juce::Colour(0xff4a4438), plate.getX(), plate.getY(),
+            juce::Colour(0xff2a2418), plate.getX(), plate.getBottom(),
+            false);
+        g.setGradientFill(plateGrad);
+        g.fillRoundedRectangle(plate, 2.0f);
+        g.setColour(juce::Colour(0xff1a140c));
+        g.drawRoundedRectangle(plate, 2.0f, 0.8f);
+        g.setColour(juce::Colours::white.withAlpha(0.04f));
+        for (int py = (int)plate.getY() + 1; py < (int)plate.getBottom(); py += 2)
+            g.fillRect((int)plate.getX() + 1, py, (int)plate.getWidth() - 2, 1);
+    }
+
+    juce::Font rrFont(juce::FontOptions(24.0f));
     rrFont = rrFont.boldened();
     g.setFont(rrFont);
-    g.setColour(juce::Colour(0xffc8c8c8));
-    g.drawText("Robin", 14, 8, 200, 32, juce::Justification::left);
+    g.setColour(RRColors::screenPrint);
+    g.drawText("Robin Control", 16, 9, 240, 28, juce::Justification::left);
 
-    const int liteX = 14 + rrFont.getStringWidth("Robin") + 3;
-    g.setColour(juce::Colour(0xff808080));
-    g.setFont(juce::Font(juce::FontOptions(17.0f)));
-    g.drawText("Design", liteX, 12, 60, 26, juce::Justification::left);
+    const int liteX = 16 + rrFont.getStringWidth("Robin Control") + 6;
+    g.setColour(RRColors::liteShade);
+    g.setFont(juce::Font(juce::FontOptions(15.0f)).italicised());
+    g.drawText("Lite", liteX, 13, 60, 22, juce::Justification::left);
 
-    // ── Section box helper (recessed panel look) ───────────────────────────
+    // ── Green LED LEVEL meter (stand-in for future real meter) ─────────────
+    {
+        constexpr int meterY = 18;
+        constexpr int meterH = 16;
+        constexpr int bars   = 14;
+        constexpr int barW   = 6;
+        constexpr int barGap = 2;
+        const int meterW  = bars * (barW + barGap) - barGap;
+        const int meterX  = 290;
+
+        // Meter well — deep black with warm bevel
+        juce::Rectangle<float> well((float)meterX - 6, (float)meterY - 3,
+                                    (float)meterW + 12, (float)meterH + 6);
+        g.setColour(juce::Colour(0xff050403));
+        g.fillRoundedRectangle(well, 2.0f);
+        g.setColour(juce::Colour(0xff3c3428));
+        g.drawRoundedRectangle(well, 2.0f, 0.6f);
+
+        // Green LED segments — 9 of 14 lit; fade from dim green to bright green
+        const juce::Colour dimGreen(0xff184828);
+        for (int i = 0; i < bars; ++i)
+        {
+            bool lit = i < 9;
+            float t = (float)i / (float)(bars - 1);
+            juce::Colour c = lit
+                ? dimGreen.interpolatedWith(RRColors::ledGreen, 0.4f + t * 0.6f)
+                : juce::Colour(0xff101c14);
+            g.setColour(c);
+            g.fillRect(meterX + i * (barW + barGap), meterY, barW, meterH);
+            if (lit)
+            {
+                g.setColour(juce::Colours::white.withAlpha(0.2f));
+                g.fillRect(meterX + i * (barW + barGap), meterY, barW, meterH / 2);
+            }
+        }
+
+        // Meter scale label — "LEVEL"
+        g.setFont(juce::Font(juce::FontOptions(7.5f)).boldened());
+        g.setColour(RRColors::ledGreen.withAlpha(0.8f));
+        g.drawText("LEVEL", meterX, meterY + meterH + 2,
+                   meterW, 8, juce::Justification::left);
+        g.drawText("0dB", meterX, meterY - 9, meterW, 8,
+                   juce::Justification::right);
+    }
+
+    // ── Section box helper (deep recessed well on cream panel) ─────────────
     auto drawSectionBox = [&](juce::Rectangle<int> r)
     {
-        // Outer shadow (depth)
-        g.setColour(juce::Colours::black.withAlpha(0.25f));
-        g.fillRoundedRectangle(r.toFloat().translated(1.0f, 1.5f), 4.0f);
-        // Panel fill
+        // Outer drop shadow
+        g.setColour(juce::Colours::black.withAlpha(0.35f));
+        g.fillRoundedRectangle(r.toFloat().translated(1.5f, 2.0f), 4.0f);
+        // Recessed panel fill
         g.setColour(RRColors::sectionBg);
         g.fillRoundedRectangle(r.toFloat(), 4.0f);
-        // Top inner highlight (subtle bevel)
-        {
-            auto top = r.toFloat().removeFromTop(1.0f).reduced(4.0f, 0.0f);
-            g.setColour(juce::Colours::white.withAlpha(0.03f));
-            g.fillRect(top);
-        }
-        // Border
+        // Inner dark-bevel border
         g.setColour(RRColors::sectionBorder);
-        g.drawRoundedRectangle(r.toFloat(), 4.0f, 1.0f);
+        g.drawRoundedRectangle(r.toFloat(), 4.0f, 1.2f);
     };
+
+    // Bigger section-title font (9pt → 16pt, ~75% larger)
+    juce::Font sectionFont(juce::FontOptions(16.0f));
+    sectionFont = sectionFont.boldened();
 
     // ── Left: Sample Pool ───────────────────────────────────────────────────
     drawSectionBox({ margin, topY, lpW, contentH });
@@ -564,8 +636,8 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
     // ── Center: Random Algorithm ────────────────────────────────────────────
     drawSectionBox({ algoX, topY, algoW, contentH });
     g.setColour(RRColors::algoCol);
-    g.setFont(juce::Font(juce::FontOptions(9.0f)).boldened());
-    g.drawText("RANDOM ALGORITHM", algoX, topY + 7, algoW, 10, juce::Justification::centred);
+    g.setFont(sectionFont);
+    g.drawText("RANDOM ALGORITHM", algoX, topY + 6, algoW, 18, juce::Justification::centred);
 
     // ── Random Algorithm tick marks (18 ticks) ──────────────────────────────
     {
@@ -599,26 +671,26 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
     // ── Right top-left: Amplitude ──────────────────────────────────────────
     drawSectionBox({ ampX, ampY, secW, secH });
     g.setColour(RRColors::ampCol);
-    g.setFont(juce::Font(juce::FontOptions(9.0f)).boldened());
-    g.drawText("AMPLITUDE", ampX + 8, ampY + 7, secW - 16, 10, juce::Justification::left);
+    g.setFont(sectionFont);
+    g.drawText("AMPLITUDE", ampX + 8, ampY + 6, secW - 16, 18, juce::Justification::left);
 
     // ── Right top-right: Tone ──────────────────────────────────────────────
     drawSectionBox({ toneX, toneY, secW, secH });
     g.setColour(RRColors::toneCol);
-    g.setFont(juce::Font(juce::FontOptions(9.0f)).boldened());
-    g.drawText("TONE", toneX + 8, toneY + 7, secW - 16, 10, juce::Justification::left);
+    g.setFont(sectionFont);
+    g.drawText("TONE", toneX + 8, toneY + 6, secW - 16, 18, juce::Justification::left);
 
     // ── Right bottom-left: Pitch ───────────────────────────────────────────
     drawSectionBox({ pitchX, pitchY, secW, secH });
     g.setColour(RRColors::pitchCol);
-    g.setFont(juce::Font(juce::FontOptions(9.0f)).boldened());
-    g.drawText("PITCH", pitchX + 8, pitchY + 7, secW - 16, 10, juce::Justification::left);
+    g.setFont(sectionFont);
+    g.drawText("PITCH", pitchX + 8, pitchY + 6, secW - 16, 18, juce::Justification::left);
 
     // ── Right bottom-right: Sample Start/End ───────────────────────────────
     drawSectionBox({ trimX, trimY, secW, secH });
     g.setColour(RRColors::trimCol);
-    g.setFont(juce::Font(juce::FontOptions(9.0f)).boldened());
-    g.drawText("SAMPLE START/END", trimX + 8, trimY + 7, secW - 16, 10, juce::Justification::left);
+    g.setFont(sectionFont);
+    g.drawText("SAMPLE START/END", trimX + 8, trimY + 6, secW - 16, 18, juce::Justification::left);
 
     // ── Knob labels ─────────────────────────────────────────────────────────
     g.setFont(juce::Font(juce::FontOptions(10.0f)));

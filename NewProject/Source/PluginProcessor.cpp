@@ -38,7 +38,7 @@ NewProjectAudioProcessor::NewProjectAudioProcessor()
 
     formatManager.registerBasicFormats();
 
-    DBG("=== Robin Design Initialized ===");
+    DBG("=== Robin Control Lite Initialized ===");
     DBG("Synthesiser ready with " + juce::String(synthesiser.getNumVoices()) + " voice(s)");
     DBG("UNPITCHED PLAYBACK MODE - All samples play at original pitch");
     DBG("Root reference note: C1 (MIDI 36)");
