@@ -585,15 +585,29 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
         g.setColour(juce::Colour(0xff3c3428));
         g.drawRoundedRectangle(well, 2.0f, 0.6f);
 
-        // Green LED segments — 9 of 14 lit; fade from dim green to bright green
+        // LED segments — 9 green (lit), 1 red at index 9 (over-0dB indicator),
+        // remaining dim. The red position is reserved for future real-audio wiring.
         const juce::Colour dimGreen(0xff184828);
+        constexpr int litCount     = 9;    // 0..8 lit green
+        constexpr int overZeroIdx  = 9;    // idx 9 = red "over 0dB" segment
         for (int i = 0; i < bars; ++i)
         {
-            bool lit = i < 9;
-            float t = (float)i / (float)(bars - 1);
-            juce::Colour c = lit
-                ? dimGreen.interpolatedWith(RRColors::ledGreen, 0.4f + t * 0.6f)
-                : juce::Colour(0xff101c14);
+            juce::Colour c;
+            bool lit = true;
+            if (i < litCount)
+            {
+                float t = (float)i / (float)(bars - 1);
+                c = dimGreen.interpolatedWith(RRColors::ledGreen, 0.4f + t * 0.6f);
+            }
+            else if (i == overZeroIdx)
+            {
+                c = RRColors::s612Red;
+            }
+            else
+            {
+                c = juce::Colour(0xff101c14);
+                lit = false;
+            }
             g.setColour(c);
             g.fillRect(meterX + i * (barW + barGap), meterY, barW, meterH);
             if (lit)
@@ -602,25 +616,29 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
                 g.fillRect(meterX + i * (barW + barGap), meterY, barW, meterH / 2);
             }
         }
-
-        // Meter scale label — "LEVEL"
-        g.setFont(juce::Font(juce::FontOptions(7.5f)).boldened());
-        g.setColour(RRColors::ledGreen.withAlpha(0.8f));
-        g.drawText("LEVEL", meterX, meterY + meterH + 2,
-                   meterW, 8, juce::Justification::left);
-        g.drawText("0dB", meterX, meterY - 9, meterW, 8,
-                   juce::Justification::right);
     }
 
-    // ── Section box helper (deep recessed well on cream panel) ─────────────
+    // ── Section box helper (warm-gray recessed well on cream panel) ────────
     auto drawSectionBox = [&](juce::Rectangle<int> r)
     {
         // Outer drop shadow
-        g.setColour(juce::Colours::black.withAlpha(0.35f));
+        g.setColour(juce::Colours::black.withAlpha(0.3f));
         g.fillRoundedRectangle(r.toFloat().translated(1.5f, 2.0f), 4.0f);
-        // Recessed panel fill
-        g.setColour(RRColors::sectionBg);
-        g.fillRoundedRectangle(r.toFloat(), 4.0f);
+        // Recessed fill — subtle warm-gray gradient (top slightly lighter)
+        {
+            juce::ColourGradient fill(
+                RRColors::sectionBg.brighter(0.05f),   r.toFloat().getX(), r.toFloat().getY(),
+                RRColors::sectionBgDark,               r.toFloat().getX(), r.toFloat().getBottom(),
+                false);
+            g.setGradientFill(fill);
+            g.fillRoundedRectangle(r.toFloat(), 4.0f);
+        }
+        // Inner top highlight (subtle bevel sheen)
+        {
+            auto top = r.toFloat().removeFromTop(1.5f).reduced(4.0f, 0.0f);
+            g.setColour(juce::Colours::white.withAlpha(0.07f));
+            g.fillRect(top);
+        }
         // Inner dark-bevel border
         g.setColour(RRColors::sectionBorder);
         g.drawRoundedRectangle(r.toFloat(), 4.0f, 1.2f);

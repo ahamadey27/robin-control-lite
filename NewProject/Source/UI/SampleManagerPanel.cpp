@@ -67,8 +67,8 @@ void SampleManagerPanel::paint(juce::Graphics& g)
     g.drawText("SAMPLE POOL", 8, 6, getWidth() - 16, 18, juce::Justification::left);
 
     // ── Playback type label above toggle ─────────────────────────────────────
-    g.setColour(juce::Colour(0xff4a4030));
-    g.setFont(juce::Font(juce::FontOptions(8.0f)).boldened());
+    g.setColour(juce::Colour(0xffe6e1d4));
+    g.setFont(juce::Font(juce::FontOptions(9.0f)).boldened());
     g.drawText("PLAYBACK TYPE", getWidth() - 168, 16, 160, 10, juce::Justification::centred);
 
     // ── LED Screen area ─────────────────────────────────────────────────────
@@ -85,6 +85,21 @@ void SampleManagerPanel::paint(juce::Graphics& g)
     // Screen background — deep blue LCD (matches LED Scren.png reference)
     g.setColour(RRColors::lcdBg);
     g.fillRoundedRectangle(screenRect.toFloat(), 2.0f);
+
+    // Subtle distress — pseudo-random specks (fixed seed = deterministic)
+    {
+        juce::Random rng(12345);
+        const int spots = (screenRect.getWidth() * screenRect.getHeight()) / 380;
+        for (int s = 0; s < spots; ++s)
+        {
+            int px = screenRect.getX() + rng.nextInt(screenRect.getWidth());
+            int py = screenRect.getY() + rng.nextInt(screenRect.getHeight());
+            g.setColour(rng.nextBool()
+                ? RRColors::lcdBgDark.withAlpha(0.28f)
+                : juce::Colour(0xff4a80d0).withAlpha(0.18f));
+            g.fillRect(px, py, 1, 1);
+        }
+    }
 
     // Subtle inner shadow (top edge darker)
     {
