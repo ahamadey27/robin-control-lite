@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio Version 18
+
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "round-robin-lite - Standalone Plugin", "round-robin-lite_StandalonePlugin.vcxproj", "{DB33F032-0C59-26C8-F958-879026AA1F89}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F3D79FBD-CA6A-0519-F7C1-76CC9494566D} = {F3D79FBD-CA6A-0519-F7C1-76CC9494566D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "round-robin-lite - VST3", "round-robin-lite_VST3.vcxproj", "{EF5D9470-951C-F9A3-50C7-27317B2900EE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F3D79FBD-CA6A-0519-F7C1-76CC9494566D} = {F3D79FBD-CA6A-0519-F7C1-76CC9494566D}
+		{A78744B5-0757-6960-0879-D96EA717116A} = {A78744B5-0757-6960-0879-D96EA717116A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "round-robin-lite - Shared Code", "round-robin-lite_SharedCode.vcxproj", "{F3D79FBD-CA6A-0519-F7C1-76CC9494566D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "round-robin-lite - VST3 Manifest Helper", "round-robin-lite_VST3ManifestHelper.vcxproj", "{A78744B5-0757-6960-0879-D96EA717116A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		roundrobinlite|x64 = roundrobinlite|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EF5D9470-951C-F9A3-50C7-27317B2900EE}.Debug|x64.ActiveCfg = Debug|x64
+		{EF5D9470-951C-F9A3-50C7-27317B2900EE}.Debug|x64.Build.0 = Debug|x64
+		{EF5D9470-951C-F9A3-50C7-27317B2900EE}.roundrobinlite|x64.ActiveCfg = roundrobinlite|x64
+		{EF5D9470-951C-F9A3-50C7-27317B2900EE}.roundrobinlite|x64.Build.0 = roundrobinlite|x64
+		{DB33F032-0C59-26C8-F958-879026AA1F89}.Debug|x64.ActiveCfg = Debug|x64
+		{DB33F032-0C59-26C8-F958-879026AA1F89}.Debug|x64.Build.0 = Debug|x64
+		{DB33F032-0C59-26C8-F958-879026AA1F89}.roundrobinlite|x64.ActiveCfg = roundrobinlite|x64
+		{DB33F032-0C59-26C8-F958-879026AA1F89}.roundrobinlite|x64.Build.0 = roundrobinlite|x64
+		{F3D79FBD-CA6A-0519-F7C1-76CC9494566D}.Debug|x64.ActiveCfg = Debug|x64
+		{F3D79FBD-CA6A-0519-F7C1-76CC9494566D}.Debug|x64.Build.0 = Debug|x64
+		{F3D79FBD-CA6A-0519-F7C1-76CC9494566D}.roundrobinlite|x64.ActiveCfg = roundrobinlite|x64
+		{F3D79FBD-CA6A-0519-F7C1-76CC9494566D}.roundrobinlite|x64.Build.0 = roundrobinlite|x64
+		{A78744B5-0757-6960-0879-D96EA717116A}.Debug|x64.ActiveCfg = Debug|x64
+		{A78744B5-0757-6960-0879-D96EA717116A}.Debug|x64.Build.0 = Debug|x64
+		{A78744B5-0757-6960-0879-D96EA717116A}.roundrobinlite|x64.ActiveCfg = roundrobinlite|x64
+		{A78744B5-0757-6960-0879-D96EA717116A}.roundrobinlite|x64.Build.0 = roundrobinlite|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
