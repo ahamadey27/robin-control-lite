@@ -7,8 +7,8 @@ namespace RRColors
     inline const juce::Colour background    { 0xffc7c2b2 };   // warm cream/stone main panel
     inline const juce::Colour backgroundLo  { 0xffb0ab9c };   // slightly darker variant
     inline const juce::Colour headerBg      { 0xff8a8478 };   // darker warm gray header
-    inline const juce::Colour sectionBg     { 0xff5a5448 };   // warm mid-dark gray recessed wells
-    inline const juce::Colour sectionBgDark { 0xff4a4438 };   // darker variant (inner shadow / inset)
+    inline const juce::Colour sectionBg     { 0xff8a8478 };   // warm gray wells (matches header)
+    inline const juce::Colour sectionBgDark { 0xff7a7468 };   // slightly darker variant (gradient bottom)
     inline const juce::Colour sectionBorder { 0xff2a2418 };   // dark warm bevel for depth
     inline const juce::Colour knobBody      { 0xffc7c2b2 };   // cream cap (matches main panel — pops against darker wells)
     inline const juce::Colour knobRim       { 0xff141110 };   // dark rim
