@@ -75,6 +75,22 @@ Standard JUCE Synthesiser pattern:
 
 ## Working on the redesign
 
+**Scope of this project:** cosmetic GUI redesign only. The goal is to try new visual ideas for the existing controls — not to rearrange the interface.
+
+### "Undo to original"
+
+When the user says **"undo to original"** (or any close variant — "revert to original", "back to original", etc.), treat it as a command to restore the project to the baseline state captured on 2026-04-22: git commit `5843ed5` plus the CLAUDE.md edits made that same day. The `original-baseline` git tag marks this state.
+
+To restore:
+```bash
+git -C /Users/alex/Documents/Github/robin-control-redesign checkout original-baseline -- .
+```
+
+Then confirm with the user before committing or discarding anything else. Do NOT interpret "undo to original" as reverting to the initial commit (`9ab5621`) or to any earlier state — it always means this baseline.
+
+- **Do NOT move, reorder, or relocate any sliders, knobs, buttons, or other controls.** The only positional adjustment allowed is slight centering tweaks (e.g. nudging a control a few pixels to center it within its slot).
+- **Keep all components where they currently are.** If a control lives in a given region today, it stays in that region. Redesign work is limited to how things *look*, not where they *live*.
+- **Visual references live in `Images/`.** The `S612_*` images (`S612_01.png`, `S612_02.png`, `S612_03.png`, `S612_Slider.png`) are the **primary** aesthetic reference — lean on these for the target look and feel. The other images (`HiFi_01.png`–`HiFi_04.png`, `Sampler_01.png`) are **secondary** inspiration only — use them for ideas, not as direct targets.
 - **The layout lives in `PluginEditor.cpp`.** The `paint()` and `resized()` layout constants are duplicated across both methods — keep them in sync.
 - The audio-engine files (PluginProcessor, RRvoice, DSP/, Data/) should generally NOT be touched during UI redesigns — changes there should be ported from / to `round-robin-lite` instead.
 - Param IDs are frozen (preset compatibility with the sibling project). Don't rename them in `ParametersIDs.h`.

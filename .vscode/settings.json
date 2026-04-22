@@ -1,0 +1,7 @@
+{
+    "cmake.sourceDirectory": "${workspaceFolder}/NewProject",
+    "cmake.buildDirectory": "${workspaceFolder}/NewProject/build",
+    "cmake.configureOnOpen": true,
+    "cmake.generator": "Unix Makefiles",
+    "cmake.parallelJobs": 0
+}
