@@ -646,7 +646,7 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
 
     // Bigger section-title font (9pt → 16pt, ~75% larger)
     juce::Font sectionFont(juce::FontOptions(16.0f));
-    sectionFont = sectionFont.boldened();
+    sectionFont = sectionFont.boldened().withExtraKerningFactor(0.04f);
 
     // Section title helper: thin dark outline + matte fill for readability on the warm-gray wells
     auto drawSectionTitle = [&](const juce::String& text, int x, int y, int w, int h,
@@ -658,7 +658,7 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
         ga.createPath(path);
 
         g.setColour(juce::Colour(0xff0a0806));
-        g.strokePath(path, juce::PathStrokeType(1.6f,
+        g.strokePath(path, juce::PathStrokeType(1.0f,
             juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
         g.setColour(fillCol);
@@ -723,14 +723,14 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
                      juce::Justification::left, RRColors::trimCol);
 
     // ── Knob labels ─────────────────────────────────────────────────────────
-    g.setFont(juce::Font(juce::FontOptions(10.0f)));
+    g.setFont(juce::Font(juce::FontOptions(12.0f)));
     auto drawKnobLabel = [&](const juce::String& text, int secY, int secHeight,
                              int knobX, juce::Colour col)
     {
         int padTop = (secHeight - 20 - 108) / 2;
-        int labelY = secY + 20 + padTop;
-        g.setColour(col.withAlpha(0.55f));
-        g.drawText(text, knobX - 8, labelY, knobW + 16, 12,
+        int labelY = secY + 20 + padTop - 4;
+        g.setColour(col.withAlpha(0.85f));
+        g.drawText(text, knobX - 8, labelY, knobW + 16, 14,
                    juce::Justification::centred);
     };
     drawKnobLabel("Volume",     ampY,    secH, ampX   + secKx0,   RRColors::ampCol);
@@ -763,7 +763,7 @@ void NewProjectAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
         g.reduceClipRegion(clip);
     }
 
-    constexpr float arcW   = 2.0f;
+    constexpr float arcW   = 3.2f;
     constexpr int   tbH    = 16;
 
     auto drawArcOutline = [&](juce::Slider& knob,
@@ -779,7 +779,6 @@ void NewProjectAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
 
         float negNorm = getNorm(negSlider);
         float posNorm = getNorm(posSlider);
-        if (negNorm < 0.01f && posNorm < 0.01f) return;
 
         // Compute the knob's current angle from its value
         float knobNorm = getNorm(knob);
@@ -788,13 +787,6 @@ void NewProjectAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
         float endA      = rp.endAngleRadians;     // ~5 o'clock
         float knobAngle = startA + knobNorm * (endA - startA);
 
-        // Available arc room from knob position to each rotary limit
-        float roomNeg = knobAngle - startA;   // room toward 7 o'clock
-        float roomPos = endA - knobAngle;     // room toward 5 o'clock
-
-        float negExtent = negNorm * roomNeg;  // at max rnd → fills to 7 o'clock
-        float posExtent = posNorm * roomPos;  // at max rnd → fills to 5 o'clock
-
         auto  b  = knob.getBounds();
         float w  = (float)b.getWidth();
         float h  = (float)(b.getHeight() - tbH);
@@ -802,7 +794,26 @@ void NewProjectAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
         float cy = b.getY() + h * 0.5f;
 
         float knobRadius = juce::jmin(w, h) * 0.5f - 2.5f;  // match body radius
-        float radius     = knobRadius;                     // draw right on the perimeter
+        float radius     = knobRadius + 4.0f;              // pushed outboard of the knob body
+
+        // Faint full-range track: always-on slot that the colored arcs fill into
+        {
+            juce::Path track;
+            track.addArc(cx - radius, cy - radius, radius * 2.0f, radius * 2.0f,
+                startA, endA, true);
+            g.setColour(col.withAlpha(0.14f));
+            g.strokePath(track, juce::PathStrokeType(arcW,
+                juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+        }
+
+        if (negNorm < 0.01f && posNorm < 0.01f) return;
+
+        // Available arc room from knob position to each rotary limit
+        float roomNeg = knobAngle - startA;   // room toward 7 o'clock
+        float roomPos = endA - knobAngle;     // room toward 5 o'clock
+
+        float negExtent = negNorm * roomNeg;  // at max rnd → fills to 7 o'clock
+        float posExtent = posNorm * roomPos;  // at max rnd → fills to 5 o'clock
 
         // Neg arc: counter-clockwise from knob position (clamped to start)
         if (negExtent > 0.01f)
@@ -810,7 +821,7 @@ void NewProjectAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
             juce::Path negArc;
             negArc.addArc(cx - radius, cy - radius, radius * 2.0f, radius * 2.0f,
                 knobAngle - negExtent, knobAngle, true);
-            g.setColour(col.withAlpha(0.7f));
+            g.setColour(col.withAlpha(0.85f));
             g.strokePath(negArc, juce::PathStrokeType(arcW,
                 juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
         }
@@ -821,7 +832,7 @@ void NewProjectAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
             juce::Path posArc;
             posArc.addArc(cx - radius, cy - radius, radius * 2.0f, radius * 2.0f,
                 knobAngle, knobAngle + posExtent, true);
-            g.setColour(col.withAlpha(0.7f));
+            g.setColour(col.withAlpha(0.85f));
             g.strokePath(posArc, juce::PathStrokeType(arcW,
                 juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
         }

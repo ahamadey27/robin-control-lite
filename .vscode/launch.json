@@ -5,7 +5,7 @@
             "name": "Debug robin-design Standalone",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/NewProject/build/robindesign_artefacts/Standalone/robin-design.app/Contents/MacOS/robin-design",
+            "program": "${workspaceFolder}/NewProject/build/robindesign_artefacts/Debug/Standalone/robin-design.app/Contents/MacOS/robin-design",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

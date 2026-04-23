@@ -6,21 +6,21 @@ SampleManagerPanel::SampleManagerPanel(NewProjectAudioProcessor& p)
 {
     loadSamplesButton.setButtonText("Load Samples");
     loadSamplesButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff2a3a30));
-    loadSamplesButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xffa0b0a0));
+    loadSamplesButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xffd4e8d4));
     loadSamplesButton.setLookAndFeel(&buttonLAF);
     loadSamplesButton.onClick = [this]() { if (onLoadSamplesClicked) onLoadSamplesClicked(); };
     addAndMakeVisible(loadSamplesButton);
 
     clearSamplesButton.setButtonText("Clear");
     clearSamplesButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff3a2a2a));
-    clearSamplesButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xffb0a0a0));
+    clearSamplesButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xffe8d0d0));
     clearSamplesButton.setLookAndFeel(&buttonLAF);
     clearSamplesButton.onClick = [this]() { if (onClearSamplesClicked) onClearSamplesClicked(); };
     addAndMakeVisible(clearSamplesButton);
 
     resetPoolButton.setButtonText("Reset");
     resetPoolButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff2a2a3a));
-    resetPoolButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xffa0a0b0));
+    resetPoolButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xffd0d0e8));
     resetPoolButton.setLookAndFeel(&buttonLAF);
     resetPoolButton.onClick = [this]() { processor.resetPlaybackPosition(); };
     addAndMakeVisible(resetPoolButton);
@@ -62,9 +62,24 @@ juce::String SampleManagerPanel::truncateName(const juce::String& name, int maxC
 void SampleManagerPanel::paint(juce::Graphics& g)
 {
     // ── Section title ────────────────────────────────────────────────────────
-    g.setColour(RRColors::ampCol);
-    g.setFont(juce::Font(juce::FontOptions(16.0f)).boldened());
-    g.drawText("SAMPLE POOL", 8, 6, getWidth() - 16, 18, juce::Justification::left);
+    {
+        juce::Font sectionFont(juce::FontOptions(16.0f));
+        sectionFont = sectionFont.boldened().withExtraKerningFactor(0.04f);
+
+        juce::GlyphArrangement ga;
+        ga.addFittedText(sectionFont, "SAMPLE POOL",
+                         8.0f, 6.0f, (float)(getWidth() - 16), 18.0f,
+                         juce::Justification::left, 1);
+        juce::Path path;
+        ga.createPath(path);
+
+        g.setColour(juce::Colour(0xff0a0806));
+        g.strokePath(path, juce::PathStrokeType(1.0f,
+            juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+        g.setColour(RRColors::ampCol);
+        g.fillPath(path);
+    }
 
     // ── Playback type label above toggle ─────────────────────────────────────
     g.setColour(juce::Colour(0xffe6e1d4));
