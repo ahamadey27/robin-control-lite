@@ -73,6 +73,11 @@ void SampleManagerPanel::paint(juce::Graphics& g)
         juce::Path path;
         ga.createPath(path);
 
+        juce::Path highlight = path;
+        highlight.applyTransform(juce::AffineTransform::translation(0.0f, 1.0f));
+        g.setColour(juce::Colour(0xffece5d4).withAlpha(0.55f));
+        g.fillPath(highlight);
+
         g.setColour(juce::Colour(0xff0a0806));
         g.strokePath(path, juce::PathStrokeType(1.0f,
             juce::PathStrokeType::curved, juce::PathStrokeType::rounded));

@@ -648,7 +648,9 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
     juce::Font sectionFont(juce::FontOptions(16.0f));
     sectionFont = sectionFont.boldened().withExtraKerningFactor(0.04f);
 
-    // Section title helper: thin dark outline + matte fill for readability on the warm-gray wells
+    // Section title helper: letterpress / engraved look on the warm panel.
+    // Cream highlight shifted 1px down simulates the light edge of an engraved recess;
+    // dark outline + section-color fill on top reads as ink pressed into the panel.
     auto drawSectionTitle = [&](const juce::String& text, int x, int y, int w, int h,
                                 juce::Justification just, juce::Colour fillCol)
     {
@@ -656,6 +658,11 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
         ga.addFittedText(sectionFont, text, (float)x, (float)y, (float)w, (float)h, just, 1);
         juce::Path path;
         ga.createPath(path);
+
+        juce::Path highlight = path;
+        highlight.applyTransform(juce::AffineTransform::translation(0.0f, 1.0f));
+        g.setColour(juce::Colour(0xffece5d4).withAlpha(0.55f));
+        g.fillPath(highlight);
 
         g.setColour(juce::Colour(0xff0a0806));
         g.strokePath(path, juce::PathStrokeType(1.0f,
