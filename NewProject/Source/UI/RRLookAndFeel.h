@@ -3,14 +3,14 @@
 
 namespace RRColors
 {
-    // Backgrounds — warm cream panel (AKAI S3000-style) with deep recessed wells
-    inline const juce::Colour background    { 0xffc7c2b2 };   // warm cream/stone main panel
-    inline const juce::Colour backgroundLo  { 0xffb0ab9c };   // slightly darker variant
-    inline const juce::Colour headerBg      { 0xff8a8478 };   // darker warm gray header
-    inline const juce::Colour sectionBg     { 0xff8a8478 };   // warm gray wells (matches header)
-    inline const juce::Colour sectionBgDark { 0xff7a7468 };   // slightly darker variant (gradient bottom)
+    // Backgrounds — INVERTED tones: warm-gray outer frame, cream header + wells
+    inline const juce::Colour background    { 0xff8a8478 };   // warm gray outer panel / footer field
+    inline const juce::Colour backgroundLo  { 0xff7a7468 };   // darker warm gray (brush grain)
+    inline const juce::Colour headerBg      { 0xffc7c2b2 };   // cream header strip
+    inline const juce::Colour sectionBg     { 0xffe4dfcd };   // brighter cream wells (readable surface for colored labels)
+    inline const juce::Colour sectionBgDark { 0xffcdc7b4 };   // slightly darker cream (gradient bottom)
     inline const juce::Colour sectionBorder { 0xff2a2418 };   // dark warm bevel for depth
-    inline const juce::Colour knobBody      { 0xffc7c2b2 };   // cream cap (matches main panel — pops against darker wells)
+    inline const juce::Colour knobBody      { 0xff8a8478 };   // warm gray cap (pops against cream wells)
     inline const juce::Colour knobRim       { 0xff141110 };   // dark rim
     inline const juce::Colour knobTrack     { 0xff1a1713 };
     inline const juce::Colour valueText     { 0xffe6f0ff };   // LED readout (pale blue-white)
@@ -34,17 +34,19 @@ namespace RRColors
     inline const juce::Colour lcdHighlight  { 0xffb0d0ff };   // highlight/brighter text
     inline const juce::Colour lcdRed        { 0xffff9080 };   // warning on blue
 
-    // Section label / accent colors — matte S612-palette tones (design-spec.md profile 1)
-    inline const juce::Colour pitchCol  { 0xffc84045 };   // S612 muted red
-    inline const juce::Colour ampCol    { 0xff009065 };   // S612 matte dark green (matches Save button feel)
+    // Section label / accent colors — darker matte tones chosen for contrast on cream wells
+    // Green / red / orange are direct S612 profile-1 picks. Tone (deep teal) and trim
+    // (deep bronze) are custom but sit squarely in the S612/S3000 hardware aesthetic.
+    inline const juce::Colour pitchCol  { 0xff9c2a2e };   // deeper red (was #c84045 — too bright/washed on cream)
+    inline const juce::Colour ampCol    { 0xff00704f };   // deeper S612 green (was #009065)
     inline const juce::Colour envCol    { 0xffb88030 };   // amber (premium — unused in Lite)
     inline const juce::Colour transCol  { 0xff8858b0 };
     inline const juce::Colour eqLowCol  { 0xff5e8a40 };
     inline const juce::Colour eqMidCol  { 0xff4880b0 };
     inline const juce::Colour eqHighCol { 0xffb87830 };
-    inline const juce::Colour toneCol   { 0xff777596 };   // S612 muted purple
-    inline const juce::Colour trimCol   { 0xff30dfd6 };   // S612 bright cyan (pops on warm-gray wells)
-    inline const juce::Colour algoCol   { 0xffda5f20 };   // S612 warm orange
+    inline const juce::Colour toneCol   { 0xff2a5a72 };   // deep slate-teal (cool counterweight to the warm sections)
+    inline const juce::Colour trimCol   { 0xff7a4820 };   // deep bronze/amber (reads strongly on cream)
+    inline const juce::Colour algoCol   { 0xffb84a18 };   // deeper S612 orange (was #da5f20)
 
     // Rand arc neg colors (lighter/desaturated version of each section)
     inline const juce::Colour pitchNeg  { 0xffe88878 };
