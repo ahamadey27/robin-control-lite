@@ -11,7 +11,7 @@ namespace RRColors
     inline const juce::Colour sectionBgDark { 0xffcdc7b4 };   // slightly darker cream (gradient bottom)
     inline const juce::Colour sectionBorder { 0xff2a2418 };   // dark warm bevel for depth
     inline const juce::Colour knobBody      { 0xff8a8478 };   // warm gray cap (pops against cream wells)
-    inline const juce::Colour knobRim       { 0xff141110 };   // dark rim
+    inline const juce::Colour knobRim       { 0xff1f1710 };   // warm near-black rim (tinted umber for the cream panel)
     inline const juce::Colour knobTrack     { 0xff1a1713 };
     inline const juce::Colour valueText     { 0xffe6f0ff };   // LED readout (pale blue-white)
     inline const juce::Colour companyText   { 0xff4a4030 };   // dark warm ink on cream

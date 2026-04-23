@@ -173,7 +173,7 @@ NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioPr
 
     // Random Algorithm knob — larger, integer snapping, no randomization arc
     randomAlgorithmSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    randomAlgorithmSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 40, 16);
+    randomAlgorithmSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 56, 22);
     randomAlgorithmSlider.setNumDecimalPlacesToDisplay(0);
     addAndMakeVisible(randomAlgorithmSlider);
 
@@ -534,11 +534,11 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
         g.setGradientFill(hdrGrad);
         g.fillRect(0, 0, getWidth(), headerH);
     }
-    // Divider: dark ink line
-    g.setColour(juce::Colour(0xff3c3428));
-    g.fillRect(0, headerH, getWidth(), 1);
-    g.setColour(juce::Colours::white.withAlpha(0.08f));
-    g.fillRect(0, headerH + 1, getWidth(), 1);
+    // Divider: dark ink line + warm catchlight — reads as a crisp panel ridge
+    g.setColour(juce::Colour(0xff1d160d));
+    g.fillRect(0, headerH, getWidth(), 2);
+    g.setColour(juce::Colour(0xfff4eedb).withAlpha(0.32f));
+    g.fillRect(0, headerH + 2, getWidth(), 1);
 
     // Brushed nameplate behind the title — darker warm tone
     {

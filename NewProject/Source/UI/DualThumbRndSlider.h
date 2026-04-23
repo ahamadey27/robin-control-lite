@@ -20,36 +20,43 @@ public:
 
     void paint(juce::Graphics& g) override
     {
-        auto b = getLocalBounds().toFloat().reduced(1.0f, 2.0f);
+        // Visually tiny and desaturated — the outboard arcs carry the randomization signal now.
+        // Component bounds stay full-size so the drag hit area is preserved.
+        auto full = getLocalBounds().toFloat();
+        constexpr float trackH = 2.0f;
+        auto b = juce::Rectangle<float>(full.getX() + 1.0f,
+                                        full.getCentreY() - trackH * 0.5f,
+                                        full.getWidth() - 2.0f, trackH);
+
         float cx = b.getCentreX();
         float halfW = b.getWidth() * 0.5f;
 
         float negNorm = getNorm(neg);
         float posNorm = getNorm(pos);
 
-        constexpr float thumbW = 6.0f;
-        constexpr float gap = 4.0f; // visible gap between thumbs at 0%
+        constexpr float thumbW = 3.0f;
+        constexpr float thumbH = 6.0f;
+        constexpr float gap = 3.0f;
 
         float negX = cx - gap - negNorm * (halfW - gap - thumbW * 0.5f);
         float posX = cx + gap + posNorm * (halfW - gap - thumbW * 0.5f);
 
-        // Track background
-        g.setColour(juce::Colour(0xff1a1a1a));
-        g.fillRoundedRectangle(b, 3.0f);
+        // Very faint track
+        g.setColour(juce::Colours::black.withAlpha(0.22f));
+        g.fillRoundedRectangle(b, 1.0f);
 
-        // Filled range (from neg thumb to pos thumb)
+        // Desaturated fill between thumbs
         if (negNorm > 0.01f || posNorm > 0.01f)
         {
-            g.setColour(col.withAlpha(0.25f));
-            g.fillRoundedRectangle(negX, b.getY(), posX - negX, b.getHeight(), 2.0f);
+            g.setColour(col.withAlpha(0.32f));
+            g.fillRoundedRectangle(negX, b.getY(), posX - negX, b.getHeight(), 1.0f);
         }
 
-        // Neg thumb
-        g.setColour(col);
-        g.fillRoundedRectangle(negX - thumbW * 0.5f, b.getY(), thumbW, b.getHeight(), 2.0f);
-
-        // Pos thumb
-        g.fillRoundedRectangle(posX - thumbW * 0.5f, b.getY(), thumbW, b.getHeight(), 2.0f);
+        // Tick indicators — thin, slightly taller than the track
+        const float tickY = b.getCentreY() - thumbH * 0.5f;
+        g.setColour(col.withAlpha(0.65f));
+        g.fillRoundedRectangle(negX - thumbW * 0.5f, tickY, thumbW, thumbH, 1.0f);
+        g.fillRoundedRectangle(posX - thumbW * 0.5f, tickY, thumbW, thumbH, 1.0f);
     }
 
     void mouseDown(const juce::MouseEvent& e) override

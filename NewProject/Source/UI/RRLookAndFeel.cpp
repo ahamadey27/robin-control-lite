@@ -11,13 +11,16 @@ void RRKnobLAF::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int
 
     const float bodyRadius = juce::jmin((float)width, (float)height) * 0.5f - 3.0f;
 
+    // Warm near-black used for rim shadows — picks up the cream panel rather than a cold gray.
+    const juce::Colour warmShadow(0xff1e1610);
+
     // ── Recessed well behind the knob (dark ring) ───────────────────────────
-    g.setColour(juce::Colours::black.withAlpha(0.35f));
+    g.setColour(warmShadow.withAlpha(0.38f));
     g.fillEllipse(cx - bodyRadius - 2.0f, cy - bodyRadius - 1.0f,
                   (bodyRadius + 2.0f) * 2.0f, (bodyRadius + 2.0f) * 2.0f);
 
     // ── Drop shadow under cap ───────────────────────────────────────────────
-    g.setColour(juce::Colours::black.withAlpha(0.45f));
+    g.setColour(warmShadow.withAlpha(0.50f));
     g.fillEllipse(cx - bodyRadius + 0.5f, cy - bodyRadius + 2.0f,
                   bodyRadius * 2.0f, bodyRadius * 2.0f);
 
