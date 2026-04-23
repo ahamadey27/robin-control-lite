@@ -80,6 +80,10 @@ public:
     void requestTrigger() { triggerPending.store(true); }
     void requestPanic()   { panicPending.store(true); }
 
+    // Output peak magnitude (0..~) — updated at the end of each processBlock,
+    // read by the editor's level-meter timer. Linear gain, not dB.
+    std::atomic<float> outputPeakLevel { 0.0f };
+
 private:
     //==============================================================================
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();

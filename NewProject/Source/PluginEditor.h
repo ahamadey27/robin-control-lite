@@ -6,7 +6,9 @@
 #include "UI/SampleManagerPanel.h"
 #include "UI/DualThumbRndSlider.h"
 
-class NewProjectAudioProcessorEditor : public juce::AudioProcessorEditor, public juce::ComponentListener
+class NewProjectAudioProcessorEditor : public juce::AudioProcessorEditor,
+                                        public juce::ComponentListener,
+                                        private juce::Timer
 {
 public:
     NewProjectAudioProcessorEditor(NewProjectAudioProcessor&);
@@ -15,6 +17,7 @@ public:
     void resized() override;
     void paintOverChildren(juce::Graphics&) override;
     void componentVisibilityChanged(juce::Component&) override;
+    void timerCallback() override;
 
 private:
     NewProjectAudioProcessor& audioProcessor;
@@ -136,6 +139,12 @@ private:
     AboutWindow      aboutWindow;
     juce::TextButton aboutButton;
     SampleManagerPanel sampleManagerPanel;
+
+    // Level-meter state — timerCallback pulls the processor's peak into
+    // displayedLevel with a fast-attack / slow-release envelope, then repaints
+    // just the meter rect.
+    float displayedLevel { 0.0f };   // linear gain
+    juce::Rectangle<int> meterBounds;
 
     // Helpers
     void setupSlider(juce::Slider& s);

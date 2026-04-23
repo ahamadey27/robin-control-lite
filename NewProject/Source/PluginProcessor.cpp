@@ -388,6 +388,13 @@ void NewProjectAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, ju
     toneControl.updateFilters(toneLowGain, toneHighGain);
     toneControl.processBlock(buffer);
 
+    //==============================================================================
+    // CAPTURE OUTPUT PEAK FOR LEVEL METER
+
+    float peak = 0.0f;
+    for (int channel = 0; channel < totalNumOutputChannels; ++channel)
+        peak = std::max(peak, buffer.getMagnitude(channel, 0, numSamples));
+    outputPeakLevel.store(peak, std::memory_order_relaxed);
 }
 
 //==============================================================================

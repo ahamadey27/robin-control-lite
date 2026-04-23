@@ -286,11 +286,15 @@ NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioPr
 
     setSize(1400, 400);
     resized();
+
+    startTimerHz(30);
 }
 
 //==============================================================================
 NewProjectAudioProcessorEditor::~NewProjectAudioProcessorEditor()
 {
+    stopTimer();
+
     for (auto* s : { &semitoneSlider, &fineTuneSlider, &volumeSlider, &panSlider,
                      &toneLowSlider, &toneHighSlider,
                      &sampleStartSlider, &sampleEndSlider,
@@ -299,6 +303,22 @@ NewProjectAudioProcessorEditor::~NewProjectAudioProcessorEditor()
 
     for (auto* b : { &triggerButton, &panicButton, &savePresetButton, &loadPresetButton, &aboutButton })
         b->setLookAndFeel(nullptr);
+}
+
+//==============================================================================
+void NewProjectAudioProcessorEditor::timerCallback()
+{
+    // Pull the latest peak from the processor and run it through a fast-attack /
+    // slow-release envelope so the LEDs rise instantly but fall smoothly.
+    const float target = audioProcessor.outputPeakLevel.load(std::memory_order_relaxed);
+
+    if (target >= displayedLevel)
+        displayedLevel = target;                  // instant attack — catch peaks
+    else
+        displayedLevel += (target - displayedLevel) * 0.25f;  // ~4-tick (~130ms) release
+
+    if (! meterBounds.isEmpty())
+        repaint(meterBounds);
 }
 
 //==============================================================================
@@ -567,7 +587,9 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
     g.setFont(juce::Font(juce::FontOptions(15.0f)).italicised());
     g.drawText("Lite", liteX, 13, 60, 22, juce::Justification::left);
 
-    // ── Green LED LEVEL meter (stand-in for future real meter) ─────────────
+    // ── LED LEVEL meter ────────────────────────────────────────────────────
+    // 14 segments; 0..8 green below 0dB, 9..13 red at/above 0dB. Each bar has
+    // a dB threshold and lights only when the current output peak reaches it.
     {
         constexpr int meterY = 18;
         constexpr int meterH = 16;
@@ -577,39 +599,53 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
         const int meterW  = bars * (barW + barGap) - barGap;
         const int meterX  = 290;
 
+        // Cache meter rect so timerCallback can repaint just this region.
+        meterBounds = juce::Rectangle<int>(meterX - 6, meterY - 3,
+                                           meterW + 12, meterH + 6);
+
         // Meter well — deep black with warm bevel
-        juce::Rectangle<float> well((float)meterX - 6, (float)meterY - 3,
-                                    (float)meterW + 12, (float)meterH + 6);
+        juce::Rectangle<float> well = meterBounds.toFloat();
         g.setColour(juce::Colour(0xff050403));
         g.fillRoundedRectangle(well, 2.0f);
         g.setColour(juce::Colour(0xff3c3428));
         g.drawRoundedRectangle(well, 2.0f, 0.6f);
 
-        // LED segments — 9 green (lit), 1 red at index 9 (over-0dB indicator),
-        // remaining dim. The red position is reserved for future real-audio wiring.
-        const juce::Colour dimGreen(0xff184828);
-        constexpr int litCount     = 9;    // 0..8 lit green
-        constexpr int overZeroIdx  = 9;    // idx 9 = red "over 0dB" segment
+        // Current level in dB (clamp very quiet signals to avoid -inf math)
+        const float levelDb = juce::Decibels::gainToDecibels(displayedLevel, -100.0f);
+
+        // Bar thresholds: 3 dB per step, with bar 9 landing exactly on 0 dB.
+        // Below 0 dB → green; at/above 0 dB → red.
+        constexpr int firstRedIdx = 9;                 // 9..13 are red
+        const juce::Colour dimGreen(0xff0f2a18);
+        const juce::Colour dimRed  (0xff3a0c08);
+
         for (int i = 0; i < bars; ++i)
         {
+            const float thresholdDb = (float)(i - firstRedIdx) * 3.0f;  // bar 9 = 0 dB
+            const bool  isRed       = i >= firstRedIdx;
+            const bool  lit         = levelDb >= thresholdDb;
+
             juce::Colour c;
-            bool lit = true;
-            if (i < litCount)
+            if (lit)
             {
-                float t = (float)i / (float)(bars - 1);
-                c = dimGreen.interpolatedWith(RRColors::ledGreen, 0.4f + t * 0.6f);
-            }
-            else if (i == overZeroIdx)
-            {
-                c = RRColors::s612Red;
+                if (isRed)
+                {
+                    c = RRColors::s612Red;
+                }
+                else
+                {
+                    float t = (float)i / (float)(firstRedIdx - 1);  // 0..1 across green range
+                    c = dimGreen.interpolatedWith(RRColors::ledGreen, 0.4f + t * 0.6f);
+                }
             }
             else
             {
-                c = juce::Colour(0xff101c14);
-                lit = false;
+                c = isRed ? dimRed : juce::Colour(0xff0a140c);
             }
+
             g.setColour(c);
             g.fillRect(meterX + i * (barW + barGap), meterY, barW, meterH);
+
             if (lit)
             {
                 g.setColour(juce::Colours::white.withAlpha(0.2f));
