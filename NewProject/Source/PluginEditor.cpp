@@ -648,14 +648,30 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
     juce::Font sectionFont(juce::FontOptions(16.0f));
     sectionFont = sectionFont.boldened();
 
+    // Section title helper: thin dark outline + matte fill for readability on the warm-gray wells
+    auto drawSectionTitle = [&](const juce::String& text, int x, int y, int w, int h,
+                                juce::Justification just, juce::Colour fillCol)
+    {
+        juce::GlyphArrangement ga;
+        ga.addFittedText(sectionFont, text, (float)x, (float)y, (float)w, (float)h, just, 1);
+        juce::Path path;
+        ga.createPath(path);
+
+        g.setColour(juce::Colour(0xff0a0806));
+        g.strokePath(path, juce::PathStrokeType(1.6f,
+            juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+        g.setColour(fillCol);
+        g.fillPath(path);
+    };
+
     // ── Left: Sample Pool ───────────────────────────────────────────────────
     drawSectionBox({ margin, topY, lpW, contentH });
 
     // ── Center: Random Algorithm ────────────────────────────────────────────
     drawSectionBox({ algoX, topY, algoW, contentH });
-    g.setColour(RRColors::algoCol);
-    g.setFont(sectionFont);
-    g.drawText("RANDOM ALGORITHM", algoX, topY + 6, algoW, 18, juce::Justification::centred);
+    drawSectionTitle("RANDOM ALGORITHM", algoX, topY + 6, algoW, 18,
+                     juce::Justification::centred, RRColors::algoCol);
 
     // ── Random Algorithm tick marks (18 ticks) ──────────────────────────────
     {
@@ -688,27 +704,23 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
 
     // ── Right top-left: Amplitude ──────────────────────────────────────────
     drawSectionBox({ ampX, ampY, secW, secH });
-    g.setColour(RRColors::ampCol);
-    g.setFont(sectionFont);
-    g.drawText("AMPLITUDE", ampX + 8, ampY + 6, secW - 16, 18, juce::Justification::left);
+    drawSectionTitle("AMPLITUDE", ampX + 8, ampY + 6, secW - 16, 18,
+                     juce::Justification::left, RRColors::ampCol);
 
     // ── Right top-right: Tone ──────────────────────────────────────────────
     drawSectionBox({ toneX, toneY, secW, secH });
-    g.setColour(RRColors::toneCol);
-    g.setFont(sectionFont);
-    g.drawText("TONE", toneX + 8, toneY + 6, secW - 16, 18, juce::Justification::left);
+    drawSectionTitle("TONE", toneX + 8, toneY + 6, secW - 16, 18,
+                     juce::Justification::left, RRColors::toneCol);
 
     // ── Right bottom-left: Pitch ───────────────────────────────────────────
     drawSectionBox({ pitchX, pitchY, secW, secH });
-    g.setColour(RRColors::pitchCol);
-    g.setFont(sectionFont);
-    g.drawText("PITCH", pitchX + 8, pitchY + 6, secW - 16, 18, juce::Justification::left);
+    drawSectionTitle("PITCH", pitchX + 8, pitchY + 6, secW - 16, 18,
+                     juce::Justification::left, RRColors::pitchCol);
 
     // ── Right bottom-right: Sample Start/End ───────────────────────────────
     drawSectionBox({ trimX, trimY, secW, secH });
-    g.setColour(RRColors::trimCol);
-    g.setFont(sectionFont);
-    g.drawText("SAMPLE START/END", trimX + 8, trimY + 6, secW - 16, 18, juce::Justification::left);
+    drawSectionTitle("SAMPLE START/END", trimX + 8, trimY + 6, secW - 16, 18,
+                     juce::Justification::left, RRColors::trimCol);
 
     // ── Knob labels ─────────────────────────────────────────────────────────
     g.setFont(juce::Font(juce::FontOptions(10.0f)));

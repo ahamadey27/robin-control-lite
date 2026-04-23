@@ -34,17 +34,17 @@ namespace RRColors
     inline const juce::Colour lcdHighlight  { 0xffb0d0ff };   // highlight/brighter text
     inline const juce::Colour lcdRed        { 0xffff9080 };   // warning on blue
 
-    // Section label / accent colors — tuned for visibility on cream panel + dark wells
-    inline const juce::Colour pitchCol  { 0xffc8382a };   // red
-    inline const juce::Colour ampCol    { 0xff2fa9a1 };   // teal
-    inline const juce::Colour envCol    { 0xffb88030 };   // amber (darker for cream readability)
+    // Section label / accent colors — matte S612-palette tones (design-spec.md profile 1)
+    inline const juce::Colour pitchCol  { 0xffc84045 };   // S612 muted red
+    inline const juce::Colour ampCol    { 0xff009065 };   // S612 matte dark green (matches Save button feel)
+    inline const juce::Colour envCol    { 0xffb88030 };   // amber (premium — unused in Lite)
     inline const juce::Colour transCol  { 0xff8858b0 };
     inline const juce::Colour eqLowCol  { 0xff5e8a40 };
     inline const juce::Colour eqMidCol  { 0xff4880b0 };
     inline const juce::Colour eqHighCol { 0xffb87830 };
-    inline const juce::Colour toneCol   { 0xff3a8880 };   // muted teal
-    inline const juce::Colour trimCol   { 0xffb88030 };   // darker amber — readable on cream
-    inline const juce::Colour algoCol   { 0xffc85830 };   // warm orange
+    inline const juce::Colour toneCol   { 0xff777596 };   // S612 muted purple
+    inline const juce::Colour trimCol   { 0xff30dfd6 };   // S612 bright cyan (pops on warm-gray wells)
+    inline const juce::Colour algoCol   { 0xffda5f20 };   // S612 warm orange
 
     // Rand arc neg colors (lighter/desaturated version of each section)
     inline const juce::Colour pitchNeg  { 0xffe88878 };
