@@ -224,14 +224,16 @@ void RRToggleLAF::drawButtonBackground(juce::Graphics& g, juce::Button& button,
     const float pillX = b.getCentreX() - pillW * 0.5f;
     const float pillY = b.getCentreY() - pillH * 0.5f;
 
-    // SERIES label — left of pill, bright when active
+    // SERIES label — left of pill. Active = inked dark, inactive = faded into warm panel.
+    const juce::Colour activeInk   (0xff1f160d);
+    const juce::Colour inactiveInk (0xff857e70);
     g.setFont(juce::Font(juce::FontOptions(9.0f)).boldened());
-    g.setColour(isRandom ? juce::Colour(0xff4a4238) : RRColors::amber.withAlpha(0.85f));
+    g.setColour(isRandom ? inactiveInk : activeInk);
     g.drawText("SERIES", pillX - pillGap - textW, b.getY(), textW, b.getHeight(),
                juce::Justification::centredRight);
 
-    // RANDOM label — right of pill, bright when active
-    g.setColour(isRandom ? RRColors::amber.withAlpha(0.85f) : juce::Colour(0xff4a4238));
+    // RANDOM label — right of pill.
+    g.setColour(isRandom ? activeInk : inactiveInk);
     g.drawText("RANDOM", pillX + pillW + pillGap, b.getY(), textW, b.getHeight(),
                juce::Justification::centredLeft);
 

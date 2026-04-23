@@ -5,22 +5,22 @@ SampleManagerPanel::SampleManagerPanel(NewProjectAudioProcessor& p)
     : processor(p)
 {
     loadSamplesButton.setButtonText("Load Samples");
-    loadSamplesButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff2a3a30));
-    loadSamplesButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xffd4e8d4));
+    loadSamplesButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff3e5a40));
+    loadSamplesButton.setColour(juce::TextButton::textColourOnId, RRColors::screenPrint);
     loadSamplesButton.setLookAndFeel(&buttonLAF);
     loadSamplesButton.onClick = [this]() { if (onLoadSamplesClicked) onLoadSamplesClicked(); };
     addAndMakeVisible(loadSamplesButton);
 
     clearSamplesButton.setButtonText("Clear");
-    clearSamplesButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff3a2a2a));
-    clearSamplesButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xffe8d0d0));
+    clearSamplesButton.setColour(juce::TextButton::buttonColourId, RRColors::s612RedDim);
+    clearSamplesButton.setColour(juce::TextButton::textColourOnId, RRColors::screenPrint);
     clearSamplesButton.setLookAndFeel(&buttonLAF);
     clearSamplesButton.onClick = [this]() { if (onClearSamplesClicked) onClearSamplesClicked(); };
     addAndMakeVisible(clearSamplesButton);
 
     resetPoolButton.setButtonText("Reset");
-    resetPoolButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff2a2a3a));
-    resetPoolButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xffd0d0e8));
+    resetPoolButton.setColour(juce::TextButton::buttonColourId, RRColors::s612Red);
+    resetPoolButton.setColour(juce::TextButton::textColourOnId, RRColors::screenPrint);
     resetPoolButton.setLookAndFeel(&buttonLAF);
     resetPoolButton.onClick = [this]() { processor.resetPlaybackPosition(); };
     addAndMakeVisible(resetPoolButton);
@@ -82,7 +82,7 @@ void SampleManagerPanel::paint(juce::Graphics& g)
     }
 
     // ── Playback type label above toggle ─────────────────────────────────────
-    g.setColour(juce::Colour(0xffe6e1d4));
+    g.setColour(juce::Colour(0xff1f160d));
     g.setFont(juce::Font(juce::FontOptions(9.0f)).boldened());
     g.drawText("PLAYBACK TYPE", getWidth() - 168, 16, 160, 10, juce::Justification::centred);
 
