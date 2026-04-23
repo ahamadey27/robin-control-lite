@@ -23,7 +23,7 @@ public:
         // Visually tiny and desaturated — the outboard arcs carry the randomization signal now.
         // Component bounds stay full-size so the drag hit area is preserved.
         auto full = getLocalBounds().toFloat();
-        constexpr float trackH = 2.0f;
+        constexpr float trackH = 4.0f;
         auto b = juce::Rectangle<float>(full.getX() + 1.0f,
                                         full.getCentreY() - trackH * 0.5f,
                                         full.getWidth() - 2.0f, trackH);
@@ -34,8 +34,8 @@ public:
         float negNorm = getNorm(neg);
         float posNorm = getNorm(pos);
 
-        constexpr float thumbW = 3.0f;
-        constexpr float thumbH = 6.0f;
+        constexpr float thumbW = 4.5f;
+        constexpr float thumbH = 10.0f;
         constexpr float gap = 3.0f;
 
         float negX = cx - gap - negNorm * (halfW - gap - thumbW * 0.5f);
