@@ -72,6 +72,49 @@ void RRKnobLAF::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int
                cx + sinA * lineOuter, cy - cosA * lineOuter, 3.2f);
 }
 
+// Recessed-readout treatment for the slider value boxes:
+// subtle top-to-bottom gradient (darker top) + inner top shadow + rounded corners,
+// rhyming with the big LCD while preserving per-section text color.
+void RRKnobLAF::drawLabel(juce::Graphics& g, juce::Label& label)
+{
+    auto bounds = label.getLocalBounds().toFloat();
+    constexpr float radius = 2.5f;
+
+    juce::Colour bg = label.findColour(juce::Label::backgroundColourId);
+    if (bg.isTransparent())
+        bg = juce::Colour(0xff0a0806);
+
+    // Gradient fill — darker top, slightly lifted bottom (light pools inside recess)
+    juce::ColourGradient grad(
+        bg.darker(0.35f),    bounds.getX(), bounds.getY(),
+        bg.brighter(0.10f),  bounds.getX(), bounds.getBottom(),
+        false);
+    g.setGradientFill(grad);
+    g.fillRoundedRectangle(bounds, radius);
+
+    // Inner top shadow — reads as the upper inside edge of the recess
+    g.setColour(juce::Colours::black.withAlpha(0.55f));
+    g.drawLine(bounds.getX() + 2.0f, bounds.getY() + 0.5f,
+               bounds.getRight() - 2.0f, bounds.getY() + 0.5f, 1.0f);
+
+    // Outline (section color at alpha, already configured via textBoxOutlineColourId)
+    juce::Colour outline = label.findColour(juce::Label::outlineColourId);
+    if (! outline.isTransparent())
+    {
+        g.setColour(outline);
+        g.drawRoundedRectangle(bounds.reduced(0.5f), radius, 0.8f);
+    }
+
+    // Text
+    if (! label.isBeingEdited())
+    {
+        g.setColour(label.findColour(juce::Label::textColourId));
+        g.setFont(getLabelFont(label));
+        g.drawFittedText(label.getText(), bounds.toNearestInt(),
+                         label.getJustificationType(), 1, 1.0f);
+    }
+}
+
 //==============================================================================
 // RRButtonLAF — hardware-style buttons
 

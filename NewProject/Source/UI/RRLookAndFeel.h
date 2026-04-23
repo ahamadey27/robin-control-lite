@@ -68,6 +68,8 @@ public:
     void drawRotarySlider(juce::Graphics&, int x, int y, int width, int height,
         float sliderPos, float rotaryStartAngle,
         float rotaryEndAngle, juce::Slider&) override;
+
+    void drawLabel(juce::Graphics&, juce::Label&) override;
 };
 
 // Vertical pill toggle: off=SERIES (knob top), on=RANDOM (knob bottom)

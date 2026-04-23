@@ -633,11 +633,17 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
             g.setGradientFill(fill);
             g.fillRoundedRectangle(r.toFloat(), 4.0f);
         }
-        // Inner top highlight (subtle bevel sheen)
+        // Inner top shadow — reads as the upper inside edge of a recess
         {
-            auto top = r.toFloat().removeFromTop(1.5f).reduced(4.0f, 0.0f);
-            g.setColour(juce::Colours::white.withAlpha(0.07f));
+            auto top = r.toFloat().removeFromTop(1.5f).reduced(5.0f, 0.0f);
+            g.setColour(juce::Colours::black.withAlpha(0.22f));
             g.fillRect(top);
+        }
+        // Inner bottom catchlight — reads as light caught on the lower lip
+        {
+            auto bot = r.toFloat().removeFromBottom(1.0f).reduced(5.0f, 0.0f);
+            g.setColour(juce::Colour(0xfff4eedb).withAlpha(0.45f));
+            g.fillRect(bot);
         }
         // Inner dark-bevel border
         g.setColour(RRColors::sectionBorder);
