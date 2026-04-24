@@ -34,6 +34,15 @@ juce_add_plugin(robindesign
 juce_generate_juce_header(robindesign)
 
 # ============================================================
+# Binary resources (logos, images)
+# ============================================================
+juce_add_binary_data(robindesign_BinaryData
+    SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/../LOGOS/FULLLOGO-standard-clear.png
+        ${CMAKE_CURRENT_SOURCE_DIR}/../LOGOS/FULLLOGO-email-white.png
+)
+
+# ============================================================
 # Source files — grouped to mirror the on-disk folder structure
 # NOTE: RRvoice uses lowercase 'v' to match the actual filename
 # ============================================================
@@ -132,6 +141,7 @@ target_compile_definitions(robindesign
 # ============================================================
 target_link_libraries(robindesign
     PRIVATE
+        robindesign_BinaryData
         juce::juce_audio_basics
         juce::juce_audio_devices
         juce::juce_audio_formats

@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "BinaryData.h"
 
 NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p),
@@ -794,10 +795,90 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
     // ── Footer ──────────────────────────────────────────────────────────────
     g.setColour(juce::Colours::black.withAlpha(0.3f));
     g.fillRect(0, getHeight() - footerH, getWidth(), 1);
-    g.setColour(RRColors::companyText);
-    g.setFont(juce::Font(juce::FontOptions(10.0f)));
-    g.drawText("Alex Hamadey", 0, getHeight() - footerH + 4, getWidth() - 14, 20,
-               juce::Justification::right);
+
+    // conduit.dsp logo.
+    //
+    // Using the email-white asset because its glyphs are pure black on white
+    // (bolder than the charcoal/transparent variant, which reads as too
+    // translucent once scaled down). Pipeline:
+    //   1. Key white → alpha. For each pixel, alpha = 255 - min(R,G,B) and
+    //      un-composite to recover the opaque foreground color — text becomes
+    //      pure black, the teal waveform stays teal.
+    //   2. Crop tightly to content bounding box (source has transparent
+    //      padding top/bottom, so drawing at N px actually gives N px of
+    //      glyph, not N/2).
+    //   3. 1-pixel morphological dilate + alpha ×1.4 boost for final bold.
+    static const juce::Image logo = [] {
+        auto src = juce::ImageCache::getFromMemory(
+            BinaryData::FULLLOGOemailwhite_png,
+            BinaryData::FULLLOGOemailwhite_pngSize);
+        const int W0 = src.getWidth(), H0 = src.getHeight();
+
+        juce::Image keyed(juce::Image::ARGB, W0, H0, true);
+        for (int y = 0; y < H0; ++y)
+            for (int x = 0; x < W0; ++x)
+            {
+                const auto p = src.getPixelAt(x, y);
+                const int r = p.getRed(), g = p.getGreen(), b = p.getBlue();
+                const int whiteness = juce::jmin(juce::jmin(r, g), b);
+                const int a = 255 - whiteness;
+                if (a <= 0) continue;
+                const int nr = juce::jlimit(0, 255, (r - whiteness) * 255 / a);
+                const int ng = juce::jlimit(0, 255, (g - whiteness) * 255 / a);
+                const int nb = juce::jlimit(0, 255, (b - whiteness) * 255 / a);
+                keyed.setPixelAt(x, y, juce::Colour::fromRGBA(
+                    (juce::uint8)nr, (juce::uint8)ng, (juce::uint8)nb, (juce::uint8)a));
+            }
+
+        int minX = W0, minY = H0, maxX = -1, maxY = -1;
+        for (int y = 0; y < H0; ++y)
+            for (int x = 0; x < W0; ++x)
+                if (keyed.getPixelAt(x, y).getAlpha() > 8)
+                {
+                    minX = juce::jmin(minX, x); minY = juce::jmin(minY, y);
+                    maxX = juce::jmax(maxX, x); maxY = juce::jmax(maxY, y);
+                }
+        if (maxX < minX) { minX = 0; maxX = W0 - 1; minY = 0; maxY = H0 - 1; }
+
+        minX = juce::jmax(0, minX - 1);
+        minY = juce::jmax(0, minY - 1);
+        maxX = juce::jmin(W0 - 1, maxX + 1);
+        maxY = juce::jmin(H0 - 1, maxY + 1);
+        auto cropped = keyed.getClippedImage({ minX, minY, maxX - minX + 1, maxY - minY + 1 });
+
+        const int W = cropped.getWidth(), H = cropped.getHeight();
+        juce::Image out(juce::Image::ARGB, W, H, true);
+        constexpr int dilateRadius = 3;    // wider neighborhood = thicker strokes
+        for (int y = 0; y < H; ++y)
+            for (int x = 0; x < W; ++x)
+            {
+                juce::Colour best;
+                juce::uint8 maxA = 0;
+                for (int dy = -dilateRadius; dy <= dilateRadius; ++dy)
+                    for (int dx = -dilateRadius; dx <= dilateRadius; ++dx)
+                    {
+                        const int nx = juce::jlimit(0, W - 1, x + dx);
+                        const int ny = juce::jlimit(0, H - 1, y + dy);
+                        const auto c = cropped.getPixelAt(nx, ny);
+                        if (c.getAlpha() > maxA) { maxA = c.getAlpha(); best = c; }
+                    }
+                const int boosted = juce::jmin(255, (int)(maxA * 2.5f));
+                out.setPixelAt(x, y, best.withAlpha((juce::uint8)boosted));
+            }
+        return out;
+    }();
+
+    constexpr int logoH = 16;                                      // 10% smaller; fits 22-px footer with 3 px padding top/bottom
+    const int logoW = juce::roundToInt(logoH * (float)logo.getWidth()
+                                              / (float)logo.getHeight());
+    const int logoX = getWidth() - logoW - 14;
+    const int logoY = getHeight() - footerH + (footerH - logoH) / 2;
+
+    g.setImageResamplingQuality(juce::Graphics::highResamplingQuality);
+    g.drawImage(logo,
+                juce::Rectangle<float>((float)logoX, (float)logoY,
+                                       (float)logoW, (float)logoH),
+                juce::RectanglePlacement::stretchToFit, false);
 }
 
 //==============================================================================
