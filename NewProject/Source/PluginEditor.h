@@ -86,7 +86,7 @@ private:
             closeButton.setButtonText("Close");
             closeButton.onClick = [this] { setVisible(false); };
             addAndMakeVisible(closeButton);
-            setSize(340, 200);
+            setSize(340, 260);
         }
 
         void paint(juce::Graphics& g) override
@@ -117,14 +117,16 @@ private:
             g.setColour(juce::Colour(0xffc0b8a8));
             g.setFont(juce::Font(juce::FontOptions(13.f)));
             juce::String body =
-                "Load up to 20 one-shot samples. Each sample is\n"
-                "mapped to all white keys and played back randomly\n"
-                "based on selected playback algorithm type.\n\n"
+                "Load up to 20 samples. Each sample is mapped\n"
+                "to all white keys and played back randomly\n"
+                "based on selected playback type.\n\n"
                 "Use the knobs to control pitch, volume, etc.\n"
                 "Use the sliders below each knob to set per-note\n"
-                "randomization ranges.";
-            g.drawFittedText(body, 20, 50, getWidth() - 40, 110,
-                juce::Justification::centredTop, 6);
+                "randomization ranges.\n\n"
+                "Random Algorithm knob introduces immediate random/n"
+                "settings that increase in intensity with every click";
+            g.drawFittedText(body, 20, 50, getWidth() - 40, 170,
+                juce::Justification::centredTop, 8);
         }
 
         void resized() override
