@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="BSkQsP" name="robindesign" projectType="audioplug" useAppConfig="0"
-              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" companyName="robindesign"
+<JUCERPROJECT id="BSkQsP" name="RobinControlLite" projectType="audioplug" useAppConfig="0"
+              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" companyName="conduit.dsp"
               pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn"
-              pluginCode="rdsn" pluginFormats="buildStandalone,buildVST3">
-  <MAINGROUP id="ayCzMd" name="robindesign">
+              pluginCode="rcll" pluginFormats="buildStandalone,buildVST3">
+  <MAINGROUP id="ayCzMd" name="RobinControlLite">
     <GROUP id="{16DB8BBD-FC25-C9E3-2064-70988F6ACE3E}" name="Source">
       <GROUP id="{5BB2D9F1-BAFB-C54D-87A0-C718464F3EB2}" name="DSP">
         <FILE id="JvhuqK" name="RandomizationEngine.cpp" compile="1" resource="0"
@@ -72,8 +72,8 @@
   <EXPORTFORMATS>
     <VS2026 targetFolder="Builds/VisualStudio2026" extraCompilerFlags="/W4">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" targetName="robindesign" enablePluginBinaryCopyStep="1"/>
-        <CONFIGURATION isDebug="0" name="robindesign" targetName="robin-design"/>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="RobinControlLite" enablePluginBinaryCopyStep="1"/>
+        <CONFIGURATION isDebug="0" name="RobinControlLite" targetName="RobinControlLite"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="../../../../../Documents/JUCE/modules"/>
