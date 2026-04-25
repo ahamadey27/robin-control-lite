@@ -68,7 +68,7 @@ void SampleManagerPanel::paint(juce::Graphics& g)
 
         juce::GlyphArrangement ga;
         ga.addFittedText(sectionFont, "SAMPLE POOL",
-                         8.0f, 3.0f, (float)(getWidth() - 16), 18.0f,
+                         10.0f, 3.0f, (float)(getWidth() - 20), 18.0f,
                          juce::Justification::left, 1);
         juce::Path path;
         ga.createPath(path);
@@ -86,7 +86,7 @@ void SampleManagerPanel::paint(juce::Graphics& g)
 
         // S612 button-strip treatment — vertical gradient fill (lighter top → darker bottom)
         const auto pathBounds = path.getBounds();
-        const juce::Colour accent = juce::Colour(0xff1f4078);
+        const juce::Colour accent = juce::Colour(0xff946028);
         {
             juce::ColourGradient grad(
                 accent.brighter(0.15f), pathBounds.getX(), pathBounds.getY(),
@@ -109,7 +109,7 @@ void SampleManagerPanel::paint(juce::Graphics& g)
     // ── Playback type label above toggle ─────────────────────────────────────
     {
         juce::Font ptFont(juce::FontOptions(11.0f));
-        ptFont = ptFont.boldened().withExtraKerningFactor(0.06f);
+        ptFont = ptFont.boldened().withExtraKerningFactor(0.04f);
         g.setFont(ptFont);
 
         const int ptX = getWidth() - 168;
