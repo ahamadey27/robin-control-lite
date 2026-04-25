@@ -86,7 +86,7 @@ void SampleManagerPanel::paint(juce::Graphics& g)
 
         // S612 button-strip treatment — vertical gradient fill (lighter top → darker bottom)
         const auto pathBounds = path.getBounds();
-        const juce::Colour accent = RRColors::ampCol;
+        const juce::Colour accent = juce::Colour(0xff1f4078);
         {
             juce::ColourGradient grad(
                 accent.brighter(0.15f), pathBounds.getX(), pathBounds.getY(),
@@ -107,9 +107,24 @@ void SampleManagerPanel::paint(juce::Graphics& g)
     }
 
     // ── Playback type label above toggle ─────────────────────────────────────
-    g.setColour(juce::Colour(0xff1f160d));
-    g.setFont(juce::Font(juce::FontOptions(9.0f)).boldened());
-    g.drawText("PLAYBACK TYPE", getWidth() - 168, 16, 160, 10, juce::Justification::centred);
+    {
+        juce::Font ptFont(juce::FontOptions(11.0f));
+        ptFont = ptFont.boldened().withExtraKerningFactor(0.06f);
+        g.setFont(ptFont);
+
+        const int ptX = getWidth() - 168;
+        const int ptY = 7;          // centered between panel top (y=0) and switch top (y=27)
+        const int ptW = 160;
+        const int ptH = 14;
+
+        // Cream drop-shadow underneath (slight screen-print depth)
+        g.setColour(juce::Colour(0xffece5d4).withAlpha(0.55f));
+        g.drawText("PLAYBACK TYPE", ptX, ptY + 1, ptW, ptH, juce::Justification::centred);
+
+        // Main ink
+        g.setColour(juce::Colour(0xff1f160d));
+        g.drawText("PLAYBACK TYPE", ptX, ptY, ptW, ptH, juce::Justification::centred);
+    }
 
     // ── LED Screen area ─────────────────────────────────────────────────────
     constexpr int screenY    = 55;
