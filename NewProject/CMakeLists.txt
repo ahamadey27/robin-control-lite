@@ -53,6 +53,20 @@ juce_add_plugin(RobinControlLite
 juce_generate_juce_header(RobinControlLite)
 
 # ============================================================
+# Copy the Standalone .app to /Applications after every build
+# (JUCE has VST3_COPY_DIR / AU_COPY_DIR but no equivalent for Standalone)
+# ============================================================
+if(APPLE)
+    add_custom_command(TARGET RobinControlLite_Standalone POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E rm -rf "/Applications/Robin Control Lite.app"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "$<TARGET_BUNDLE_DIR:RobinControlLite_Standalone>"
+            "/Applications/Robin Control Lite.app"
+        COMMENT "Copying Standalone to /Applications"
+    )
+endif()
+
+# ============================================================
 # Binary resources (logos, images)
 # ============================================================
 juce_add_binary_data(RobinControlLite_BinaryData

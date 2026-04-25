@@ -702,17 +702,36 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
         juce::Path path;
         ga.createPath(path);
 
-        juce::Path highlight = path;
-        highlight.applyTransform(juce::AffineTransform::translation(0.0f, 1.0f));
+        // Cream drop-shadow underneath (1px down)
+        juce::Path shadow = path;
+        shadow.applyTransform(juce::AffineTransform::translation(0.0f, 1.0f));
         g.setColour(juce::Colour(0xffece5d4).withAlpha(0.55f));
-        g.fillPath(highlight);
+        g.fillPath(shadow);
 
+        // Dark outline stroke
         g.setColour(juce::Colour(0xff0a0806));
         g.strokePath(path, juce::PathStrokeType(1.0f,
             juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
-        g.setColour(fillCol);
-        g.fillPath(path);
+        // S612 button-strip treatment — vertical gradient fill (lighter top → darker bottom)
+        const auto pathBounds = path.getBounds();
+        {
+            juce::ColourGradient grad(
+                fillCol.brighter(0.15f), pathBounds.getX(), pathBounds.getY(),
+                fillCol.darker(0.10f),   pathBounds.getX(), pathBounds.getBottom(),
+                false);
+            g.setGradientFill(grad);
+            g.fillPath(path);
+        }
+
+        // Faint white sheen along top edge of glyphs (clipped to text shape)
+        {
+            juce::Graphics::ScopedSaveState state(g);
+            g.reduceClipRegion(path);
+            g.setColour(juce::Colours::white.withAlpha(0.25f));
+            g.fillRect(pathBounds.getX(), pathBounds.getY() + 0.5f,
+                       pathBounds.getWidth(), 0.8f);
+        }
     };
 
     // ── Left: Sample Pool ───────────────────────────────────────────────────

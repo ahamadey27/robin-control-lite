@@ -10,6 +10,10 @@ As of 2026-04-25 this folder is the **authoritative project**. It was originally
 
 For the full development plan (formats, signing, distribution, CI, testing, license decisions), see `spec.md` at the repo root. **`spec.md` is the source of truth** for anything not covered here.
 
+### Product behavior (free version)
+
+The shipped product is **monophonic** and triggers from **any MIDI key**. There is **no** paired-key MIDI mapping, **no** white-keys-only restriction, and **no** chromatic per-key pitching. Pitch is global only (semitone + fine-tune knobs). The codebase still contains paired-key infrastructure (`MidiMapper::NUM_KEY_PAIRS = 10`, `RRSound::keyPairIndex`) inherited from the parent project — that's internal plumbing, not user-facing behavior. **When the inherited code description disagrees with the shipped product, the product wins.** See `memory/project_free_version_scope.md` for full reasoning.
+
 ## Build
 
 ```bash
@@ -20,7 +24,12 @@ cmake --build build
 
 JUCE resolution: defaults to `~/Documents/JUCE` if present, else `FetchContent` pulls JUCE 8.0.4. Override the local path with `cmake -DJUCE_PATH=/path/to/JUCE -B build`.
 
-Output copies automatically to `~/Library/Audio/Plug-Ins/VST3/Robin Control Lite.vst3` and `~/Library/Audio/Plug-Ins/Components/Robin Control Lite.component`. Xcode project lands at `NewProject/build/RobinControlLite.xcodeproj`.
+Outputs copy automatically after every build:
+- VST3 → `~/Library/Audio/Plug-Ins/VST3/Robin Control Lite.vst3`
+- AU → `~/Library/Audio/Plug-Ins/Components/Robin Control Lite.component`
+- Standalone → `/Applications/Robin Control Lite.app` (post-build hook in CMakeLists; JUCE has no `STANDALONE_COPY_DIR` so we wired one manually)
+
+Xcode project lands at `NewProject/build/RobinControlLite.xcodeproj`.
 
 A Projucer file (`NewProject/RobinControlLite.jucer`) is kept in sync with CMake, but **CMake is the authoritative build**. The old `NewProject/Builds/` tree is stale Projucer output — do not rely on it; safe to delete.
 

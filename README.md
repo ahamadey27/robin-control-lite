@@ -1,6 +1,6 @@
 # Robin Control Lite
 
-A free monophonic sampler plugin by [conduit.dsp](https://conduit.dsp). Drop in up to 20 audio samples, trigger them from the white keys of your MIDI controller, and shape them with built-in tone, randomization, and round-robin playback.
+A free monophonic sampler plugin by [conduit.dsp](https://conduit.dsp). Drop in up to 20 audio samples, trigger them from any key on your MIDI controller, and shape them with built-in tone, randomization, and round-robin playback.
 
 [![JUCE](https://img.shields.io/badge/JUCE-8.0+-blue.svg)](https://juce.com/)
 [![Formats](https://img.shields.io/badge/Formats-VST3%20%7C%20AU%20%7C%20Standalone-green.svg)]()
@@ -13,7 +13,7 @@ A free monophonic sampler plugin by [conduit.dsp](https://conduit.dsp). Drop in 
 ## What it does
 
 - **20 sample slots** — load `.wav`, `.aif`, `.flac`, `.ogg` via file picker or drag-drop
-- **White-keys-only monophonic playback** — one voice at a time, triggered from the white keys (no chromatic / pitched playback in the free version)
+- **Monophonic playback** — one voice at a time, triggered from any MIDI key (no chromatic pitching in the free version — every key plays back at the sample's natural pitch, with global semitone + fine-tune offsets)
 - **Round-robin playback** — Series mode (cycle in order) or Random mode (no repeats until pool exhausted)
 - **Per-note randomization** — every parameter has independent negative and positive randomization ranges
 - **Sample shaping** — start/end trim, global pitch (semitones + cents), tone control (low + high shelf)
@@ -59,7 +59,7 @@ Full host matrix in [`spec.md`](spec.md) §7.3.
 ## Quick start
 
 1. Drag a `.wav` onto any of the 20 sample slots in the left panel
-2. Press a white key on your MIDI controller — samples trigger monophonically (one voice at a time)
+2. Press any key on your MIDI controller — samples trigger monophonically (one voice at a time)
 3. Adjust pitch, tone, sample start/end on the main panel
 4. Tweak the randomization range below each knob to add per-note variation
 5. Switch playback mode (Series ↔ Random) in the header

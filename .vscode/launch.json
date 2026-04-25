@@ -2,10 +2,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug robin-design Standalone",
+            "name": "Debug Robin Control Lite Standalone",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/NewProject/build/robindesign_artefacts/Debug/Standalone/robin-design.app/Contents/MacOS/robin-design",
+            "program": "${workspaceFolder}/NewProject/build/RobinControlLite_artefacts/Standalone/Robin Control Lite.app/Contents/MacOS/Robin Control Lite",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
