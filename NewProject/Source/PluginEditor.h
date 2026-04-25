@@ -123,7 +123,7 @@ private:
                 "Use the knobs to control pitch, volume, etc.\n"
                 "Use the sliders below each knob to set per-note\n"
                 "randomization ranges.\n\n"
-                "Random Algorithm knob introduces immediate random/n"
+                "Random Algorithm knob introduces randomization\n"
                 "settings that increase in intensity with every click";
             g.drawFittedText(body, 20, 50, getWidth() - 40, 170,
                 juce::Justification::centredTop, 8);
