@@ -444,15 +444,10 @@ void NewProjectAudioProcessorEditor::savePreset()
         return;
     }
 
-    // useOSNativeDialogBox = false: JUCE 8 on macOS has a bug where the native
-    // file chooser always creates NSOpenPanel even when saveMode is set, causing
-    // "Ignoring NSSavePanel method sent to NSOpenPanel" and empty getResult().
-    // JUCE's own cross-platform dialog correctly handles save mode.
     fileChooser = std::make_unique<juce::FileChooser>(
         "Save Preset",
         juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
-        "*.rrpreset",
-        false);   // false = use JUCE dialog, not native macOS panel
+        "*.rrpreset");
 
     fileChooser->launchAsync(
         juce::FileBrowserComponent::saveMode |
