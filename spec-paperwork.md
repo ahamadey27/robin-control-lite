@@ -19,7 +19,7 @@ Personal admin checklist for shipping v1.0. The technical/build/test plan lives 
   - [ ] EUIPO eSearch — https://www.tmdn.org/tmview
   - [ ] KVR Audio + Plugin Boutique + Google for existing products
 - [ ] Confirm `conduit.dsp` domain ownership + DNS access
-- [ ] Set up `support@conduit.dsp` (forward to your real inbox)
+- [ ] Set up `hello@conduitdsp.com` (forward to your real inbox)
 - [ ] Draft a 1-page EULA covering: free distribution, no warranty, no reverse-engineering, copyright reservation, VST/AU trademark attributions
 - [ ] One-line privacy statement (only relevant if you collect any data — mailing list, analytics, crash reports)
 

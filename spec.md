@@ -149,7 +149,7 @@ FORMATS  VST3 AU Standalone   # v1.0
 - **Notarize:**
   ```bash
   xcrun notarytool submit "Installer.pkg" \
-    --apple-id you@conduit.dsp \
+    --apple-id hello@conduitdsp.com \
     --team-id TEAMID \
     --password "@keychain:AC_PASSWORD" \
     --wait
@@ -518,7 +518,7 @@ In rough priority order:
 8. **Demo content / preset pack.** Free plugin sells itself harder if it ships with 5–10 great-sounding sample sets. Footstep packs (the original use case) are a natural starter.
 9. **Accessibility.** JUCE 8 added accessibility hooks. At minimum, label every control with `setDescription`/`setHelpText`. VoiceOver/Narrator users will thank you.
 10. **Telemetry — explicit "no".** State in the EULA that the plugin doesn't phone home. Free + privacy-respecting is a strong combination.
-11. **Support channel.** A Discord server or just `support@conduit.dsp` forwarded to your inbox. One bug-report email beats no channel.
+11. **Support channel.** A Discord server or just `hello@conduitdsp.com` forwarded to your inbox. One bug-report email beats no channel.
 12. **Press kit.** Logo PNGs (1x/2x), screenshots (1400×400 + scaled), 50/100/200-word descriptions. Saves hours when sites/blogs ask.
 13. **Beta program.** Ship `v1.0.0-rc1` to ~10 trusted testers (DAW diversity matters more than count) for two weeks before public launch.
 14. **Legal: VST3 trademark.** "VST" is Steinberg's. The license you accept with the SDK requires specific attribution language — re-read it before the launch page is written.

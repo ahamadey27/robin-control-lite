@@ -1,6 +1,6 @@
 # Robin Control Lite
 
-A free monophonic sampler plugin by [conduit.dsp](https://conduit.dsp). Drop in up to 20 audio samples, trigger them from any key on your MIDI controller, and shape them with built-in tone, randomization, and round-robin playback.
+A free monophonic sampler plugin by [conduit.dsp](https://conduitdsp.com). Drop in up to 20 audio samples, trigger them from any key on your MIDI controller, and shape them with built-in tone, randomization, and round-robin playback.
 
 [![JUCE](https://img.shields.io/badge/JUCE-8.0+-blue.svg)](https://juce.com/)
 [![Formats](https://img.shields.io/badge/Formats-VST3%20%7C%20AU%20%7C%20Standalone-green.svg)]()
@@ -69,7 +69,7 @@ Full host matrix in [`spec.md`](spec.md) §7.3.
 ## Reporting issues
 
 - Bug reports: open an issue on this repo with host + version, OS + version, and repro steps
-- Support email: `support@conduit.dsp`
+- Support email: `hello@conduitdsp.com`
 
 ---
 
@@ -99,4 +99,4 @@ VST is a trademark of Steinberg Media Technologies GmbH. Audio Units is a tradem
 
 ---
 
-**conduit.dsp** — `hello@conduit.dsp`
+**conduit.dsp** — `hello@conduitdsp.com`
