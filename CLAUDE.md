@@ -8,7 +8,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 As of 2026-04-25 this folder is the **authoritative project**. It was originally a UI-redesign sandbox forked from `../round-robin-lite`, but has been promoted to be the main codebase. The sibling folder `../round-robin-lite` is retired — kept on disk as read-only legacy reference, not built or installed.
 
-For the full development plan (formats, signing, distribution, CI, testing, license decisions), see `spec.md` at the repo root. **`spec.md` is the source of truth** for anything not covered here.
+For the full development plan (formats, signing, distribution, CI, testing, license decisions), see `spec.md` at the repo root. **`spec.md` is the source of truth** for anything not covered here. Sibling docs at the repo root:
+- `spec-paperwork.md` — admin/legal checklist (Apple Developer enrollment, trademark, etc.)
+- `EULA.md` — end-user license; establishes **Conduit DSP LLC** (Kingston, NY; Ulster County jurisdiction) as the legal entity
+- `README.md` — end-user-facing install/use docs
 
 ### Product behavior (free version)
 
@@ -71,7 +74,17 @@ The `Source/` tree was originally copied from `../round-robin-lite/NewProject/So
 
 ### UI (`Source/UI/`)
 
-- **RRLookAndFeel** — Custom `LookAndFeel_V4` subclasses: `RRKnobLAF`, `RRNegSliderLAF` / `RRPosSliderLAF`, `RRToggleLAF`.
+- **RRLookAndFeel** — Custom `LookAndFeel_V4` subclasses: `RRKnobLAF`, `RRNegSliderLAF` / `RRPosSliderLAF`, `RRToggleLAF`, `RRButtonLAF`.
+
+### Section-label visual treatment (preserve)
+
+Every section header text — **SAMPLE POOL**, **RANDOM ALGORITHM**, **AMPLITUDE**, **TONE**, **PITCH**, **SAMPLE START/END** — uses a unified treatment:
+1. Cream `0xffece5d4` 1px drop-shadow underneath (alpha 0.55)
+2. Dark `0xff0a0806` 1px outline stroke
+3. Vertical gradient fill on the path: `accent.brighter(0.15f)` at top → `accent.darker(0.10f)` at bottom (S612 button-strip technique)
+4. Faint white sheen along glyph tops: 0.8px tall rect at 25% alpha, clipped to the text path
+
+Helper: `drawSectionTitle` lambda in `PluginEditor.cpp::paint`. Sibling implementation in `SampleManagerPanel.cpp::paint` for SAMPLE POOL. **Don't simplify or remove** any of the four layers above — the user explicitly approved this look on 2026-04-25 after several iterations. SAMPLE POOL position is hard-locked at y=3.0f (see `memory/feedback_sample_pool_text_locked.md`).
 
 ## Key Design Decisions
 
