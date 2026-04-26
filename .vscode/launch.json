@@ -5,7 +5,7 @@
             "name": "Debug Robin Control Lite Standalone",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/NewProject/build/RobinControlLite_artefacts/Standalone/Robin Control Lite.app/Contents/MacOS/Robin Control Lite",
+            "program": "${workspaceFolder}/NewProject/build/RobinControlLite_artefacts/Debug/Standalone/Robin Control Lite.app/Contents/MacOS/Robin Control Lite",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
