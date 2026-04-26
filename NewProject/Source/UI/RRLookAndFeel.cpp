@@ -44,7 +44,7 @@ void RRKnobLAF::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int
     {
         const float hl = bodyRadius * 0.7f;
         juce::ColourGradient sheen(
-            juce::Colours::white.withAlpha(0.22f), cx, cy - bodyRadius * 0.6f,
+            juce::Colours::white.withAlpha(0.15f), cx, cy - bodyRadius * 0.6f,
             juce::Colours::transparentWhite,       cx, cy + bodyRadius * 0.1f,
             false);
         g.setGradientFill(sheen);
