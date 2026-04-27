@@ -1,0 +1,42 @@
+Copyright © 2026 Conduit DSP LLC. All Rights Reserved.
+
+This source code is the proprietary and confidential property of Conduit DSP
+LLC, a New York limited liability company ("Conduit DSP"). It is not open
+source. No license, express or implied, is granted to you by Conduit DSP under
+any patent, copyright, trade secret, or other intellectual property right.
+
+You may NOT, without the prior written consent of Conduit DSP:
+
+  1. Copy, reproduce, modify, adapt, translate, or create derivative works of
+     this source code, in whole or in part.
+  2. Distribute, publish, sublicense, sell, rent, lease, or otherwise transfer
+     this source code, in compiled or source form.
+  3. Reverse engineer, decompile, or disassemble any compiled artifact built
+     from this source code, except to the extent such activity is expressly
+     permitted by applicable law notwithstanding this limitation.
+  4. Use this source code or any portion of it to develop, train, evaluate,
+     or improve any machine-learning model, large language model, or similar
+     system.
+  5. Use the names "Conduit DSP," "conduit.dsp," "Robin Control," or any
+     associated trademarks to endorse or promote products derived from this
+     source code.
+
+Distribution of compiled artifacts (the "Software") to end users is governed
+by the End User License Agreement (EULA.md) at the root of this repository.
+This LICENSE governs the source code itself; the EULA governs the binary.
+
+Third-party components incorporated into the Software (including the JUCE
+framework) are licensed separately under their respective terms, which are
+not modified or superseded by this LICENSE.
+
+THIS SOURCE CODE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. CONDUIT
+DSP DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN
+NO EVENT SHALL CONDUIT DSP BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THIS SOURCE CODE OR
+THE USE OR OTHER DEALINGS IN IT.
+
+For licensing inquiries, contact: hello@conduitdsp.com
+
+Conduit DSP LLC
+Kingston, New York, USA

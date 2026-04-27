@@ -32,6 +32,8 @@ Outputs copy automatically after every build:
 - AU → `~/Library/Audio/Plug-Ins/Components/Robin Control Lite.component`
 - Standalone → `/Applications/Robin Control Lite.app` (post-build hook in CMakeLists; JUCE has no `STANDALONE_COPY_DIR` so we wired one manually)
 
+The build is configured `CMAKE_BUILD_TYPE=Debug` (single-config Unix Makefiles). JUCE writes per-format artefacts under `build/RobinControlLite_artefacts/Debug/<Format>/`. **`.vscode/launch.json` must include the `Debug/` segment in its `program` path** — if it points at `RobinControlLite_artefacts/Standalone/...` (no Debug), VSCode will silently launch a stale binary from a previous build configuration. See `memory/project_vscode_launch_path.md` for the full incident.
+
 Xcode project lands at `NewProject/build/RobinControlLite.xcodeproj`.
 
 A Projucer file (`NewProject/RobinControlLite.jucer`) is kept in sync with CMake, but **CMake is the authoritative build**. The old `NewProject/Builds/` tree is stale Projucer output — do not rely on it; safe to delete.

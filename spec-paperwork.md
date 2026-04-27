@@ -7,26 +7,26 @@ Personal admin checklist for shipping v1.0. The technical/build/test plan lives 
 ## Required before launch
 
 ### Apple Developer Program — $99/yr (the only mandatory paid expense)
-- [ ] Enroll at https://developer.apple.com/programs/ (allow 24–48h for approval)
+- [x] Enroll at https://developer.apple.com/programs/ (allow 24–48h for approval)
 - [ ] Generate **Developer ID Application** certificate in Xcode → Settings → Accounts (signs `.vst3` / `.component` / `.app`)
 - [ ] Generate **Developer ID Installer** certificate (signs the `.pkg` installer)
 - [ ] Create an **app-specific password** for `notarytool`: appleid.apple.com → Sign-In and Security → App-Specific Passwords
 - [ ] Back up cert `.p12` exports + app-specific password to your password manager (lose these = revoke + reissue)
 
 ### Identity / legal
-- [ ] Trademark search on "Robin Control Lite":
-  - [ ] USPTO TESS — https://tmsearch.uspto.gov
-  - [ ] EUIPO eSearch — https://www.tmdn.org/tmview
-  - [ ] KVR Audio + Plugin Boutique + Google for existing products
-- [ ] Confirm `conduit.dsp` domain ownership + DNS access
-- [ ] Set up `hello@conduitdsp.com` (forward to your real inbox)
-- [ ] Draft a 1-page EULA covering: free distribution, no warranty, no reverse-engineering, copyright reservation, VST/AU trademark attributions
-- [ ] One-line privacy statement (only relevant if you collect any data — mailing list, analytics, crash reports)
+- [x] Trademark search on "Robin Control Lite":
+  - [x] USPTO TESS — https://tmsearch.uspto.gov
+  - [x] EUIPO eSearch — https://www.tmdn.org/tmview
+  - [x] KVR Audio + Plugin Boutique + Google for existing products
+- [x] Confirm `conduit.dsp` domain ownership + DNS access
+- [x] Set up `hello@conduitdsp.com` (forward to your real inbox)
+- [x] Draft a 1-page EULA covering: free distribution, no warranty, no reverse-engineering, copyright reservation, VST/AU trademark attributions
+- [x] One-line privacy statement (only relevant if you collect any data — mailing list, analytics, crash reports)
 
 ### JUCE license
-- [ ] Re-read current Personal license terms at https://juce.com/get-juce
+- [x] Re-read current Personal license terms at https://juce.com/get-juce
   - Confirm revenue threshold (~$40k/yr last check), no splash screen, closed-source permitted
-- [ ] No payment — just confirm you're in compliance
+- [x] No payment — just confirm you're in compliance
 
 ### GitHub repo
 - [ ] Decide repo visibility (public vs. private until launch)
