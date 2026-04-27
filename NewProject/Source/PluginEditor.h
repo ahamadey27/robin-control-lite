@@ -119,13 +119,15 @@ private:
             juce::String body =
                 "Load up to 20 samples. Each sample is mapped\n"
                 "to all white keys and played back randomly\n"
-                "based on selected playback type.\n\n"
+                "based on selected playback type\n\n"
                 "Use the knobs to control pitch, volume, etc.\n"
                 "Use the sliders below each knob to set per-note\n"
-                "randomization ranges.\n\n"
+                "randomization ranges\n\n"
                 "Random Algorithm knob introduces randomization\n"
-                "settings that increase in intensity with every click";
-            g.drawFittedText(body, 20, 50, getWidth() - 40, 170,
+                "settings that increase in intensity with every click\n\n"
+                "'RESET' button resets the sequence. Useful in series\n"
+                "mode to reset playback to the first sample";
+            g.drawFittedText(body, 20, 50, getWidth() - 40, 190,
                 juce::Justification::centredTop, 8);
         }
 

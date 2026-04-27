@@ -876,7 +876,7 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
                         const auto c = cropped.getPixelAt(nx, ny);
                         if (c.getAlpha() > maxA) { maxA = c.getAlpha(); best = c; }
                     }
-                const int boosted = juce::jmin(255, (int)(maxA * 2.5f));
+                const int boosted = juce::jmin(255, (int)(maxA * 3.0f));
                 out.setPixelAt(x, y, best.withAlpha((juce::uint8)boosted));
             }
         return out;
