@@ -86,7 +86,19 @@ private:
             closeButton.setButtonText("Close");
             closeButton.onClick = [this] { setVisible(false); };
             addAndMakeVisible(closeButton);
-            setSize(340, 260);
+
+            // Measure body text height precisely so the gap above the close button
+            // matches the gap below the title.
+            juce::AttributedString attr;
+            attr.setText(bodyText);
+            attr.setFont(juce::Font(juce::FontOptions(13.f)));
+            attr.setJustification(juce::Justification::centredTop);
+
+            juce::TextLayout layout;
+            layout.createLayout(attr, (float) (boxWidth - 40));
+            bodyHeight = (int) std::ceil(layout.getHeight());
+
+            setSize(boxWidth, marginTop + titleH + gap + bodyHeight + gap + buttonH + marginBottom);
         }
 
         void paint(juce::Graphics& g) override
@@ -108,35 +120,45 @@ private:
             const int tx = (getWidth() - totalW) / 2;
 
             g.setColour(juce::Colour(0xffe6e1d4));
-            g.drawText(mainTitle, tx, 16, titleW, 22, juce::Justification::left);
+            g.drawText(mainTitle, tx, marginTop, titleW, titleH, juce::Justification::left);
 
             g.setFont(juce::Font(juce::FontOptions(13.f)).italicised());
             g.setColour(juce::Colour(0xffffb84a));
-            g.drawText("Lite", tx + titleW + 6, 20, liteW, 18, juce::Justification::left);
+            g.drawText("Lite", tx + titleW + 6, marginTop + 4, liteW, 18, juce::Justification::left);
 
             g.setColour(juce::Colour(0xffc0b8a8));
             g.setFont(juce::Font(juce::FontOptions(13.f)));
-            juce::String body =
-                "Load up to 20 samples. Each sample is mapped\n"
-                "to all white keys and played back randomly\n"
-                "based on selected playback type\n\n"
-                "Use the knobs to control pitch, volume, etc.\n"
-                "Use the sliders below each knob to set per-note\n"
-                "randomization ranges\n\n"
-                "Random Algorithm knob introduces randomization\n"
-                "settings that increase in intensity with every click\n\n"
-                "'RESET' button resets the sequence. Useful in series\n"
-                "mode to reset playback to the first sample";
-            g.drawFittedText(body, 20, 50, getWidth() - 40, 190,
-                juce::Justification::centredTop, 8);
+            g.drawFittedText(bodyText, 20, marginTop + titleH + gap, getWidth() - 40, bodyHeight,
+                juce::Justification::centredTop, 16);
         }
 
         void resized() override
         {
-            closeButton.setBounds(getWidth() / 2 - 40, getHeight() - 36, 80, 24);
+            const int by = marginTop + titleH + gap + bodyHeight + gap;
+            closeButton.setBounds(getWidth() / 2 - 40, by, 80, buttonH);
         }
 
     private:
+        static constexpr int boxWidth     = 340;
+        static constexpr int marginTop    = 16;
+        static constexpr int titleH       = 22;
+        static constexpr int gap          = 12;
+        static constexpr int buttonH      = 24;
+        static constexpr int marginBottom = 16;
+
+        const juce::String bodyText =
+            "Load up to 20 samples. Samples are mapped to all\n"
+            "keys and played back randomly based on selected\n"
+            "playback type (Series or Random)\n\n"
+            "Use the knobs to control pitch, volume, etc.\n"
+            "Use the sliders below each knob to set per-note\n"
+            "randomization ranges\n\n"
+            "Random Algorithm knob introduces randomization\n"
+            "settings that increase in intensity with every click\n\n"
+            "'RESET' button resets the sequence. Useful in series\n"
+            "mode to reset playback to the first sample";
+
+        int bodyHeight { 0 };
         juce::TextButton closeButton;
     };
 

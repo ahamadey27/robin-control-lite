@@ -121,9 +121,17 @@ NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioPr
     aboutButton.setLookAndFeel(&buttonLAF);
     aboutButton.onClick = [this]
         {
-            aboutWindow.setTopLeftPosition(getWidth() / 2 - 170, getHeight() / 2 - 100);
-            addAndMakeVisible(aboutWindow);
-            aboutWindow.toFront(true);
+            if (aboutWindow.isVisible())
+            {
+                aboutWindow.setVisible(false);
+            }
+            else
+            {
+                aboutWindow.setTopLeftPosition((getWidth()  - aboutWindow.getWidth())  / 2,
+                                               (getHeight() - aboutWindow.getHeight()) / 2);
+                addAndMakeVisible(aboutWindow);
+                aboutWindow.toFront(true);
+            }
             repaint();
         };
 
