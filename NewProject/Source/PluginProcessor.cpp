@@ -148,6 +148,11 @@ void NewProjectAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBl
         " Hz, Buffer Size: " + juce::String(samplesPerBlock) + " samples");
 
     sampleLoader.setSampleRate(sampleRate);
+    // setSampleRate() resamples every loaded slot to the new rate, which changes
+    // each slot's sample count. maxSampleLength was computed at the old rate and
+    // is now stale — without this rebuild, voices clamp playback to the old
+    // length and the tail of the sample gets cut off at higher SRs (88.2k, 96k).
+    rebuildLoadedIndices();
     synthesiser.setCurrentPlaybackSampleRate(sampleRate);
 
     // COMMENTED FOR LITE — ACTIVE IN PREMIUM
