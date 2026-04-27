@@ -42,10 +42,48 @@ AAX is **opt-in extra work**. It is not free even though the plugin is free.
 
 **Recommendation: ship VST3 + AU + Standalone in v1.0; add AAX in v1.1 once the rest is stable.** AAX adds ~1–2 weeks of plumbing and a recurring signing step per release.
 
+#### 1.3.1 Avid developer portal — navigation gotchas
+The portal is genuinely clunky. Documenting what works so the next setup goes faster:
+
+- The public `developer.avid.com/audio` "Download Evaluation Toolkit" page **shows only a Back button** unless you're signed in as an enrolled developer. The click-through EULA only renders when authenticated.
+- After registering, **"My Toolkits and Downloads" starts empty** ("You do not own any products under this account yet"). The AAX toolkit must first be claimed via the **SDK Toolkits** catalog link in the dashboard. Once claimed (free), the SDK + tools list appears in My Toolkits.
+- The public AAX page never serves the actual files — every download happens inside the authenticated dashboard.
+
+**Status (2026-04-26):** Avid Developer account active under hamadey@gmail.com; AAX evaluation toolkit claimed; downloads pending. See `memory/project_aax_dev_setup.md`.
+
+#### 1.3.2 Minimal AAX SDK download set (Apple Silicon Mac)
+The dashboard lists 50+ items. For getting Robin Control Lite building as AAX, only these are required:
+
+| Item | Size | Why |
+|---|---|---|
+| **AAX SDK 2.9.0** | 41.28 MB | Headers/libs JUCE links against |
+| **AAX Developer Tools Beta 22.R4.0.1 arm64 (Mac)** | 191.79 MB | DigiShell, validator, signing utilities. Use `22.9.0.1 x86_64` on Intel Macs |
+| **DigiShell and AAX Validator 24.6 Arm (Mac)** | 298.31 MB | Validates the built `.aaxplugin`. Arch-matched |
+| **Pro Tools Developer 2025.12.0 Arm (Mac)** | 2.29 GB | The **Dev** build loads unsigned/eval AAX. Regular Pro Tools 2025.12 rejects unsigned plugins |
+| **Evaluation License.pdf** (AAX SDK section) | — | Read before building |
+
+Optional but useful: **AAX Plugin Test Plan (January 2024)** (664 KB) — Avid's official validation checklist for commercial submission.
+
+**Skip:**
+- *JUCE to AAX DSP Example* and *Page Table Editor* — AAX DSP is for SHARC chips on HDX hardware; we ship AAX Native only.
+- *kTrace / WPR Capture Tools* — only if Avid asks for traces during a support case.
+- *HD Driver, Avid Cloud Client Services, Legacy, Sibelius, Pro Tools Demo Session* — unrelated to plugin dev.
+- *Pro Tools 2025.12 (non-Dev) and Pro Tools Beta builds* — non-Dev rejects unsigned plugins; Beta is only for forward-compat testing against unreleased PT versions.
+
+#### 1.3.3 v1.1 AAX onboarding order of operations
+- [x] Avid Developer account created and AAX evaluation toolkit claimed (2026-04-26)
+- [ ] Download the §1.3.2 set; unpack AAX SDK to a stable path (e.g. `~/SDKs/AAX_SDK_2.9.0/`)
+- [c] Install Pro Tools Dev (long install)
+- [ ] Install AAX Developer Tools (gives DigiShell, validator, signing utilities)
+- [ ] Wire `JUCE_AAX_SDK_PATH` into `NewProject/CMakeLists.txt`; add `AAX` to `juce_add_plugin(... FORMATS ...)`
+- [ ] Build → load the produced `.aaxplugin` in Pro Tools Dev → smoke test
+- [ ] **Order an iLok USB key** (2nd or 3rd gen) from ilok.com — required for commercial signing, not for eval builds. Order early; shipping takes days
+- [ ] When ready to ship: email `audiosdk@avid.com` to provision the commercial license + signing tools, then submit `.aaxplugin` for PACE signing per release (see §5.3)
+
 ### 1.4 Repository / GitHub identity
-- Rename repo from `robin-control-redesign` to `robin-control-lite`?
-- Public or private until launch?
-- License file (MIT/proprietary EULA) — separate from JUCE's license, this covers *your* code
+- [x] Rename repo from `robin-control-redesign` to `robin-control-lite` (done 2026-04-26; local folder name unchanged)
+- [x] Public or private until launch? — **Private** through launch
+- [x] License file (MIT/proprietary EULA) — separate from JUCE's license, this covers *your* code (LICENSE = All Rights Reserved, shipped 2026-04-26)
 
 ---
 
@@ -54,9 +92,9 @@ AAX is **opt-in extra work**. It is not free even though the plugin is free.
 The values from §1.1 are now wired into `NewProject/CMakeLists.txt` and `NewProject/RobinControlLite.jucer` (renamed from `robindesign.jucer`). Source-level user-visible strings (`Source/PluginEditor.cpp` header, `Source/PluginEditor.h` About dialog, `Source/PluginProcessor.cpp` init log) already say "Robin Control Lite" — no source edits needed.
 
 Outstanding identity-related cleanup:
-- `README.md` — still describes the project under the original framing; needs a rewrite for end users (see §10 step 6)
-- `CLAUDE.md` — drop the "design sandbox / don't touch audio engine" framing (see §10 step 5)
-- `NewProject/Builds/` — stale Projucer output trees from before the CMake era; safe to delete
+- [ ] `README.md` — still describes the project under the original framing; needs a rewrite for end users (see §10 step 6)
+- [x] `CLAUDE.md` — drop the "design sandbox / don't touch audio engine" framing (done; see §10 step 5)
+- [ ] `NewProject/Builds/` — stale Projucer output trees from before the CMake era; safe to delete
 
 ---
 
@@ -491,16 +529,16 @@ NewProject/Builds/
 
 The hard part isn't the spec — it's untangling the relationship with `../round-robin-lite`. Steps, in order:
 
-1. **Decide the cutoff.** Either (a) this folder is now main and `round-robin-lite` is archived/deleted, or (b) `round-robin-lite` is archived but kept as read-only reference. Recommended: (b), tag its current commit, then stop touching it.
-2. **Pick name + JUCE license + AAX plan** (all of §1). Without these the rest is busywork.
-3. **Rename the target.** `robindesign` → `RobinControlLite` everywhere: CMakeLists, .jucer, source-string identity. One commit.
-4. **Fix the JUCE path.** Switch from absolute path to FetchContent or submodule (§3.5). Verify build still works on a fresh clone.
-5. **Update CLAUDE.md.** Strip the "design sandbox / don't move controls" framing. The redesign constraint is gone — the project is now full-stack development. Keep the "undo to original" rune if useful, but the baseline shifts to the post-pivot commit.
-6. **Update README.md** for end users, not just developers. Pull learning-resource and proprietary-license language out.
-7. **First Mac release dry-run.** Build → sign → notarize → install in Logic and Reaper → verify state recall. Catch process bugs before v1.0 pressure.
-8. **Spin up Windows build environment.** Parallels VM is fastest path. Build, install in Reaper-Windows, smoke test.
-9. **Tag `v1.0.0-rc1`.** Iterate on the checklist in §7.5 until clean.
-10. **Tag `v1.0.0` and ship.**
+- [x] **Decide the cutoff.** Either (a) this folder is now main and `round-robin-lite` is archived/deleted, or (b) `round-robin-lite` is archived but kept as read-only reference. Picked: (b), sibling retired as legacy reference.
+- [x] **Pick name + JUCE license + AAX plan** (all of §1). Name = Robin Control Lite; AAX deferred to v1.1; JUCE license recommendation = Personal (final confirmation pending).
+- [x] **Rename the target.** `robindesign` → `RobinControlLite` everywhere: CMakeLists, .jucer, source-string identity.
+- [x] **Fix the JUCE path.** Switch from absolute path to FetchContent or submodule (§3.5). Done — local-checkout-then-FetchContent fallback.
+- [x] **Update CLAUDE.md.** Strip the "design sandbox / don't move controls" framing. The redesign constraint is gone — the project is now full-stack development.
+- [ ] **Update README.md** for end users, not just developers. Pull learning-resource and proprietary-license language out.
+- [ ] **First Mac release dry-run.** Build → sign → notarize → install in Logic and Reaper → verify state recall. Catch process bugs before v1.0 pressure.
+- [ ] **Spin up Windows build environment.** Parallels VM is fastest path. Build, install in Reaper-Windows, smoke test.
+- [ ] **Tag `v1.0.0-rc1`.** Iterate on the checklist in §7.5 until clean.
+- [ ] **Tag `v1.0.0` and ship.**
 
 ---
 
@@ -508,35 +546,35 @@ The hard part isn't the spec — it's untangling the relationship with `../round
 
 In rough priority order:
 
-1. **Trademark search** for the chosen name. USPTO TESS (US), EUIPO eSearch (EU). 30 minutes. Do this before printing anything.
-2. **Domain.** `conduit.dsp` exists; do you also want `robin-control-lite.com` or a `/robin-control-lite` subpath?
-3. **Privacy policy + EULA.** Even a free plugin needs both if you have a download form, mailing list, or any analytics. Templates exist; have a lawyer eyeball before launch.
-4. **Crash reporting.** JUCE's `juce::SystemStats` + a tiny log file is enough for v1. Sentry / Bugsnag are overkill for a free plugin.
-5. **Update mechanism.** Don't build one for v1. Email + a "check for updates" link in the About dialog is fine.
-6. **Mailing list / launch list.** Capture emails on the download page. ConvertKit / Buttondown / self-hosted Listmonk.
-7. **Documentation site.** A static page per platform (install instructions) goes a long way. README is for GitHub readers; users need a real site.
-8. **Demo content / preset pack.** Free plugin sells itself harder if it ships with 5–10 great-sounding sample sets. Footstep packs (the original use case) are a natural starter.
-9. **Accessibility.** JUCE 8 added accessibility hooks. At minimum, label every control with `setDescription`/`setHelpText`. VoiceOver/Narrator users will thank you.
-10. **Telemetry — explicit "no".** State in the EULA that the plugin doesn't phone home. Free + privacy-respecting is a strong combination.
-11. **Support channel.** A Discord server or just `hello@conduitdsp.com` forwarded to your inbox. One bug-report email beats no channel.
-12. **Press kit.** Logo PNGs (1x/2x), screenshots (1400×400 + scaled), 50/100/200-word descriptions. Saves hours when sites/blogs ask.
-13. **Beta program.** Ship `v1.0.0-rc1` to ~10 trusted testers (DAW diversity matters more than count) for two weeks before public launch.
-14. **Legal: VST3 trademark.** "VST" is Steinberg's. The license you accept with the SDK requires specific attribution language — re-read it before the launch page is written.
-15. **Backup strategy for signing certificates.** Lose the Mac Developer ID cert and you can revoke + reissue, but lose the Windows code signing cert + private key and you may need to repurchase. Back up the `.p12`/`.pfx` files to a password manager.
-16. **Universal Binary 2 sanity check.** Test the AU on an Intel Mac if possible — Apple Silicon-native testing alone has missed bugs that only surface on x86_64.
-17. **The two stale folders.** `NewProject/Builds/MacOSX/` and `NewProject/Builds/VisualStudio2026/` are old Projucer output. Decide: delete (recommended, CMake is authoritative) or keep as a fallback path.
-18. **`design-spec.md` and `RRLite_spec_v2_OLD.md`** — archive both into `docs/archive/` or delete. Having two stale specs alongside this new one will cause confusion in three months.
+- [ ] **Trademark search** for the chosen name. USPTO TESS (US), EUIPO eSearch (EU). 30 minutes. Do this before printing anything.
+- [ ] **Domain.** `conduit.dsp` exists; do you also want `robin-control-lite.com` or a `/robin-control-lite` subpath?
+- [x] **Privacy policy + EULA.** Even a free plugin needs both if you have a download form, mailing list, or any analytics. EULA v1.0 effective 2026-04-26; Privacy.md pointer ships with repo, canonical at conduitdsp.com/privacy-policy/.
+- [ ] **Crash reporting.** JUCE's `juce::SystemStats` + a tiny log file is enough for v1. Sentry / Bugsnag are overkill for a free plugin.
+- [ ] **Update mechanism.** Don't build one for v1. Email + a "check for updates" link in the About dialog is fine.
+- [ ] **Mailing list / launch list.** Capture emails on the download page. MailerLite is the chosen tool (already on conduitdsp.com).
+- [ ] **Documentation site.** A static page per platform (install instructions) goes a long way. README is for GitHub readers; users need a real site.
+- [ ] **Demo content / preset pack.** Free plugin sells itself harder if it ships with 5–10 great-sounding sample sets. Footstep packs (the original use case) are a natural starter.
+- [ ] **Accessibility.** JUCE 8 added accessibility hooks. At minimum, label every control with `setDescription`/`setHelpText`. VoiceOver/Narrator users will thank you.
+- [ ] **Telemetry — explicit "no".** State in the EULA that the plugin doesn't phone home. Free + privacy-respecting is a strong combination.
+- [ ] **Support channel.** A Discord server or just `hello@conduitdsp.com` forwarded to your inbox. One bug-report email beats no channel.
+- [ ] **Press kit.** Logo PNGs (1x/2x), screenshots (1400×400 + scaled), 50/100/200-word descriptions. Saves hours when sites/blogs ask.
+- [ ] **Beta program.** Ship `v1.0.0-rc1` to ~10 trusted testers (DAW diversity matters more than count) for two weeks before public launch.
+- [ ] **Legal: VST3 trademark.** "VST" is Steinberg's. The license you accept with the SDK requires specific attribution language — re-read it before the launch page is written.
+- [ ] **Backup strategy for signing certificates.** Lose the Mac Developer ID cert and you can revoke + reissue, but lose the Windows code signing cert + private key and you may need to repurchase. Back up the `.p12`/`.pfx` files to a password manager.
+- [ ] **Universal Binary 2 sanity check.** Test the AU on an Intel Mac if possible — Apple Silicon-native testing alone has missed bugs that only surface on x86_64.
+- [ ] **The two stale folders.** `NewProject/Builds/MacOSX/` and `NewProject/Builds/VisualStudio2026/` are old Projucer output. Decide: delete (recommended, CMake is authoritative) or keep as a fallback path.
+- [ ] **`design-spec.md` and `RRLite_spec_v2_OLD.md`** — archive both into `docs/archive/` or delete. Having two stale specs alongside this new one will cause confusion in three months.
 
 ---
 
 ## 12. Open questions for you
 
-1. Pick a name from §1.1 (or propose another).
-2. Confirm Personal JUCE license is the path (§1.2).
-3. Confirm AAX deferred to v1.1 (§1.3).
-4. Public or private GitHub repo until launch (§1.4)?
-5. Do you have an Apple Developer account already, or is that a new $99 expense?
-6. Any preference on Mac installer (`.pkg` vs `.dmg`)? `.pkg` is more "professional installer," `.dmg` is "drag to Applications."
-7. Target release date for v1.0 — drives how much of the §11 list ships day one vs day 30.
+- [x] Pick a name from §1.1 (or propose another). → Robin Control Lite
+- [ ] Confirm Personal JUCE license is the path (§1.2).
+- [x] Confirm AAX deferred to v1.1 (§1.3).
+- [x] Public or private GitHub repo until launch (§1.4)? → Private
+- [ ] Do you have an Apple Developer account already, or is that a new $99 expense?
+- [ ] Any preference on Mac installer (`.pkg` vs `.dmg`)? `.pkg` is more "professional installer," `.dmg` is "drag to Applications."
+- [ ] Target release date for v1.0 — drives how much of the §11 list ships day one vs day 30.
 
 Once §1.1–1.3 are answered, I'll do the rename pass + JUCE pinning + CLAUDE.md rewrite as a single coordinated change.

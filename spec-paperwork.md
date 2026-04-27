@@ -38,7 +38,7 @@ Personal admin checklist for shipping v1.0. The technical/build/test plan lives 
 ## Channels — free, file at launch
 
 - [ ] **KVR Audio listing** — https://www.kvraudio.com/get-listed (free, ~24h moderation, requires short description + screenshots + version + formats + system requirements)
-- [ ] **Download page on conduit.dsp** — screenshots, per-platform install instructions, link to EULA, support email
+- [x] **Download page on conduit.dsp** — screenshots, per-platform install instructions, link to EULA, support email
 
 ---
 
