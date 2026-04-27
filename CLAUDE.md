@@ -44,6 +44,10 @@ A Projucer file (`NewProject/RobinControlLite.jucer`) is kept in sync with CMake
 
 No automated tests yet. Test manually via JUCE AudioPluginHost or any DAW. `pluginval` is on the roadmap (see spec.md §7).
 
+### Audio formats supported
+
+WAV, AIFF, FLAC, OGG, **MP3** (decode-only). MP3 is gated behind `JUCE_USE_MP3AUDIOFORMAT=1` in `CMakeLists.txt` (`target_compile_definitions`) — JUCE 8's basic format pack does NOT include it by default. `MP3AudioFormat` is also explicitly registered in `PluginProcessor` after `formatManager.registerBasicFormats()`. JUCE's MP3 decoder ships royalty-free; safe for distribution. The picker filters and `SampleLoader::supportedFormats` array must list `.mp3` too — all three places stay in sync.
+
 ### Plugin identity (for DAW registry)
 
 | Field | Value |
@@ -74,7 +78,7 @@ The `Source/` tree was originally copied from `../round-robin-lite/NewProject/So
 
 ### DSP Chain (`Source/DSP/`)
 
-- **ToneControl** — Simple 2-knob low/high shelf EQ (250Hz/4kHz, ±12dB). Fully integrated.
+- **ToneControl** — Simple 2-knob low/high shelf EQ (250Hz/4kHz, ±12dB). Fully integrated. Caches last-applied `(lowGain_dB, highGain_dB)` and short-circuits `updateFilters()` when neither moved (epsilon 0.001f) — coefficient math is the costly part. **Don't remove this cache** without measuring; it's the largest single CPU win in idle. The cache is invalidated in `prepareToPlay` (sample-rate change must rebuild).
 - **ThreeBandEQ** — Full 3-band EQ. Code exists but is commented out (reserved for Pro).
 - **TransientShaper** — Attack/decay transient processor. Also commented out.
 
@@ -98,8 +102,10 @@ Helper: `drawSectionTitle` lambda in `PluginEditor.cpp::paint`. Sibling implemen
 - **Unpitched playback:** MIDI key selects sample, not pitch. Pitch is global (semitone + fine tune).
 - **Playback modes:** Series (round-robin) or Random (Fisher-Yates, no repeats until all played).
 - **Randomization:** every parameter has 4 rnd params (neg/pos range). Values generated per note-on in `RRVoice::startNote()`.
-- **Sample Start/End:** percentages reference `maxPoolSampleLength` then clamp per-voice.
+- **Sample Start/End:** percentages reference `maxPoolSampleLength` then clamp per-voice. **Asymmetric edge case (intentional):** if Start (in pool-relative samples) lands past *this* sample's end, the voice falls back to applying the Start percentage to this sample's own length so short samples don't go silent in mixed-duration pools (RRvoice.cpp `startNote`). End uses straight clamp — short samples play fully when End extends past them. This was a fix for ticks 15–17 of the Random Algorithm table (the only ticks with `sampleStartRndPos > 0`), where short WAVs went silent in pools that included multi-minute MP3s.
 - **Trigger / Panic:** both are atomic flags consumed in `processBlock`. Panic wins over Trigger queued in the same block.
+- **Audio/message-thread safety contract:** any code path that mutates `sampleSlots[]`, `loadedSlotIndices`, `shuffledIndices`, `roundRobinIndex`, or the synthesiser's `RRSound` from the message thread MUST take `getCallbackLock()` (`juce::ScopedLock`). The audio thread holds it implicitly during `processBlock`, so this serializes cleanly. `SampleLoader` takes a `const juce::CriticalSection&` reference at construction (passed `getCallbackLock()`) and locks internally in `loadSample`/`clearSlot`/`setSampleRate`/`updateSynthesiserSounds`. `PluginProcessor::swapSamples`/`insertSample`/`auditionSample`/`resetPlaybackPosition` and the slot-restore block in `setStateInformation` lock at the entry. Decode/resample happens off-lock; only the final swap is locked, so big files don't stall `processBlock`.
+- **`prepareToPlay` rebuilds after resample.** `sampleLoader.setSampleRate()` resamples every loaded slot to the new rate, which changes each slot's sample count. `rebuildLoadedIndices()` MUST be called immediately after, otherwise `maxSampleLength` stays stale at the old rate and voices clamp playback to that — causing tail cutoff at 88.2k/96k. Already wired in `prepareToPlay`; keep it that way.
 - **Param IDs are frozen.** Once v1.0 ships, renaming a param ID in `ParametersIDs.h` breaks every saved preset. Migrate via `setStateInformation`, don't rename in place.
 
 ## Visual references
@@ -137,3 +143,4 @@ What still applies:
 - **Param IDs frozen post-v1.0** (preset compatibility). Pre-v1.0 they're still mutable.
 - **CMake is authoritative**, Projucer file is sync-only.
 - For anything about formats, signing, distribution, CI, testing, or licensing decisions, defer to `spec.md`.
+- **"Load Samples" is additive, not destructive.** Both the header `Load Samples` button and the in-pool "click to add (x) samples" placeholder route through `addMoreSamples()` and append to the next empty slot. Users clear the pool with the Clear button to start fresh. Don't restore the old replace-everything behavior — the user explicitly chose this on 2026-04-27 because the old replace was hostile UX (had to reload the entire pool just to add one more sample).
