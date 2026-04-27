@@ -10,8 +10,12 @@ As of 2026-04-25 this folder is the **authoritative project**. It was originally
 
 For the full development plan (formats, signing, distribution, CI, testing, license decisions), see `spec.md` at the repo root. **`spec.md` is the source of truth** for anything not covered here. Sibling docs at the repo root:
 - `spec-paperwork.md` — admin/legal checklist (Apple Developer enrollment, trademark, etc.)
-- `EULA.md` — end-user license; establishes **Conduit DSP LLC** (Kingston, NY; Ulster County jurisdiction) as the legal entity
+- `EULA.md` — end-user license for the binary; establishes **Conduit DSP LLC** (Kingston, NY; Ulster County jurisdiction) as the legal entity. Effective date: April 26, 2026 (v1.0). Will be published at `https://conduitdsp.com/eula/robin-control-lite/`.
+- `LICENSE` — source code license: **All Rights Reserved (proprietary)**. The source is not open-source; a Pro version is planned, so the codebase must remain shareable between Lite and Pro without a third-party fork ever shipping.
+- `Privacy.md` — short pointer to the canonical privacy policy at `https://conduitdsp.com/privacy-policy/`. The plugin itself collects nothing; the website handles email-capture (MailerLite) for downloads.
 - `README.md` — end-user-facing install/use docs
+
+GitHub remote: `https://github.com/ahamadey27/robin-control-lite.git` (private). Local folder name (`robin-control-redesign`) intentionally not changed — VSCode workspace paths still point at the old folder name.
 
 ### Product behavior (free version)
 
