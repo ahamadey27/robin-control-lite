@@ -64,7 +64,9 @@ NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioPr
     sampleManagerPanel(p)
 {
     // Wire sample manager panel callbacks
-    sampleManagerPanel.onLoadSamplesClicked = [this]() { loadSamplesFromFiles(); };
+    // "Load Samples" appends to the pool (matches the in-pool "click to add"
+    // placeholder). Users clear with the Clear button to start fresh.
+    sampleManagerPanel.onLoadSamplesClicked = [this]() { addMoreSamples(); };
     sampleManagerPanel.onClearSamplesClicked = [this]()
         {
             for (int i = 0; i < NewProjectAudioProcessor::NUM_SAMPLE_SLOTS; ++i)
@@ -79,7 +81,7 @@ NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioPr
     sampleManagerPanel.onReplaceSample = [this](int slotIndex)
         {
             fileChooser = std::make_unique<juce::FileChooser>(
-                "Replace Sample", juce::File{}, "*.wav;*.aif;*.aiff;*.flac;*.ogg");
+                "Replace Sample", juce::File{}, "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3");
             fileChooser->launchAsync(
                 juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                 [this, slotIndex](const juce::FileChooser& fc)
@@ -348,48 +350,12 @@ void NewProjectAudioProcessorEditor::setupKnob(juce::Slider& s)
 }
 
 //==============================================================================
-void NewProjectAudioProcessorEditor::loadSamplesFromFiles()
-{
-    fileChooser = std::make_unique<juce::FileChooser>(
-        "Load Samples (up to 20)",
-        juce::File{},
-        "*.wav;*.aif;*.aiff;*.flac;*.ogg"
-    );
-
-    fileChooser->launchAsync(
-        juce::FileBrowserComponent::openMode |
-        juce::FileBrowserComponent::canSelectFiles |
-        juce::FileBrowserComponent::canSelectMultipleItems,
-        [this](const juce::FileChooser& fc)
-        {
-            auto results = fc.getResults();
-
-            for (int i = 0; i < NewProjectAudioProcessor::NUM_SAMPLE_SLOTS; ++i)
-                audioProcessor.sampleLoader.clearSlot(i);
-
-            int slot = 0;
-            for (const auto& file : results)
-            {
-                if (slot >= NewProjectAudioProcessor::NUM_SAMPLE_SLOTS) break;
-                if (file.existsAsFile())
-                {
-                    audioProcessor.sampleLoader.loadSample(slot, file);
-                    ++slot;
-                }
-            }
-
-            audioProcessor.rebuildLoadedIndices();
-            sampleManagerPanel.repaint();
-        }
-    );
-}
-
 void NewProjectAudioProcessorEditor::addMoreSamples()
 {
     fileChooser = std::make_unique<juce::FileChooser>(
         "Add Samples",
         juce::File{},
-        "*.wav;*.aif;*.aiff;*.flac;*.ogg"
+        "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3"
     );
 
     fileChooser->launchAsync(

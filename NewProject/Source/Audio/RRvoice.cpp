@@ -384,23 +384,29 @@ void RRVoice::startNote(int midiNoteNumber, float velocity,
         return;
     }
 
-    // Start/End percentages reference the longest sample in the pool, then clamp to
-    // this sample's length. Example: End=50% with a 40s max cuts at the 20s mark for
-    // every sample — a 1s sample plays fully (clamped), a 40s sample stops at 20s.
+    // Start/End percentages reference the longest sample in the pool, then clamp
+    // to this sample's length. Example: End=50% with a 40s max cuts at the 20s
+    // mark for every sample — a 1s sample plays fully (clamped), a 40s sample
+    // stops at 20s.
+    //
+    // Asymmetric edge case: if Start (in pool-relative samples) lands past this
+    // sample's end, pure clamping would equal End and the voice would silence
+    // entirely. To keep short samples audible when the trim/random offset
+    // exceeds their length, we fall back to applying the Start percentage to
+    // THIS sample's own length — proportional rather than silent.
     const int refLength = (maxPoolSampleLength > 0) ? maxPoolSampleLength : cachedSampleLength;
-    playbackStartSample = (int)(randomizedSampleStart / 100.0f * refLength);
-    playbackEndSample   = (int)(randomizedSampleEnd   / 100.0f * refLength);
-    playbackStartSample = juce::jlimit(0, cachedSampleLength, playbackStartSample);
-    playbackEndSample   = juce::jlimit(0, cachedSampleLength, playbackEndSample);
 
-    // If the start lands beyond this sample's end (or start >= end after clamping),
-    // there's nothing to play.
-    if (playbackEndSample <= playbackStartSample)
-    {
-        isPlaying = false;
-        clearCurrentNote();
-        return;
-    }
+    int absoluteStart = (int)(randomizedSampleStart / 100.0f * refLength);
+    int absoluteEnd   = (int)(randomizedSampleEnd   / 100.0f * refLength);
+
+    playbackEndSample = juce::jlimit(1, cachedSampleLength, absoluteEnd);
+
+    if (absoluteStart >= playbackEndSample)
+        playbackStartSample = (int)(randomizedSampleStart / 100.0f * cachedSampleLength);
+    else
+        playbackStartSample = absoluteStart;
+
+    playbackStartSample = juce::jlimit(0, playbackEndSample - 1, playbackStartSample);
 
     // Micro-fade length (~3ms), reduced if trimmed region is very short
     fadeSamples = (int)(0.003 * getSampleRate());

@@ -37,6 +37,10 @@ NewProjectAudioProcessor::NewProjectAudioProcessor()
     }
 
     formatManager.registerBasicFormats();
+    // registerBasicFormats() does NOT include MP3. Register it explicitly so
+    // users can drop in .mp3 files. JUCE's MP3 reader is decode-only and ships
+    // royalty-free with the framework — safe for distribution.
+    formatManager.registerFormat(new juce::MP3AudioFormat(), false);
 
     DBG("=== Robin Control Lite Initialized ===");
     DBG("Synthesiser ready with " + juce::String(synthesiser.getNumVoices()) + " voice(s)");

@@ -40,11 +40,11 @@ bool SampleLoader::loadSample(int slotIndex, const juce::File& file)
 
     // --- Error Check 3: Supported format ---
     auto extension = file.getFileExtension().toLowerCase();
-    juce::StringArray supportedFormats = { ".wav", ".aif", ".aiff", ".flac", ".ogg" };
+    juce::StringArray supportedFormats = { ".wav", ".aif", ".aiff", ".flac", ".ogg", ".mp3" };
     if (!supportedFormats.contains(extension))
     {
         DBG("SampleLoader: Unsupported format '" + extension + "': " + file.getFileName());
-        lastErrorMessage = "Unsupported format '" + extension + "'. Use WAV, AIFF, FLAC, or OGG.";
+        lastErrorMessage = "Unsupported format '" + extension + "'. Use WAV, AIFF, FLAC, OGG, or MP3.";
         return false;
     }
 

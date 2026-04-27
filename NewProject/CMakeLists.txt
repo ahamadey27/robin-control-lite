@@ -165,6 +165,7 @@ target_compile_definitions(RobinControlLite
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
+        JUCE_USE_MP3AUDIOFORMAT=1
     PRIVATE
         JUCE_STRICT_REFCOUNTEDPOINTER=1
 )

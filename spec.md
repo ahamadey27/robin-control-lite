@@ -313,13 +313,13 @@ DSP and UI aren't worth unit testing; manual + pluginval covers them.
 For each host × format combination, walk this checklist. Allow ~5–7 minutes per host once you're warmed up.
 
 **Discovery & load**
-- [ ] Plugin appears in host's plugin list after rescan (no validation errors logged)
-- [ ] Plugin loads onto a track without warning dialogs
-- [ ] Plugin name shown in host matches "Robin Control Lite" (not the bundle name)
-- [ ] Manufacturer shown as "conduit.dsp"
+- [x] Plugin appears in host's plugin list after rescan (no validation errors logged)
+- [x] Plugin loads onto a track without warning dialogs
+- [x] Plugin name shown in host matches "Robin Control Lite" (not the bundle name)
+- [x] Manufacturer shown as "conduit.dsp"
 
 **Basic playback**
-- [ ] MIDI keyboard (host's virtual or hardware) triggers samples on the expected MIDI notes
+- [x] MIDI keyboard (host's virtual or hardware) triggers samples on the expected MIDI notes
 - [ ] All 10 sample slots load valid WAVs via the file picker AND drag-drop from desktop
 - [ ] Series mode (round-robin) cycles through samples in order
 - [ ] Random mode never repeats until pool exhausted (Fisher-Yates intent)
@@ -391,7 +391,7 @@ Within reason — saving a Live project then opening it in Logic isn't a thing, 
 
 Sweep tests:
 - [ ] Buffer sizes: 32, 64, 128, 256, 512, 1024 — no audio glitches at any size
-- [ ] Sample rates: 44.1, 48, 88.2, 96, 192 kHz — no glitches; sample playback pitch is correct (resampler not introducing detune)
+- [x] Sample rates: 44.1, 48, 88.2, 96, 192 kHz — no glitches; sample playback pitch is correct (resampler not introducing detune)
 - [ ] 30-min continuous playback session — RAM stable (no leak), CPU stable (no thermal-related runaway)
 
 ### 7.9 Platform-specific tests
@@ -546,12 +546,12 @@ The hard part isn't the spec — it's untangling the relationship with `../round
 
 In rough priority order:
 
-- [ ] **Trademark search** for the chosen name. USPTO TESS (US), EUIPO eSearch (EU). 30 minutes. Do this before printing anything.
-- [ ] **Domain.** `conduit.dsp` exists; do you also want `robin-control-lite.com` or a `/robin-control-lite` subpath?
+- [x] **Trademark search** for the chosen name. USPTO TESS (US), EUIPO eSearch (EU). 30 minutes. Do this before printing anything.
+- [x] **Domain.** `conduit.dsp` exists; do you also want `robin-control-lite.com` or a `/robin-control-lite` subpath?
 - [x] **Privacy policy + EULA.** Even a free plugin needs both if you have a download form, mailing list, or any analytics. EULA v1.0 effective 2026-04-26; Privacy.md pointer ships with repo, canonical at conduitdsp.com/privacy-policy/.
 - [ ] **Crash reporting.** JUCE's `juce::SystemStats` + a tiny log file is enough for v1. Sentry / Bugsnag are overkill for a free plugin.
 - [ ] **Update mechanism.** Don't build one for v1. Email + a "check for updates" link in the About dialog is fine.
-- [ ] **Mailing list / launch list.** Capture emails on the download page. MailerLite is the chosen tool (already on conduitdsp.com).
+- [x] **Mailing list / launch list.** Capture emails on the download page. MailerLite is the chosen tool (already on conduitdsp.com).
 - [ ] **Documentation site.** A static page per platform (install instructions) goes a long way. README is for GitHub readers; users need a real site.
 - [ ] **Demo content / preset pack.** Free plugin sells itself harder if it ships with 5–10 great-sounding sample sets. Footstep packs (the original use case) are a natural starter.
 - [ ] **Accessibility.** JUCE 8 added accessibility hooks. At minimum, label every control with `setDescription`/`setHelpText`. VoiceOver/Narrator users will thank you.
@@ -559,7 +559,7 @@ In rough priority order:
 - [ ] **Support channel.** A Discord server or just `hello@conduitdsp.com` forwarded to your inbox. One bug-report email beats no channel.
 - [ ] **Press kit.** Logo PNGs (1x/2x), screenshots (1400×400 + scaled), 50/100/200-word descriptions. Saves hours when sites/blogs ask.
 - [ ] **Beta program.** Ship `v1.0.0-rc1` to ~10 trusted testers (DAW diversity matters more than count) for two weeks before public launch.
-- [ ] **Legal: VST3 trademark.** "VST" is Steinberg's. The license you accept with the SDK requires specific attribution language — re-read it before the launch page is written.
+- [x] **Legal: VST3 trademark.** "VST" is Steinberg's. The license you accept with the SDK requires specific attribution language — re-read it before the launch page is written.
 - [ ] **Backup strategy for signing certificates.** Lose the Mac Developer ID cert and you can revoke + reissue, but lose the Windows code signing cert + private key and you may need to repurchase. Back up the `.p12`/`.pfx` files to a password manager.
 - [ ] **Universal Binary 2 sanity check.** Test the AU on an Intel Mac if possible — Apple Silicon-native testing alone has missed bugs that only surface on x86_64.
 - [ ] **The two stale folders.** `NewProject/Builds/MacOSX/` and `NewProject/Builds/VisualStudio2026/` are old Projucer output. Decide: delete (recommended, CMake is authoritative) or keep as a fallback path.
@@ -570,7 +570,7 @@ In rough priority order:
 ## 12. Open questions for you
 
 - [x] Pick a name from §1.1 (or propose another). → Robin Control Lite
-- [ ] Confirm Personal JUCE license is the path (§1.2).
+- [x] Confirm Personal JUCE license is the path (§1.2).
 - [x] Confirm AAX deferred to v1.1 (§1.3).
 - [x] Public or private GitHub repo until launch (§1.4)? → Private
 - [ ] Do you have an Apple Developer account already, or is that a new $99 expense?
