@@ -29,9 +29,9 @@ Personal admin checklist for shipping v1.0. The technical/build/test plan lives 
 - [x] No payment — just confirm you're in compliance
 
 ### GitHub repo
-- [ ] Decide repo visibility (public vs. private until launch)
-- [ ] Add `LICENSE` file at repo root for **your** code (separate from JUCE's license)
-- [ ] Add `EULA.md` (the document you drafted above) at repo root
+- [x] Decide repo visibility (public vs. private until launch)
+- [x] Add `LICENSE` file at repo root for **your** code (separate from JUCE's license)
+- [x] Add `EULA.md` (the document you drafted above) at repo root
 
 ---
 

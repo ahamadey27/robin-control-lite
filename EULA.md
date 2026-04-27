@@ -1,8 +1,8 @@
 # End User License Agreement
 
-**Robin Control Lite**
+**Robin Control Lite** — Version 1.0
 Conduit DSP LLC
-Last updated: April 2026
+Effective date: April 26, 2026
 
 This Agreement is between you ("You") and **Conduit DSP LLC** ("Conduit DSP," "we," "us"), a New York limited liability company. By installing or using Robin Control Lite (the "Software") you agree to these terms. If you don't agree, don't install the Software.
 
