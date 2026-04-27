@@ -13,7 +13,8 @@ public:
     SampleLoader(juce::AudioFormatManager&formatManager,
                  juce::Synthesiser&synthesiser,
                  SampleSlot*slots,
-                 int numSlots);
+                 int numSlots,
+                 const juce::CriticalSection& callbackLock);
 
     const juce::String& getLastError() const { return lastErrorMessage; }
 
@@ -36,6 +37,7 @@ private:
     juce::Synthesiser& synthesiser;
     SampleSlot* slots;
     int numSlots;
+    const juce::CriticalSection& callbackLock;
     juce::String lastErrorMessage;
     double currentSampleRate = 44100.0;
 

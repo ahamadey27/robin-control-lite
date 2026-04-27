@@ -95,7 +95,7 @@ private:
 
 public:
     // Declared after private dependencies so it initializes after them
-    SampleLoader sampleLoader{ formatManager, synthesiser, sampleSlots, NUM_SAMPLE_SLOTS };
+    SampleLoader sampleLoader{ formatManager, synthesiser, sampleSlots, NUM_SAMPLE_SLOTS, getCallbackLock() };
 
 private:
     //==============================================================================

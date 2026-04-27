@@ -233,11 +233,15 @@ void NewProjectAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, ju
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
     //==============================================================================
-    // UPDATE SMOOTHED PARAMETER VALUES
+    // UPDATE SMOOTHED PARAMETER VALUES — read each APVTS atomic exactly once.
 
-    smoothedSemitone.setTargetValue(apvts.getRawParameterValue(ParameterIDs::semitone)->load());
-    smoothedFineTune.setTargetValue(apvts.getRawParameterValue(ParameterIDs::fineTune)->load());
-    smoothedVolume.setTargetValue(apvts.getRawParameterValue(ParameterIDs::volume)->load());
+    const float semitoneTarget = apvts.getRawParameterValue(ParameterIDs::semitone)->load();
+    const float fineTuneTarget = apvts.getRawParameterValue(ParameterIDs::fineTune)->load();
+    const float volumeTarget   = apvts.getRawParameterValue(ParameterIDs::volume)->load();
+
+    smoothedSemitone.setTargetValue(semitoneTarget);
+    smoothedFineTune.setTargetValue(fineTuneTarget);
+    smoothedVolume  .setTargetValue(volumeTarget);
     // COMMENTED FOR LITE — ACTIVE IN PREMIUM
     //smoothedEnvAttack.setTargetValue(apvts.getRawParameterValue(ParameterIDs::envAttack)->load());
     //smoothedEnvDecay.setTargetValue(apvts.getRawParameterValue(ParameterIDs::envDecay)->load());
@@ -252,10 +256,14 @@ void NewProjectAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, ju
         buffer.clear(i, 0, buffer.getNumSamples());
 
     //==============================================================================
-    // STORE GLOBAL PARAMETER VALUES FOR VOICES
+    // STORE GLOBAL PARAMETER VALUES FOR VOICES — pull from smoothers (already
+    // updated above) instead of re-loading the same atomics.
 
-    globalSemitones.store(smoothedSemitone.getCurrentValue());
-    globalCents.store(smoothedFineTune.getCurrentValue());
+    const float semitonesNow = smoothedSemitone.getCurrentValue();
+    const float centsNow     = smoothedFineTune.getCurrentValue();
+
+    globalSemitones.store(semitonesNow);
+    globalCents.store(centsNow);
     // COMMENTED FOR LITE — ACTIVE IN PREMIUM
     //globalAttackMs.store(smoothedEnvAttack.getCurrentValue());
     //globalDecayMs.store(smoothedEnvDecay.getCurrentValue());
@@ -263,17 +271,11 @@ void NewProjectAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, ju
     //==============================================================================
     // UPDATE ALL VOICES WITH CURRENT GLOBAL PARAMETERS
 
-    float semitones = static_cast<float>(apvts.getRawParameterValue(ParameterIDs::semitone)->load());
-    float cents = static_cast<float>(apvts.getRawParameterValue(ParameterIDs::fineTune)->load());
-    // COMMENTED FOR LITE — ACTIVE IN PREMIUM
-    //float attackMs = apvts.getRawParameterValue(ParameterIDs::envAttack)->load();
-    //float decayMs = apvts.getRawParameterValue(ParameterIDs::envDecay)->load();
-
     for (int i = 0; i < synthesiser.getNumVoices(); ++i)
     {
         if (auto* voice = dynamic_cast<RRVoice*>(synthesiser.getVoice(i)))
         {
-            voice->updateGlobalParameters(semitones, cents, 0.0f, 0.0f); // LITE: attack/decay removed from APVTS
+            voice->updateGlobalParameters(semitonesNow, centsNow, 0.0f, 0.0f); // LITE: attack/decay removed from APVTS
             voice->setMaxPoolSampleLength(maxSampleLength);
         }
     }
@@ -534,7 +536,11 @@ void NewProjectAudioProcessor::setStateInformation(const void* data, int sizeInB
             }
         }
 
-        rebuildLoadedIndices();
+        {
+            const juce::ScopedLock sl(getCallbackLock());
+            rebuildLoadedIndices();
+            reshuffleIndices();
+        }
         DBG("  Loaded slots after restore: " + juce::String((int)loadedSlotIndices.size()));
         sampleLoader.updateSynthesiserSounds();
         DBG("  Synth sounds after restore: " + juce::String(synthesiser.getNumSounds()));
@@ -967,6 +973,7 @@ void NewProjectAudioProcessor::reshuffleIndices()
 
 void NewProjectAudioProcessor::resetPlaybackPosition()
 {
+    const juce::ScopedLock sl(getCallbackLock());
     roundRobinIndex = 0;
     reshuffleIndices();
     lastPlayedSlot = -1;
@@ -1018,17 +1025,21 @@ void NewProjectAudioProcessor::auditionSample(int slotIndex)
     if (slotIndex < 0 || slotIndex >= NUM_SAMPLE_SLOTS || !sampleSlots[slotIndex].isLoaded)
         return;
 
-    // Force the synth to play this specific slot without advancing round-robin
-    if (synthesiser.getNumSounds() == 0)
     {
-        auto* newSound = new RRSound();
-        newSound->setFromSlot(sampleSlots[slotIndex]);
-        synthesiser.addSound(newSound);
-    }
-    else
-    {
-        if (auto* sound = dynamic_cast<RRSound*>(synthesiser.getSound(0).get()))
-            sound->setFromSlot(sampleSlots[slotIndex]);
+        const juce::ScopedLock sl(getCallbackLock());
+
+        // Force the synth to play this specific slot without advancing round-robin
+        if (synthesiser.getNumSounds() == 0)
+        {
+            auto* newSound = new RRSound();
+            newSound->setFromSlot(sampleSlots[slotIndex]);
+            synthesiser.addSound(newSound);
+        }
+        else
+        {
+            if (auto* sound = dynamic_cast<RRSound*>(synthesiser.getSound(0).get()))
+                sound->setFromSlot(sampleSlots[slotIndex]);
+        }
     }
 
     synthesiser.noteOn(1, 60, 1.0f);
@@ -1040,10 +1051,13 @@ void NewProjectAudioProcessor::swapSamples(int indexA, int indexB)
         indexB < 0 || indexB >= NUM_SAMPLE_SLOTS || indexA == indexB)
         return;
 
-    std::swap(sampleSlots[indexA], sampleSlots[indexB]);
+    {
+        const juce::ScopedLock sl(getCallbackLock());
+        std::swap(sampleSlots[indexA], sampleSlots[indexB]);
+        rebuildLoadedIndices();
+        reshuffleIndices();
+    }
     sampleLoader.updateSynthesiserSounds();
-    rebuildLoadedIndices();
-    reshuffleIndices();
 }
 
 void NewProjectAudioProcessor::insertSample(int fromIndex, int toIndex)
@@ -1052,23 +1066,27 @@ void NewProjectAudioProcessor::insertSample(int fromIndex, int toIndex)
         toIndex < 0 || toIndex >= NUM_SAMPLE_SLOTS || fromIndex == toIndex)
         return;
 
-    SampleSlot temp = sampleSlots[fromIndex];
-
-    if (fromIndex < toIndex)
     {
-        for (int i = fromIndex; i < toIndex; ++i)
-            sampleSlots[i] = sampleSlots[i + 1];
-    }
-    else
-    {
-        for (int i = fromIndex; i > toIndex; --i)
-            sampleSlots[i] = sampleSlots[i - 1];
-    }
+        const juce::ScopedLock sl(getCallbackLock());
 
-    sampleSlots[toIndex] = temp;
+        SampleSlot temp = std::move(sampleSlots[fromIndex]);
+
+        if (fromIndex < toIndex)
+        {
+            for (int i = fromIndex; i < toIndex; ++i)
+                sampleSlots[i] = std::move(sampleSlots[i + 1]);
+        }
+        else
+        {
+            for (int i = fromIndex; i > toIndex; --i)
+                sampleSlots[i] = std::move(sampleSlots[i - 1]);
+        }
+
+        sampleSlots[toIndex] = std::move(temp);
+        rebuildLoadedIndices();
+        reshuffleIndices();
+    }
     sampleLoader.updateSynthesiserSounds();
-    rebuildLoadedIndices();
-    reshuffleIndices();
 }
 
 //==============================================================================

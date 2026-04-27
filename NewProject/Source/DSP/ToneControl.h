@@ -23,6 +23,11 @@ private:
     double currentSampleRate = 44100.0;
     bool isPrepared = false;
 
+    // Last-applied gains. Coefficient recompute is the expensive part of
+    // updateFilters; skip it when the gains have not moved since last call.
+    float lastLowGain_dB  = std::numeric_limits<float>::quiet_NaN();
+    float lastHighGain_dB = std::numeric_limits<float>::quiet_NaN();
+
     static constexpr float lowFreqHz  = 250.0f;
     static constexpr float highFreqHz = 4000.0f;
     static constexpr float Q          = 0.707f;

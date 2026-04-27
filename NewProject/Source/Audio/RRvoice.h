@@ -159,6 +159,10 @@ private:
 
     bool releaseTriggered = false;
 
+    // Equal-power pan gains, computed once per note-on from randomizedPan.
+    float cachedPanLeftGain  = 0.7071f;
+    float cachedPanRightGain = 0.7071f;
+
     // Cached parameter pointers (set once, read many times)
     struct RandomizationPointers
     {

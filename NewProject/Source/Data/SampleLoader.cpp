@@ -3,11 +3,13 @@
 SampleLoader::SampleLoader(juce::AudioFormatManager& formatManager,
     juce::Synthesiser& synthesiser,
     SampleSlot* slots,
-    int          numSlots)
+    int          numSlots,
+    const juce::CriticalSection& callbackLock)
     : formatManager(formatManager),
     synthesiser(synthesiser),
     slots(slots),
-    numSlots(numSlots)
+    numSlots(numSlots),
+    callbackLock(callbackLock)
 {
 }
 
@@ -70,32 +72,40 @@ bool SampleLoader::loadSample(int slotIndex, const juce::File& file)
     // Note: loadFromFile will create its own reader internally
     reader.reset();
 
-    bool success = slots[slotIndex].loadFromFile(file, formatManager);
+    // Decode + resample on the calling thread without holding the audio lock —
+    // big files can take tens of ms and we don't want to stall processBlock.
+    SampleSlot pending;
+    bool success = pending.loadFromFile(file, formatManager);
 
     if (success)
     {
-        // --- Error Check 6: Verify buffer was actually populated ---
-        if (slots[slotIndex].audioBuffer.getNumSamples() == 0 ||
-            slots[slotIndex].audioBuffer.getNumChannels() == 0)
+        if (pending.audioBuffer.getNumSamples() == 0 ||
+            pending.audioBuffer.getNumChannels() == 0)
         {
             DBG("SampleLoader: Buffer empty after load - possible memory issue: " + file.getFileName());
             lastErrorMessage = "Failed to allocate audio buffer for: " + file.getFileName();
-            slots[slotIndex].clear();
             return false;
+        }
+
+        resampleBuffer(pending.audioBuffer, pending.sampleRate);
+        pending.sampleRate = currentSampleRate;
+
+        // Hand the prepared slot to the audio side under the callback lock.
+        {
+            const juce::ScopedLock sl(callbackLock);
+            slots[slotIndex] = std::move(pending);
         }
 
         lastErrorMessage.clear();
         DBG("Slot " + juce::String(slotIndex) + " loaded: " + slots[slotIndex].displayName);
-
-        // --- Step 4: Resample to plugin sample rate if needed ---
-        resampleBuffer(slots[slotIndex].audioBuffer, slots[slotIndex].sampleRate);
-        slots[slotIndex].sampleRate = currentSampleRate;  // buffer is now at plugin rate
-
     }
     else
     {
         // loadFromFile failed - fallback: ensure slot is clean
-        slots[slotIndex].clear();
+        {
+            const juce::ScopedLock sl(callbackLock);
+            slots[slotIndex].clear();
+        }
         lastErrorMessage = "Failed to load: " + file.getFileName();
         DBG("Slot " + juce::String(slotIndex) + " failed to load: " + file.getFullPathName());
     }
@@ -108,7 +118,10 @@ void SampleLoader::clearSlot(int slotIndex)
     if (slotIndex < 0 || slotIndex >= numSlots)
         return;
 
-    slots[slotIndex].clear();
+    {
+        const juce::ScopedLock sl(callbackLock);
+        slots[slotIndex].clear();
+    }
     DBG("SampleLoader: Slot " + juce::String(slotIndex) + " cleared");
 }
 
@@ -121,14 +134,20 @@ void SampleLoader::setSampleRate(double newSampleRate)
     currentSampleRate = newSampleRate;
     DBG("SampleLoader: Sample rate set to " + juce::String(newSampleRate));
 
-    // Resample all currently loaded slots to the new rate
+    // Resample each slot off-lock, then swap in under the lock — keeps
+    // processBlock un-stalled across the (potentially long) resample loop.
     for (int i = 0; i < numSlots; ++i)
     {
         if (!slots[i].isLoaded)
             continue;
 
-        resampleBuffer(slots[i].audioBuffer, slots[i].sampleRate);
-        slots[i].sampleRate = currentSampleRate;  // buffer is now at new plugin rate
+        juce::AudioBuffer<float> resampled;
+        resampled.makeCopyOf(slots[i].audioBuffer);
+        resampleBuffer(resampled, slots[i].sampleRate);
+
+        const juce::ScopedLock sl(callbackLock);
+        slots[i].audioBuffer = std::move(resampled);
+        slots[i].sampleRate = currentSampleRate;
     }
 
     //updateSynthesiserSounds();
@@ -168,6 +187,8 @@ void SampleLoader::resampleBuffer(juce::AudioBuffer<float>& buffer, double sourc
 
 void SampleLoader::updateSynthesiserSounds()
 {
+    const juce::ScopedLock sl(callbackLock);
+
     // Update existing sound in place instead of clearing
     if (synthesiser.getNumSounds() > 0)
     {
