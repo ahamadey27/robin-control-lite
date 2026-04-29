@@ -401,6 +401,7 @@ FodyWeavers.xsd
 
 # CMake / JUCE build output
 NewProject/build/
+NewProject/build-*/
 NewProject/Builds/
 
 # Release artifacts (per spec.md §9) — track folder structure via .gitkeep

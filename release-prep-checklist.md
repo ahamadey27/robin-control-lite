@@ -8,20 +8,22 @@ Cross-references to `spec.md` are inline where the section spells out detail.
 
 ## 1. Build hygiene
 
-- [ ] Fresh-clone CMake configure works without `JUCE_PATH` set (FetchContent fallback path actually resolves JUCE 8.0.4)
-- [ ] Mac universal Release build compiles with zero warnings:
+- [x] Fresh-clone CMake configure works without `JUCE_PATH` set (verified: forced `JUCE_PATH=/nonexistent`, FetchContent path resolved JUCE 8.0.4 cleanly, configure done in 25.8s)
+- [x] Mac universal Release build succeeds — VST3 + AU + Standalone produced as `Mach-O universal x86_64 + arm64`:
   ```bash
   cd NewProject
-  cmake -B build -G Xcode \
+  cmake -B build-release -G Xcode \
     -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
-  cmake --build build --config Release
+  cmake --build build-release --config Release
   ```
-- [ ] Version string set consistently in both `project(... VERSION x.y.z)` and `juce_add_plugin(... VERSION x.y.z)` in `NewProject/CMakeLists.txt`
-- [ ] About dialog version string matches the version above
-- [ ] `.gitignore` updated per spec.md §9 (`Releases/`, `NewProject/build/`, `NewProject/Builds/`)
-- [ ] Stale paths archived/deleted: `NewProject/Builds/`, `design-spec.md`, `RRLite_spec_v2_OLD.md` (CMake is authoritative; Projucer output is sync-only)
-- [ ] `Releases/macOS/` and `Releases/Installers/` folder structure created and gitignored
+- [ ] **Build compiles with zero warnings** — DEFERRED. Current build emits 186 warnings in `Source/` (56 implicit-int-float, 26 unused-private-field [mostly Pro-reserved per `update-premium-spec.md` §2 — fix with `[[maybe_unused]]`, NOT deletion], 26 unused-parameter, 24 sign-conversion, 16 float-conversion, 14 sign-compare, 10 shadow-field-in-constructor, 4 unused-variable, 4 misc). None affect correctness. Address in a focused cleanup pass before tagging `v1.0.0`. See §11 below.
+- [x] Version string set consistently — `project(RobinControlLite VERSION 1.0.0)` and `juce_add_plugin(... VERSION 1.0.0 ...)` both in `NewProject/CMakeLists.txt`
+- [x] About dialog version stamp — bottom-right corner of `AboutWindow` renders `juce::String("v") + JucePlugin_VersionString`, dim text, doesn't perturb measured layout
+- [x] `CMAKE_OSX_DEPLOYMENT_TARGET` default dropped from `13.0` to `11.0` (per spec.md §3.7) so the floor is correct without needing the flag on the command line every time
+- [x] `.gitignore` updated — replaced blanket `[Rr]eleases/` (Visual Studio template) with the specific spec.md §9 patterns; added `NewProject/Builds/`
+- [x] Stale paths removed — `NewProject/Builds/MacOSX/` (32K) + `NewProject/Builds/VisualStudio2026/` (888K). `design-spec.md` / `RRLite_spec_v2_OLD.md` already gone in a prior session.
+- [x] `Releases/macOS/`, `Releases/Windows/`, `Releases/Installers/` folder structure tracked via `.gitkeep`
 
 ---
 
@@ -153,3 +155,20 @@ Don't run these yet — staged so the moment certs land you can ship.
 - Beta program, KVR listing, press kit, README/CHANGELOG, demo content — non-technical
 - AAX work — deferred to v1.1 per spec.md §1.3
 - CI workflow (`.github/workflows/build.yml`) — needs Windows runner too, defer until both platforms ready
+
+---
+
+## 11. Deferred to a focused pass before v1.0 tag
+
+### Compiler warning cleanup (186 in `Source/`)
+
+Build succeeds but emits warnings the v1.0 tag should not ship with. Bucket strategy when you tackle:
+
+- **Pro-reserved fields** (`unused-private-field` on envelope/EQ/transient/paired-key members in `RRvoice.h`, `unused-variable` in `TransientShaper.cpp`, etc.) — annotate `[[maybe_unused]]`, **do not delete** (per `update-premium-spec.md` §2: Pro keeps these active).
+- **`unused-parameter` in JUCE override signatures** (e.g., `RRVoice::stopNote`, `RRSound::appliesToChannel`) — drop the parameter name in the function signature to silence cleanly. `void stopNote(float, bool)` is valid for the override.
+- **`shadow-field-in-constructor` in `SampleLoader.cpp`** (5 occurrences) — rename ctor params with leading `in_` or trailing `_` to break the shadow.
+- **`implicit-int-float-conversion`, `sign-conversion`, `sign-compare`, `float-conversion`** (~110 total) — explicit casts (`static_cast<float>(x)`, `static_cast<int>(x)`). **Be careful in `RRvoice.cpp` audio thread paths** — verify no semantic change (e.g., truncation vs rounding).
+- **`shadow-uncaptured-local`, `misleading-indentation`** (4 total) — local fixes, low risk.
+- **`deprecated-declarations` (6)** — investigate; likely transitive through JUCE includes (`<codecvt>`/`wstring_convert`). If genuinely Apple SDK noise we can't fix, suppress with `target_compile_options(... PRIVATE -Wno-deprecated-declarations)` scoped to JUCE includes only, not our code.
+
+Estimate: 1–2 hours of mechanical edits. Re-run the universal Release build after — gate is zero warnings in `robin-control-redesign/NewProject/Source/`.

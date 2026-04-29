@@ -1,6 +1,0 @@
-#!/bin/sh
-set -e
-if test "$CONFIGURATION" = "Debug"; then :
-  cd /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-fetchtest/_deps/juce-subbuild
-fi
-
