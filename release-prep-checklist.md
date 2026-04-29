@@ -31,10 +31,10 @@ Cross-references to `spec.md` are inline where the section spells out detail.
 
 Run on the unsigned Release build — signing doesn't change validation behavior.
 
-- [ ] `pluginval --strictness-level 10 --validate-in-process --timeout-ms 600000` passes on VST3
-- [ ] `pluginval --strictness-level 10 --validate-in-process --timeout-ms 600000` passes on AU
-- [ ] `auval -v aumu rcll Cdsp` passes with zero warnings
-- [ ] Every failure resolved — these are state-recall and threading bug magnets, do not paper over
+- [x] `pluginval --strictness-level 10 --validate-in-process --timeout-ms 600000` passes on VST3 — SUCCESS, 16s, no failures or warnings
+- [x] `pluginval --strictness-level 10 --validate-in-process --timeout-ms 600000` passes on AU — SUCCESS, 17s, no failures; one informational note: `!!! WARNING: Current program is -1... Is this correct?` (pluginval flagging that `getCurrentProgram()` returns -1; non-fatal, didn't fail the run, but worth fixing — see §11)
+- [x] `auval -v aumu rcll Cdsp` — `AU VALIDATION SUCCEEDED.`, all render tests pass at 22.05k / 44.1k / 48k / 96k / 192k, MIDI + parameter tests clean
+- [x] DBG audit precheck — `DBG()` strings confirmed stripped from Release binary (JUCE wraps `DBG` in `#if JUCE_DEBUG`, NDEBUG is defined in Release)
 
 ---
 
@@ -122,16 +122,16 @@ Per §7.9:
 
 ## 9. Installer scaffolding (unsigned)
 
-The `--sign` flags become one-liners once the Developer ID Installer cert arrives. Build and verify the rest now.
+The `--sign` flag is parameterized via `INSTALLER_SIGN` env var — one-liner once the Developer ID Installer cert arrives.
 
-- [ ] Write `pkgbuild` script for each component (VST3, AU, Standalone) with correct install destinations:
-  - VST3 → `/Library/Audio/Plug-Ins/VST3/`
-  - AU → `/Library/Audio/Plug-Ins/Components/`
-  - Standalone → `/Applications/`
-- [ ] Write `productbuild` script combining the component pkgs into one distribution `.pkg`
-- [ ] Build the unsigned `.pkg`, run on a fresh user account or VM if available — confirm files land at the right paths
-- [ ] Write Mac uninstaller shell script (removes all installed files cleanly)
-- [ ] Verify uninstaller against an installed copy, then re-install — round-trip clean
+- [x] `installer/build-installer.sh` — driver: parses `VERSION` from `NewProject/CMakeLists.txt`, builds three component pkgs via `pkgbuild`, runs `productbuild` to produce the distribution `.pkg`, sets sign flag from `INSTALLER_SIGN` env var
+- [x] `installer/distribution.xml` — productbuild distribution definition, `customize="allow"`, `hostArchitectures="x86_64,arm64"`, OS floor 11.0, license shown at install (`EULA.md` copied to `license.txt` at build time), `@VERSION@` placeholder substituted by the build script
+- [x] `installer/uninstall.sh` — user-facing uninstaller: removes installed bundles from `/Library/Audio/Plug-Ins/{VST3,Components}/` and `/Applications/`, also clears any `~/Library/...` dev copies, runs `pkgutil --forget` on all three component IDs
+- [x] Unsigned end-to-end build verified — `Releases/Installers/Robin Control Lite 1.0.0.pkg` (14MB) produced, structure inspected via `pkgutil --expand` and `pkgutil --bom`. Install-locations confirmed:
+  - VST3 → `/Library/Audio/Plug-Ins/VST3`
+  - AU → `/Library/Audio/Plug-Ins/Components`
+  - Standalone → `/Applications`
+- [ ] **Live install test** (deferred — needs sudo): on a clean user account or VM, run `sudo installer -pkg "Releases/Installers/Robin Control Lite 1.0.0.pkg" -target /`, then verify all three bundles arrived. Then run `installer/uninstall.sh` and confirm clean removal.
 
 ---
 
@@ -172,3 +172,9 @@ Build succeeds but emits warnings the v1.0 tag should not ship with. Bucket stra
 - **`deprecated-declarations` (6)** — investigate; likely transitive through JUCE includes (`<codecvt>`/`wstring_convert`). If genuinely Apple SDK noise we can't fix, suppress with `target_compile_options(... PRIVATE -Wno-deprecated-declarations)` scoped to JUCE includes only, not our code.
 
 Estimate: 1–2 hours of mechanical edits. Re-run the universal Release build after — gate is zero warnings in `robin-control-redesign/NewProject/Source/`.
+
+### AU "Current program is -1" (pluginval informational note) — accepted for v1.0
+
+pluginval AU prints `!!! WARNING: Current program is -1... Is this correct?` after `Changing program` in the program-list test. Non-fatal — pluginval still reports SUCCESS at strictness 10.
+
+Investigated 2026-04-29: `getNumPrograms()` already returns 1, `getCurrentProgram()` already returns 0. Updated `getProgramName(0)` to return `"Default"` instead of empty (small improvement, kept). The persistent `-1` is JUCE's AU wrapper reporting `AUPreset.presetNumber = -1` because we don't register AU **factory presets** through the JUCE preset hook. Fixing properly requires implementing factory presets (multi-step: subclass overrides + `AudioProcessor::isMetaParameter` configuration + AU-specific preset list) — beyond v1.0 scope. **Accept for v1.0**, revisit when factory presets are implemented (likely a Pro feature).

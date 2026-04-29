@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  productbuild distribution definition for Robin Control Lite.
+  build-installer.sh substitutes @VERSION@ at build time.
+  Single source of truth for version: NewProject/CMakeLists.txt.
+-->
+<installer-gui-script minSpecVersion="2">
+    <title>Robin Control Lite</title>
+    <organization>dsp.conduit</organization>
+    <license file="license.txt" />
+
+    <options customize="allow" require-scripts="false" hostArchitectures="x86_64,arm64" />
+
+    <volume-check>
+        <allowed-os-versions>
+            <os-version min="11.0" />
+        </allowed-os-versions>
+    </volume-check>
+
+    <choices-outline>
+        <line choice="vst3" />
+        <line choice="au" />
+        <line choice="standalone" />
+    </choices-outline>
+
+    <choice id="vst3" title="VST3"
+            description="Universal VST3 plugin for compatible DAWs (Ableton Live, Reaper, Cubase, Studio One, Bitwig, FL Studio). Installs to /Library/Audio/Plug-Ins/VST3.">
+        <pkg-ref id="dsp.conduit.RobinControlLite.vst3" />
+    </choice>
+
+    <choice id="au" title="Audio Unit (AU)"
+            description="Audio Unit for macOS hosts (Logic Pro, GarageBand, MainStage). Installs to /Library/Audio/Plug-Ins/Components.">
+        <pkg-ref id="dsp.conduit.RobinControlLite.au" />
+    </choice>
+
+    <choice id="standalone" title="Standalone Application"
+            description="Standalone application for testing or use without a DAW. Installs to /Applications.">
+        <pkg-ref id="dsp.conduit.RobinControlLite.standalone" />
+    </choice>
+
+    <pkg-ref id="dsp.conduit.RobinControlLite.vst3"       version="@VERSION@" auth="Root">RobinControlLite-VST3.pkg</pkg-ref>
+    <pkg-ref id="dsp.conduit.RobinControlLite.au"         version="@VERSION@" auth="Root">RobinControlLite-AU.pkg</pkg-ref>
+    <pkg-ref id="dsp.conduit.RobinControlLite.standalone" version="@VERSION@" auth="Root">RobinControlLite-Standalone.pkg</pkg-ref>
+</installer-gui-script>

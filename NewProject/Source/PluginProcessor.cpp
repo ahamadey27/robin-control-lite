@@ -138,7 +138,8 @@ void NewProjectAudioProcessor::setCurrentProgram(int index)
 
 const juce::String NewProjectAudioProcessor::getProgramName(int index)
 {
-    return {};
+    juce::ignoreUnused(index);
+    return "Default";
 }
 
 void NewProjectAudioProcessor::changeProgramName(int index, const juce::String& newName)
