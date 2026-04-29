@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+if test "$CONFIGURATION" = "Debug"; then :
+  cd /Users/alex/Documents/Github/robin-control-redesign/NewProject
+  /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/JUCE/tools/extras/Build/juceaide/juceaide_artefacts/Custom/juceaide binarydata BinaryData BinaryData.h /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/juce_binarydata_RobinControlLite_BinaryData/JuceLibraryCode /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/juce_binarydata_RobinControlLite_BinaryData/JuceLibraryCode/input_file_list
+fi
+if test "$CONFIGURATION" = "Release"; then :
+  cd /Users/alex/Documents/Github/robin-control-redesign/NewProject
+  /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/JUCE/tools/extras/Build/juceaide/juceaide_artefacts/Custom/juceaide binarydata BinaryData BinaryData.h /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/juce_binarydata_RobinControlLite_BinaryData/JuceLibraryCode /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/juce_binarydata_RobinControlLite_BinaryData/JuceLibraryCode/input_file_list
+fi
+if test "$CONFIGURATION" = "MinSizeRel"; then :
+  cd /Users/alex/Documents/Github/robin-control-redesign/NewProject
+  /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/JUCE/tools/extras/Build/juceaide/juceaide_artefacts/Custom/juceaide binarydata BinaryData BinaryData.h /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/juce_binarydata_RobinControlLite_BinaryData/JuceLibraryCode /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/juce_binarydata_RobinControlLite_BinaryData/JuceLibraryCode/input_file_list
+fi
+if test "$CONFIGURATION" = "RelWithDebInfo"; then :
+  cd /Users/alex/Documents/Github/robin-control-redesign/NewProject
+  /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/JUCE/tools/extras/Build/juceaide/juceaide_artefacts/Custom/juceaide binarydata BinaryData BinaryData.h /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/juce_binarydata_RobinControlLite_BinaryData/JuceLibraryCode /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/juce_binarydata_RobinControlLite_BinaryData/JuceLibraryCode/input_file_list
+fi
+

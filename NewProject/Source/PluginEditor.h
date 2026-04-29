@@ -130,6 +130,14 @@ private:
             g.setFont(juce::Font(juce::FontOptions(13.f)));
             g.drawFittedText(bodyText, 20, marginTop + titleH + gap, getWidth() - 40, bodyHeight,
                 juce::Justification::centredTop, 16);
+
+            // Version stamp, bottom-right corner — dim, doesn't perturb measured layout.
+            // JucePlugin_VersionString is a const char* emitted by juce_add_plugin(VERSION ...).
+            g.setFont(juce::Font(juce::FontOptions(9.f)));
+            g.setColour(juce::Colour(0xff7a7468));
+            g.drawText(juce::String("v") + JucePlugin_VersionString,
+                       getWidth() - 50, getHeight() - 14, 40, 10,
+                       juce::Justification::right);
         }
 
         void resized() override

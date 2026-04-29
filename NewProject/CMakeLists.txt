@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS version")
+set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
 project(RobinControlLite VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -31,6 +31,7 @@ endif()
 # Plugin target
 # ============================================================
 juce_add_plugin(RobinControlLite
+    VERSION                         1.0.0
     COMPANY_NAME                    "conduit.dsp"
     BUNDLE_ID                       "dsp.conduit.RobinControlLite"
     PLUGIN_CODE                     "rcll"

@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+if test "$CONFIGURATION" = "Debug"; then :
+  cd /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release
+  /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/JUCE/tools/extras/Build/juceaide/juceaide_artefacts/Custom/juceaide pkginfo VST3 /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/RobinControlLite_artefacts/JuceLibraryCode/RobinControlLite_VST3/PkgInfo
+fi
+if test "$CONFIGURATION" = "Release"; then :
+  cd /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release
+  /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/JUCE/tools/extras/Build/juceaide/juceaide_artefacts/Custom/juceaide pkginfo VST3 /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/RobinControlLite_artefacts/JuceLibraryCode/RobinControlLite_VST3/PkgInfo
+fi
+if test "$CONFIGURATION" = "MinSizeRel"; then :
+  cd /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release
+  /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/JUCE/tools/extras/Build/juceaide/juceaide_artefacts/Custom/juceaide pkginfo VST3 /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/RobinControlLite_artefacts/JuceLibraryCode/RobinControlLite_VST3/PkgInfo
+fi
+if test "$CONFIGURATION" = "RelWithDebInfo"; then :
+  cd /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release
+  /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/JUCE/tools/extras/Build/juceaide/juceaide_artefacts/Custom/juceaide pkginfo VST3 /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/RobinControlLite_artefacts/JuceLibraryCode/RobinControlLite_VST3/PkgInfo
+fi
+

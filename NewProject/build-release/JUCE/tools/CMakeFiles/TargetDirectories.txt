@@ -1,0 +1,7 @@
+/Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/JUCE/tools/CMakeFiles/install.dir
+/Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/JUCE/tools/CMakeFiles/ALL_BUILD.dir
+/Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/JUCE/tools/CMakeFiles/ZERO_CHECK.dir
+/Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/JUCE/tools/modules/CMakeFiles/install.dir
+/Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/JUCE/tools/extras/Build/CMakeFiles/install.dir
+/Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/JUCE/tools/extras/Build/juceaide/CMakeFiles/juceaide.dir
+/Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/JUCE/tools/extras/Build/juceaide/CMakeFiles/install.dir
