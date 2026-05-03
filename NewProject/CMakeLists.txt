@@ -28,6 +28,23 @@ else()
 endif()
 
 # ============================================================
+# AAX SDK — opt in by setting JUCE_AAX_SDK_PATH (defaults to ~/SDKs/aax-sdk-2-9-0).
+# Builds fall back to VST3/AU only when the SDK isn't present, so fresh clones
+# and Windows boxes without the SDK still configure cleanly.
+# Override per invocation: cmake -DJUCE_AAX_SDK_PATH=/path/to/aax-sdk -B build
+# ============================================================
+set(JUCE_AAX_SDK_PATH "$ENV{HOME}/SDKs/aax-sdk-2-9-0" CACHE PATH "Path to AAX SDK root")
+
+if(EXISTS "${JUCE_AAX_SDK_PATH}/Interfaces/AAX.h")
+    message(STATUS "AAX SDK found at ${JUCE_AAX_SDK_PATH} — enabling AAX format")
+    juce_set_aax_sdk_path("${JUCE_AAX_SDK_PATH}")
+    set(PLUGIN_FORMATS VST3 AU AAX)
+else()
+    message(STATUS "AAX SDK not found at ${JUCE_AAX_SDK_PATH} — building VST3/AU only")
+    set(PLUGIN_FORMATS VST3 AU)
+endif()
+
+# ============================================================
 # Plugin target
 # ============================================================
 juce_add_plugin(RobinControlLite
@@ -47,25 +64,11 @@ juce_add_plugin(RobinControlLite
     VST3_COPY_DIR                   "$ENV{HOME}/Library/Audio/Plug-Ins/VST3"
     AU_COPY_DIR                     "$ENV{HOME}/Library/Audio/Plug-Ins/Components"
 
-    FORMATS                         VST3 AU Standalone
+    FORMATS                         ${PLUGIN_FORMATS}
 )
 
 # Generate JuceHeader.h (required because source files use #include <JuceHeader.h>)
 juce_generate_juce_header(RobinControlLite)
-
-# ============================================================
-# Copy the Standalone .app to /Applications after every build
-# (JUCE has VST3_COPY_DIR / AU_COPY_DIR but no equivalent for Standalone)
-# ============================================================
-if(APPLE)
-    add_custom_command(TARGET RobinControlLite_Standalone POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E rm -rf "/Applications/Robin Control Lite.app"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "$<TARGET_BUNDLE_DIR:RobinControlLite_Standalone>"
-            "/Applications/Robin Control Lite.app"
-        COMMENT "Copying Standalone to /Applications"
-    )
-endif()
 
 # ============================================================
 # Binary resources (logos, images)

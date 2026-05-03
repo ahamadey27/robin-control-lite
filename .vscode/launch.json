@@ -1,16 +1,16 @@
 {
+    // Standalone was removed from the v1.0 build (see release-spec.md §2.1).
+    // For live plugin debugging, build the plugin (cmake --build build), open
+    // the AU/VST3 in any DAW (Logic, Live, Reaper, AudioPluginHost...), then
+    // run this config and pick the host's process from the picker.
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Robin Control Lite Standalone",
+            "name": "Attach lldb to host (DAW or AudioPluginHost)",
             "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/NewProject/build/RobinControlLite_artefacts/Debug/Standalone/Robin Control Lite.app/Contents/MacOS/Robin Control Lite",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
+            "request": "attach",
+            "program": "/usr/bin/true",
+            "processId": "${command:pickProcess}",
             "MIMode": "lldb",
             "preLaunchTask": "cmake build"
         }

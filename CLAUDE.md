@@ -34,9 +34,12 @@ JUCE resolution: defaults to `~/Documents/JUCE` if present, else `FetchContent` 
 Outputs copy automatically after every build:
 - VST3 → `~/Library/Audio/Plug-Ins/VST3/Robin Control Lite.vst3`
 - AU → `~/Library/Audio/Plug-Ins/Components/Robin Control Lite.component`
-- Standalone → `/Applications/Robin Control Lite.app` (post-build hook in CMakeLists; JUCE has no `STANDALONE_COPY_DIR` so we wired one manually)
 
-The build is configured `CMAKE_BUILD_TYPE=Debug` (single-config Unix Makefiles). JUCE writes per-format artefacts under `build/RobinControlLite_artefacts/Debug/<Format>/`. **`.vscode/launch.json` must include the `Debug/` segment in its `program` path** — if it points at `RobinControlLite_artefacts/Standalone/...` (no Debug), VSCode will silently launch a stale binary from a previous build configuration. See `memory/project_vscode_launch_path.md` for the full incident.
+AAX is built when the SDK is found at `~/SDKs/aax-sdk-2-9-0` (override with `cmake -DJUCE_AAX_SDK_PATH=...`). AAX has no auto-copy — the eval `.aaxplugin` lives in `build/RobinControlLite_artefacts/<Config>/AAX/` and you copy it manually to `/Library/Application Support/Avid/Audio/Plug-Ins/` for Pro Tools Developer testing.
+
+Standalone was dropped from v1.0 ship (see `release-spec.md` §2.1). For local plugin debugging, `.vscode/launch.json` now uses **attach-to-process** — build the plugin, open the AU/VST3 in any DAW, then run the launch config and pick the host's process from the picker.
+
+The build is configured `CMAKE_BUILD_TYPE=Debug` (single-config Unix Makefiles). JUCE writes per-format artefacts under `build/RobinControlLite_artefacts/Debug/<Format>/`.
 
 Xcode project lands at `NewProject/build/RobinControlLite.xcodeproj`.
 

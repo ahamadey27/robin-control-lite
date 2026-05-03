@@ -42,18 +42,18 @@ Run on the unsigned Release build — signing doesn't change validation behavior
 
 Run §7.4 + §7.5 + §7.6 in `spec.md` for each host. ~5–7 min/host once warmed up.
 
-- [ ] Logic Pro (AU)
-- [ ] Ableton Live 12 (VST3 + AU)
+- [x] Logic Pro (AU)
+- [x] Ableton Live 12 (VST3 + AU)
 - [ ] Reaper 7 (VST3 + AU)
 - [ ] JUCE AudioPluginHost (VST3 + AU — neutral reference, isolates host bugs from plugin bugs)
 
 Highest-value items inside those sections:
 
-- [ ] Plugin name shows as "Robin Control Lite"; manufacturer reads "conduit.dsp"
-- [ ] Save host project → close host → reopen → every loaded sample, every knob, every neg/pos randomization range restored exactly
-- [ ] VST3 ↔ AU parity: load identical samples + params in both formats, render same MIDI clip → bit-identical (or sub-LSB) output
-- [ ] Plugin's own preset save → reload — exact state restored
-- [ ] Offline bounce vs realtime — match (catches block-size-dependent state bugs)
+- [x] Plugin name shows as "Robin Control Lite"; manufacturer reads "conduit.dsp"
+- [x] Save host project → close host → reopen → every loaded sample, every knob, every neg/pos randomization range restored exactly
+- [x] VST3 ↔ AU parity: load identical samples + params in both formats, render same MIDI clip → bit-identical (or sub-LSB) output
+- [x] Plugin's own preset save → reload — exact state restored
+- [x] Offline bounce vs realtime — match (catches block-size-dependent state bugs)
 
 ---
 
@@ -61,11 +61,11 @@ Highest-value items inside those sections:
 
 Per §7.5:
 
-- [ ] Volume automation: write → playback recreates moves exactly
-- [ ] Randomization neg/pos thumbs automate **independently** (they're hidden APVTS sliders driven by `DualThumbRndSlider` — both sides need their own automation lane)
-- [ ] Sample Start / Sample End percentage automation
-- [ ] Save → reopen — automation lanes intact, playback identical
-- [ ] Bypass toggle mid-playback — no glitch, no state reset on resume
+- [x] Volume automation: write → playback recreates moves exactly
+- [x] Randomization neg/pos thumbs automate **independently** (they're hidden APVTS sliders driven by `DualThumbRndSlider` — both sides need their own automation lane)
+- [x] Sample Start / Sample End percentage automation
+- [x] Save → reopen — automation lanes intact, playback identical
+- [x] Bypass toggle mid-playback — no glitch, no state reset on resume
 
 ---
 
@@ -73,18 +73,18 @@ Per §7.5:
 
 Per §7.7:
 
-- [ ] Trigger spam (30+ in 5s) — no crash, no stuck voice
+- [x] Trigger spam (30+ in 5s) — no crash, no stuck voice
 - [ ] Hold chord → press Panic → next note plays cleanly
 - [ ] Load/unload samples 50× consecutively — Instruments → Allocations shows no leak
 - [ ] Drag 200MB sample — graceful load (the off-lock decode path in `SampleLoader` should keep `processBlock` from stalling)
-- [ ] Drag non-audio file — graceful rejection
-- [ ] Load 24-bit / 32-bit float / 96k / 192k source samples — correct resampling
-- [ ] Load `.mp3` — decodes, plays, resamples (validates `JUCE_USE_MP3AUDIOFORMAT=1` gate)
-- [ ] All 20 slots filled; switch Series ↔ Random mid-playback — no dropout
-- [ ] Multi-instance: 8 tracks × 8 instances, all playing — independent state, no crosstalk
-- [ ] Editor open during host's offline render — no UI/audio thread deadlock
-- [ ] **Mixed-duration pool**: 1 multi-minute MP3 + 5 short WAVs, Random Algorithm tick 15+ (`sampleStartRndPos > 0`) — every sample audible (validates §3c fix from commit `79fb930`)
-- [ ] **Drag-reorder slot during heavy trigger spam** — no crash, no UI/audio desync (validates `getCallbackLock()` contract from commit `17637da`)
+- [x] Drag non-audio file — graceful rejection
+- [x] Load 24-bit / 32-bit float / 96k / 192k source samples — correct resampling
+- [x] Load `.mp3` — decodes, plays, resamples (validates `JUCE_USE_MP3AUDIOFORMAT=1` gate)
+- [x] All 20 slots filled; switch Series ↔ Random mid-playback — no dropout
+- [x] Multi-instance: 8 tracks × 8 instances, all playing — independent state, no crosstalk
+- [x] Editor open during host's offline render — no UI/audio thread deadlock
+- [x] **Mixed-duration pool**: 1 multi-minute MP3 + 5 short WAVs, Random Algorithm tick 15+ (`sampleStartRndPos > 0`) — every sample audible (validates §3c fix from commit `79fb930`)
+- [x] **Drag-reorder slot during heavy trigger spam** — no crash, no UI/audio desync (validates `getCallbackLock()` contract from commit `17637da`)
 
 ---
 
@@ -92,13 +92,13 @@ Per §7.7:
 
 Per §7.8:
 
-- [ ] Buffer size sweep: 32 / 64 / 128 / 256 / 512 / 1024 — no glitches at any size
-- [ ] Sample rate sweep: 44.1 / 48 / 88.2 / 96 / 192 kHz — no glitches, correct pitch, **no tail truncation** (validates `prepareToPlay → rebuildLoadedIndices()` fix from commit `a62b262`)
-- [ ] CPU < 0.5% at 64 samples / 48k / 1 voice on M1
-- [ ] CPU < 5% at 8 instances all playing
-- [ ] RAM < 80MB per instance (10 samples × 2MB each)
-- [ ] 30-min continuous playback — RAM stable, CPU stable, no thermal runaway
-- [ ] Idle CPU compare: knob-static vs knob-wiggling — confirms `ToneControl` coefficient cache is short-circuiting (the largest single CPU win when idle)
+- [x] Buffer size sweep: 32 / 64 / 128 / 256 / 512 / 1024 — no glitches at any size
+- [x] Sample rate sweep: 44.1 / 48 / 88.2 / 96 / 192 kHz — no glitches, correct pitch, **no tail truncation** (validates `prepareToPlay → rebuildLoadedIndices()` fix from commit `a62b262`)
+- [x] CPU < 0.5% at 64 samples / 48k / 1 voice on M1
+- [x] CPU < 5% at 8 instances all playing
+- [x] RAM < 80MB per instance (10 samples × 2MB each)
+- [x] 30-min continuous playback — RAM stable, CPU stable, no thermal runaway
+- [x] Idle CPU compare: knob-static vs knob-wiggling — confirms `ToneControl` coefficient cache is short-circuiting (the largest single CPU win when idle)
 
 ---
 

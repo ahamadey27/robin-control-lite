@@ -73,7 +73,7 @@ Optional but useful: **AAX Plugin Test Plan (January 2024)** (664 KB) — Avid's
 #### 1.3.3 v1.1 AAX onboarding order of operations
 - [x] Avid Developer account created and AAX evaluation toolkit claimed (2026-04-26)
 - [ ] Download the §1.3.2 set; unpack AAX SDK to a stable path (e.g. `~/SDKs/AAX_SDK_2.9.0/`)
-- [c] Install Pro Tools Dev (long install)
+- [x] Install Pro Tools Dev (long install)
 - [ ] Install AAX Developer Tools (gives DigiShell, validator, signing utilities)
 - [ ] Wire `JUCE_AAX_SDK_PATH` into `NewProject/CMakeLists.txt`; add `AAX` to `juce_add_plugin(... FORMATS ...)`
 - [ ] Build → load the produced `.aaxplugin` in Pro Tools Dev → smoke test
