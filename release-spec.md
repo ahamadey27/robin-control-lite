@@ -95,38 +95,38 @@ One-time account/keychain operations. Don't repeat per release.
 ### 3.1 Generate Developer ID Application certificate
 Signs the `.vst3` / `.component` bundles.
 
-- [ ] 🔴 **YOU:** Open **Xcode** → **Settings** (⌘,) → **Accounts**
-- [ ] 🔴 **YOU:** Confirm `hamadey@gmail.com` is signed in; CONDUIT DSP LLC team appears
-- [ ] 🔴 **YOU:** Select team → **Manage Certificates…** → **+** → **Developer ID Application**
-- [ ] Verify the cert landed in your keychain:
+- [x] 🔴 **YOU:** Open **Xcode** → **Settings** (⌘,) → **Accounts**
+- [x] 🔴 **YOU:** Confirm `hamadey@gmail.com` is signed in; CONDUIT DSP LLC team appears
+- [x] 🔴 **YOU:** Select team → **Manage Certificates…** → **+** → **Developer ID Application**
+- [x] Verify the cert landed in your keychain:
   ```bash
   security find-identity -v -p codesigning
   ```
   Expect a line like `1) <hash> "Developer ID Application: Conduit DSP LLC (QS378YGT2W)"`
-- [ ] 🔴 **YOU:** Copy the **exact** common-name string somewhere you'll remember — every later `codesign` invocation pastes it
+- [x] 🔴 **YOU:** Copy the **exact** common-name string somewhere you'll remember — every later `codesign` invocation pastes it
 
 ### 3.2 Generate Developer ID Installer certificate
 Signs the `.pkg`.
 
-- [ ] 🔴 **YOU:** Same Xcode → Accounts → Manage Certificates pane → **+** → **Developer ID Installer**
-- [ ] Verify:
+- [x] 🔴 **YOU:** Same Xcode → Accounts → Manage Certificates pane → **+** → **Developer ID Installer**
+- [x] Verify:
   ```bash
   security find-identity -v
   ```
   Expect `"Developer ID Installer: Conduit DSP LLC (QS378YGT2W)"`
 
 ### 3.3 Create app-specific password for notarytool
-- [ ] 🔴 **YOU:** Open https://appleid.apple.com → sign in as `hamadey@gmail.com`
-- [ ] 🔴 **YOU:** Sidebar → **Sign-In and Security** → **App-Specific Passwords** → **+** → label `notarytool-robin-control-lite` → **Create**
-- [ ] 🔴 **YOU:** Copy the one-time password (looks like `abcd-efgh-ijkl-mnop`) — it won't be shown again
-- [ ] 🔴 **YOU:** Hand the password to Claude (or run yourself) so it can be stored in keychain:
+- [x] 🔴 **YOU:** Open https://appleid.apple.com → sign in as `hamadey@gmail.com`
+- [x] 🔴 **YOU:** Sidebar → **Sign-In and Security** → **App-Specific Passwords** → **+** → label `notarytool-robin-control-lite` → **Create** (jcxr-mepf-cxfn-ywhk)
+- [x] 🔴 **YOU:** Copy the one-time password (looks like `abcd-efgh-ijkl-mnop`) — it won't be shown again
+- [x] 🔴 **YOU:** Hand the password to Claude (or run yourself) so it can be stored in keychain:
   ```bash
   xcrun notarytool store-credentials AC_PASSWORD \
     --apple-id "hamadey@gmail.com" \
     --team-id "QS378YGT2W" \
     --password "abcd-efgh-ijkl-mnop"
   ```
-- [ ] Verify credentials work:
+- [x] Verify credentials work:
   ```bash
   xcrun notarytool history --keychain-profile AC_PASSWORD
   ```
@@ -157,12 +157,33 @@ Signs the `.pkg`.
   Eval-signed only — loads in Pro Tools Developer, rejected by retail Pro Tools until PACE wraps it (§7).
 
 ### 4.3 Validate the .aaxplugin
-- [ ] Run the AAX validator:
+
+**Prereqs (gotchas hit on 2026-05-05):**
+1. Clear macOS quarantine on the SDK before first launch — Gatekeeper will kill `dsh` silently otherwise (exit 137) and may also remove the convenience link at `CommandLineTools/dsh`:
+   ```bash
+   xattr -dr com.apple.quarantine ~/SDKs/aax-validator-dsh-2024-6-0
+   ```
+   Two `No such file` errors about `Frameworks/.../DynamicXPC.framework/Modules` are expected (broken symlinks in framework layout) and harmless.
+2. **§4.5 must be done first.** `load_dish aaxval` silently fails (returns `loaded_dishes_count: 0`) until iLok License Manager is installed — the dish needs the PACE runtime that ships with iLok LM, even just to enumerate tests.
+3. The `-e validator-batch=...` flag the original spec showed does **not** parse on dsh 24.9.0x14 ("command line parsing failed"). Drive the dish via stdin-piped commands instead.
+
+- [x] Bundle structure pre-check (no PACE needed) — universal x86_64+arm64, Bundle ID `dsp.conduit.RobinControlLite`, version 1.0.0, adhoc-signed — **done 2026-05-05**
+- [x] **AAX validator first run** — done 2026-05-05 after iLok LM install. Result: **12 PASS / 1 FAIL / 1 E_LOST** on 14 tests.
+
   ```bash
-  ~/SDKs/aax-validator-dsh-2024-6-0/CommandLineTools/dsh \
-    -e validator-batch="/Users/alex/Documents/Github/robin-control-redesign/NewProject/build/RobinControlLite_artefacts/Release/AAX/Robin Control Lite.aaxplugin"
+  AAX_BUNDLE="/Users/alex/Documents/Github/robin-control-redesign/NewProject/build/RobinControlLite_artefacts/Release/AAX/Robin Control Lite.aaxplugin"
+
+  printf 'load_dish aaxval\nruntests "%s"\nexit\n' "$AAX_BUNDLE" \
+    | ~/SDKs/aax-validator-dsh-2024-6-0/CommandLineTools/dsh
   ```
-  Pass = clean exit. Fix any conformance errors before submitting to Avid.
+
+  **Findings:**
+  - **`test.page_table.load`: E_COMPLETED_FAIL** — "ERROR: Failed to load page tables library". The .aaxplugin doesn't ship an AAX page tables XML. Page tables map params to Avid control-surface pages (S1/S3/S6); without them, surfaces fall back to generic parameter banking. Nothing user-facing breaks. **Decision: ship as-is, disclose in §4.6 Avid email, defer to v1.0.x or v1.1.**
+  - **`test.cycle_counts`: E_LOST** — known issue AAXTOOL-771 (the ~1hr test times out / loses connection). Targets HDX/TDM DSP cycle accounting; meaningless for Native plug-ins. **Effectively N/A.**
+  - **`test.describe_validation`: PASS w/ 8× warning** — "Algorithm context contains gaps between registered fields. This may be a problem on older hosts." (`-14001`). JUCE/AAX glue artifact; test still passes. Acceptable.
+  - All other 12 tests PASS, including 1000-cycle load/unload, full linear parameter traversal across 32 params, and data model.
+
+  **No further action before submitting to Avid** unless Avid responds asking for page tables — at which point we generate `AAX_PageTable.xml` and ship in v1.0.1.
 
 ### 4.4 Smoke test in Pro Tools Developer
 - [ ] 🔴 **YOU:** Copy the eval `.aaxplugin` to `/Library/Application Support/Avid/Audio/Plug-Ins/`
@@ -198,11 +219,16 @@ Signs the `.pkg`.
     iLok account: alex.hamadey
     Distribution model: free download from conduitdsp.com (no charge)
 
-    The plugin has been built against AAX SDK 2.9.0, validated with the DigiShell AAX
-    Validator (clean), and tested in Pro Tools Developer. I'd like to take it through
-    PACE wrapping for retail Pro Tools distribution.
+    The plugin has been built against AAX SDK 2.9.0 and validated with the DigiShell
+    AAX Validator (2024.6.0). 12 of 14 tests PASS; one E_LOST (test.cycle_counts —
+    known issue AAXTOOL-771, not applicable to Native plug-ins); one E_COMPLETED_FAIL
+    on test.page_table.load because the bundle does not yet ship an AAX page tables
+    XML (control-surface integration is not a current goal — happy to add page tables
+    in a follow-up if commercial signing requires it). Pro Tools Developer smoke test
+    is pending. I'd like to take it through PACE wrapping for retail Pro Tools
+    distribution.
 
-    Please advise on next steps.
+    Please advise on next steps and whether the missing page tables are a blocker.
 
     Thanks,
     Alex Hamadey

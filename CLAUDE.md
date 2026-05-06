@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 As of 2026-04-25 this folder is the **authoritative project**. It was originally a UI-redesign sandbox forked from `../round-robin-lite`, but has been promoted to be the main codebase. The sibling folder `../round-robin-lite` is retired — kept on disk as read-only legacy reference, not built or installed.
 
 For the full development plan (formats, signing, distribution, CI, testing, license decisions), see `spec.md` at the repo root. **`spec.md` is the source of truth** for anything not covered here. Sibling docs at the repo root:
+- `release-spec.md` — **the active v1.0 ship execution playbook**. Sequential, command-level checklist with [x]/[ ] checkboxes covering build config, Apple signing, AAX validation, Pro Tools test, Windows build, distribution. When `spec.md` and `release-spec.md` disagree on something v1.0-specific, `release-spec.md` wins. Update it as you complete items.
 - `spec-paperwork.md` — admin/legal checklist (Apple Developer enrollment, trademark, etc.)
 - `EULA.md` — end-user license for the binary; establishes **Conduit DSP LLC** (Kingston, NY; Ulster County jurisdiction) as the legal entity. Effective date: April 26, 2026 (v1.0). Will be published at `https://conduitdsp.com/eula/robin-control-lite/`.
 - `LICENSE` — source code license: **All Rights Reserved (proprietary)**. The source is not open-source; a Pro version is planned, so the codebase must remain shareable between Lite and Pro without a third-party fork ever shipping.
