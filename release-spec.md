@@ -74,9 +74,10 @@ Pick a path on the day Mac + Win VST3/AU builds are validated and stapled:
 - [x] Standalone `/Applications` post-build copy hook removed from CMakeLists — **done 2026-05-02**
 - [x] `.vscode/launch.json` switched to attach-to-process pattern (Standalone gone) — **done 2026-05-02**
 - [x] CLAUDE.md "Build" section updated (drop Standalone bullet, document attach-debug pattern) — **done 2026-05-02**
-- [ ] **Edit `installer/build-installer.sh`** to drop the Standalone component pkg (Standalone no longer in the build, so the `pkgbuild` call referencing it will fail)
-- [ ] **Edit `installer/distribution.xml`** to remove the Standalone choice line
-- [ ] Smoke build to confirm installer scripts produce a valid 2-component `.pkg`:
+- [x] **Edit `installer/build-installer.sh`** to drop the Standalone component pkg — **done 2026-05-05**
+- [x] **Edit `installer/distribution.xml`** to remove the Standalone choice line — **done 2026-05-05**
+- [x] (Bonus) `installer/uninstall.sh` Standalone refs cleaned (echo line, `/Applications` rm, `.standalone` pkgutil --forget) — **done 2026-05-05**
+- [x] Smoke build confirmed: `Releases/Installers/Robin Control Lite 1.0.0.pkg` (9.0M) expands cleanly to `RobinControlLite-VST3.pkg` + `RobinControlLite-AU.pkg`, no Standalone — **done 2026-05-05**
   ```bash
   cd /Users/alex/Documents/Github/robin-control-redesign
   ./installer/build-installer.sh

@@ -4,8 +4,7 @@
 # Inputs (must exist before running):
 #   NewProject/build-release/RobinControlLite_artefacts/Release/
 #     ├── VST3/Robin Control Lite.vst3
-#     ├── AU/Robin Control Lite.component
-#     └── Standalone/Robin Control Lite.app
+#     └── AU/Robin Control Lite.component
 #
 # Output:
 #   Releases/Installers/Robin Control Lite <VERSION>.pkg
@@ -41,10 +40,9 @@ echo "    artefacts: $ARTEFACTS"
 echo "    staging:   $STAGE_DIR"
 echo "    output:    $OUTPUT_DIR"
 
-# Verify the three Release artefacts exist
+# Verify the Release artefacts exist
 for fmt_dir in "VST3/Robin Control Lite.vst3" \
-               "AU/Robin Control Lite.component" \
-               "Standalone/Robin Control Lite.app"; do
+               "AU/Robin Control Lite.component"; do
     if [[ ! -d "$ARTEFACTS/$fmt_dir" ]]; then
         echo "ERROR: missing artefact $ARTEFACTS/$fmt_dir" >&2
         echo "       Run a Release build first:" >&2
@@ -80,14 +78,6 @@ pkgbuild \
     --version "$VERSION" \
     --install-location "/Library/Audio/Plug-Ins/Components" \
     "$STAGE_DIR/pkgs/RobinControlLite-AU.pkg"
-
-echo "==> pkgbuild Standalone"
-pkgbuild \
-    --component "$ARTEFACTS/Standalone/Robin Control Lite.app" \
-    --identifier "dsp.conduit.RobinControlLite.standalone" \
-    --version "$VERSION" \
-    --install-location "/Applications" \
-    "$STAGE_DIR/pkgs/RobinControlLite-Standalone.pkg"
 
 # 2. Installer GUI resources (license shown during install)
 cp "$REPO_ROOT/EULA.md" "$STAGE_DIR/resources/license.txt"

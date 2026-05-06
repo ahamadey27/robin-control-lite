@@ -20,7 +20,6 @@
     <choices-outline>
         <line choice="vst3" />
         <line choice="au" />
-        <line choice="standalone" />
     </choices-outline>
 
     <choice id="vst3" title="VST3"
@@ -33,12 +32,6 @@
         <pkg-ref id="dsp.conduit.RobinControlLite.au" />
     </choice>
 
-    <choice id="standalone" title="Standalone Application"
-            description="Standalone application for testing or use without a DAW. Installs to /Applications.">
-        <pkg-ref id="dsp.conduit.RobinControlLite.standalone" />
-    </choice>
-
-    <pkg-ref id="dsp.conduit.RobinControlLite.vst3"       version="@VERSION@" auth="Root">RobinControlLite-VST3.pkg</pkg-ref>
-    <pkg-ref id="dsp.conduit.RobinControlLite.au"         version="@VERSION@" auth="Root">RobinControlLite-AU.pkg</pkg-ref>
-    <pkg-ref id="dsp.conduit.RobinControlLite.standalone" version="@VERSION@" auth="Root">RobinControlLite-Standalone.pkg</pkg-ref>
+    <pkg-ref id="dsp.conduit.RobinControlLite.vst3" version="@VERSION@" auth="Root">RobinControlLite-VST3.pkg</pkg-ref>
+    <pkg-ref id="dsp.conduit.RobinControlLite.au"   version="@VERSION@" auth="Root">RobinControlLite-AU.pkg</pkg-ref>
 </installer-gui-script>
