@@ -42,7 +42,7 @@ The installer is signed and notarized by Apple. If macOS still flags it, right-c
    - VST3 → `C:\Program Files\Common Files\VST3\Robin Control Lite.vst3`
 3. Rescan plugins in your DAW.
 
-Windows SmartScreen may show a warning on first run. Click "More info" → "Run anyway" if you trust the publisher (`conduit.dsp`).
+**Note for Windows users:** the v1.0 installer is currently unsigned, so Windows SmartScreen will show "Windows protected your PC" on first run. Click **More info** → **Run anyway** to proceed. We're working on adding a code-signing certificate to remove this warning in a future release.
 
 ### Tested DAWs
 

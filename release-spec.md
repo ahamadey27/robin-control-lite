@@ -246,7 +246,7 @@ All steps in this section are on the Windows laptop.
 > **Windows portability fix (2026-05-09):** First build leaked a stray `C:\Library\Audio\Plug-Ins\VST3\Robin Control Lite.vst3` because JUCE's `COPY_PLUGIN_AFTER_BUILD` was unconditionally on with the Mac-only `$ENV{HOME}/Library/...` path (collapses to `C:\Library\...` on Windows). Patched `NewProject/CMakeLists.txt` to wrap auto-copy in `if(APPLE)` — Mac auto-copy still works, Windows skips it (Inno installer §8.4 + manual §5.4 copy handle distribution). Stray cleaned, VST3 manually copied to `C:\Program Files\Common Files\VST3\`.
 
 ### 5.4 Smoke install paths (Windows, manual copy for testing)
-- VST3: `C:\Program Files\Common Files\VST3\` — **VST3 installed here 2026-05-09; DAW smoke test pending**
+- VST3: `C:\Program Files\Common Files\VST3\` — **VST3 installed here 2026-05-09; smoke test passed in Ableton Live (Win) 2026-05-09**
 - AAX: `C:\Program Files\Common Files\Avid\Audio\Plug-Ins\`
 
 (The §8 installer handles this for distribution.)
@@ -371,18 +371,20 @@ Depends on Avid having granted the commercial license (§4.6). If they haven't, 
 ## 8. Windows release build
 
 ### 8.1 Build VST3 + AAX Release
-- [ ] 🔴 **YOU:** On the Windows laptop:
+- [x] 🔴 **YOU:** On the Windows laptop — **VST3 done 2026-05-09** (Path B; AAX flag omitted; gate fell back to VST3-only as expected):
   ```powershell
-  cd $HOME\Documents\Github\robin-control-redesign\NewProject
+  cd $HOME\Documents\GitHub\robin-control-lite\robin-control-lite\NewProject
   Remove-Item -Recurse -Force build-release -ErrorAction SilentlyContinue
-  cmake -B build-release -G "Visual Studio 17 2022" -A x64 -DJUCE_AAX_SDK_PATH="C:/SDKs/aax-sdk-2-9-0"
+  cmake -B build-release -G "Visual Studio 17 2022" -A x64
   cmake --build build-release --config Release
   ```
+  Output: `build-release\RobinControlLite_artefacts\Release\VST3\Robin Control Lite.vst3` (6.28 MB, x86_64-win). AAX rebuild deferred to v1.0.1.
 
 ### 8.2 Smoke test (unsigned)
 - [ ] 🔴 **YOU:** Reaper-Win: load VST3 → MIDI trigger → save project → reopen → state recall
 - [ ] 🔴 **YOU:** Pro Tools-Win: load PACE-signed AAX (after §7.4)
 - [ ] 🔴 **YOU:** FL Studio: VST3 scan, load, automation lane test (FL is the quirky one for automation)
+- [x] 🔴 **YOU:** Ableton Live (Win): VST3 scan, load, audio + MIDI trigger — **passed 2026-05-09** (manual install pre-installer; reconfirmed via installer install/uninstall cycle below)
 
 ### 8.3 Code signing decision
 v1.0 ships **unsigned** (per §0.4). Document the SmartScreen workaround in README (§8.5).
@@ -393,36 +395,13 @@ If you decide to buy a Windows code-signing certificate later:
 - Sign with `signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /a "Robin Control Lite.vst3"`
 
 ### 8.4 Installer (Inno Setup)
-- [ ] 🔴 **YOU:** Install Inno Setup 6 from https://jrsoftware.org/isinfo.php (free, scriptable)
-- [ ] 🔴 **YOU:** Create `installer/windows/RobinControlLite.iss`:
-  ```pascal
-  [Setup]
-  AppName=Robin Control Lite
-  AppVersion=1.0.0
-  AppPublisher=Conduit DSP LLC
-  AppPublisherURL=https://conduitdsp.com
-  DefaultDirName={autopf}\Common Files\VST3
-  DisableDirPage=yes
-  DisableProgramGroupPage=yes
-  OutputDir=..\..\Releases\Installers
-  OutputBaseFilename=RobinControlLite-1.0.0-Windows
-  PrivilegesRequired=admin
-  UninstallDisplayName=Robin Control Lite
-
-  [Files]
-  Source: "..\..\NewProject\build-release\RobinControlLite_artefacts\Release\VST3\Robin Control Lite.vst3\*"; \
-    DestDir: "{commoncf}\VST3\Robin Control Lite.vst3"; Flags: recursesubdirs createallsubdirs
-  Source: "..\..\NewProject\build-release\RobinControlLite_artefacts\Release\AAX\Robin Control Lite.aaxplugin\*"; \
-    DestDir: "{commoncf}\Avid\Audio\Plug-Ins\Robin Control Lite.aaxplugin"; Flags: recursesubdirs createallsubdirs
-
-  [Code]
-  // Show EULA at install time — set LicenseFile=..\..\EULA.md (or convert to .rtf)
-  ```
-- [ ] 🔴 **YOU:** Build with `iscc installer/windows/RobinControlLite.iss`. Output lands in `Releases/Installers/RobinControlLite-1.0.0-Windows.exe`
+- [x] 🔴 **YOU:** Install Inno Setup 6 from https://jrsoftware.org/isinfo.php (free, scriptable) — **done 2026-05-09** (Inno Setup 6.7.1 at `C:\Program Files (x86)\Inno Setup 6\`; iscc available by full path, not on PATH)
+- [x] Create `installer/windows/RobinControlLite.iss` — **done 2026-05-09** (Path B: VST3-only, AAX block commented out for v1.0.1; uses `LicenseFile=..\..\EULA.md`; stable AppId GUID `{8E1F12C7-3D4F-4E2A-A2D6-E5C92F4C7B3A}` for upgrade tracking; build dir parameterized via `#define MyBuildDir`)
+- [x] 🔴 **YOU:** Build with `iscc installer/windows/RobinControlLite.iss` — **done 2026-05-09** → `Releases/Installers/RobinControlLite-1.0.0-Windows.exe` (3.88 MB). Install/uninstall round-trip verified clean: VST3 deploys to `C:\Program Files\Common Files\VST3\Robin Control Lite.vst3\`, scans clean in Ableton Live, uninstall via Settings → Apps removes the bundle dir cleanly.
 
 ### 8.5 SmartScreen workaround in README
-- [ ] Add to README install section:
-  > **Windows users:** the installer is currently unsigned. Windows SmartScreen may show "Windows protected your PC". Click **More info** → **Run anyway** to proceed. We're working on adding a code-signing certificate to remove this warning.
+- [x] Add to README install section — **done 2026-05-09** (replaced the prior brief SmartScreen line in the Windows install section with the §8.5 wording: explicit about unsigned status + roadmap note about future code-signing cert):
+  > **Note for Windows users:** the v1.0 installer is currently unsigned, so Windows SmartScreen will show "Windows protected your PC" on first run. Click **More info** → **Run anyway** to proceed. We're working on adding a code-signing certificate to remove this warning in a future release.
 
 ---
 
