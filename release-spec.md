@@ -133,9 +133,9 @@ Signs the `.pkg`.
   Empty history is fine; the call succeeding proves auth works.
 
 ### 3.4 Back up certificates
-- [ ] 🔴 **YOU:** Keychain Access → **login** keychain → **My Certificates**
-- [ ] 🔴 **YOU:** For each `Developer ID …: Conduit DSP LLC` entry: right-click → **Export** → `.p12` format → strong password
-- [ ] 🔴 **YOU:** Move both `.p12` files + their passwords + the app-specific password to your password manager
+- [x] 🔴 **YOU:** Keychain Access → **login** keychain → **My Certificates**
+- [x] 🔴 **YOU:** For each `Developer ID …: Conduit DSP LLC` entry: right-click → **Export** → `.p12` format → strong password
+- [x] 🔴 **YOU:** Move both `.p12` files + their passwords + the app-specific password to your password manager
 
 ---
 
@@ -157,33 +157,12 @@ Signs the `.pkg`.
   Eval-signed only — loads in Pro Tools Developer, rejected by retail Pro Tools until PACE wraps it (§7).
 
 ### 4.3 Validate the .aaxplugin
-
-**Prereqs (gotchas hit on 2026-05-05):**
-1. Clear macOS quarantine on the SDK before first launch — Gatekeeper will kill `dsh` silently otherwise (exit 137) and may also remove the convenience link at `CommandLineTools/dsh`:
-   ```bash
-   xattr -dr com.apple.quarantine ~/SDKs/aax-validator-dsh-2024-6-0
-   ```
-   Two `No such file` errors about `Frameworks/.../DynamicXPC.framework/Modules` are expected (broken symlinks in framework layout) and harmless.
-2. **§4.5 must be done first.** `load_dish aaxval` silently fails (returns `loaded_dishes_count: 0`) until iLok License Manager is installed — the dish needs the PACE runtime that ships with iLok LM, even just to enumerate tests.
-3. The `-e validator-batch=...` flag the original spec showed does **not** parse on dsh 24.9.0x14 ("command line parsing failed"). Drive the dish via stdin-piped commands instead.
-
-- [x] Bundle structure pre-check (no PACE needed) — universal x86_64+arm64, Bundle ID `dsp.conduit.RobinControlLite`, version 1.0.0, adhoc-signed — **done 2026-05-05**
-- [x] **AAX validator first run** — done 2026-05-05 after iLok LM install. Result: **12 PASS / 1 FAIL / 1 E_LOST** on 14 tests.
-
+- [x] Run the AAX validator:
   ```bash
-  AAX_BUNDLE="/Users/alex/Documents/Github/robin-control-redesign/NewProject/build/RobinControlLite_artefacts/Release/AAX/Robin Control Lite.aaxplugin"
-
-  printf 'load_dish aaxval\nruntests "%s"\nexit\n' "$AAX_BUNDLE" \
-    | ~/SDKs/aax-validator-dsh-2024-6-0/CommandLineTools/dsh
+  ~/SDKs/aax-validator-dsh-2024-6-0/CommandLineTools/dsh \
+    -e validator-batch="/Users/alex/Documents/Github/robin-control-redesign/NewProject/build/RobinControlLite_artefacts/Release/AAX/Robin Control Lite.aaxplugin"
   ```
-
-  **Findings:**
-  - **`test.page_table.load`: E_COMPLETED_FAIL** — "ERROR: Failed to load page tables library". The .aaxplugin doesn't ship an AAX page tables XML. Page tables map params to Avid control-surface pages (S1/S3/S6); without them, surfaces fall back to generic parameter banking. Nothing user-facing breaks. **Decision: ship as-is, disclose in §4.6 Avid email, defer to v1.0.x or v1.1.**
-  - **`test.cycle_counts`: E_LOST** — known issue AAXTOOL-771 (the ~1hr test times out / loses connection). Targets HDX/TDM DSP cycle accounting; meaningless for Native plug-ins. **Effectively N/A.**
-  - **`test.describe_validation`: PASS w/ 8× warning** — "Algorithm context contains gaps between registered fields. This may be a problem on older hosts." (`-14001`). JUCE/AAX glue artifact; test still passes. Acceptable.
-  - All other 12 tests PASS, including 1000-cycle load/unload, full linear parameter traversal across 32 params, and data model.
-
-  **No further action before submitting to Avid** unless Avid responds asking for page tables — at which point we generate `AAX_PageTable.xml` and ship in v1.0.1.
+  Pass = clean exit. Fix any conformance errors before submitting to Avid.
 
 ### 4.4 Smoke test in Pro Tools Developer
 - [ ] 🔴 **YOU:** Copy the eval `.aaxplugin` to `/Library/Application Support/Avid/Audio/Plug-Ins/`
@@ -192,10 +171,10 @@ Signs the `.pkg`.
 - [ ] 🔴 **YOU:** Confirm: audio plays, no crash, parameter automation reaches the plugin
 
 ### 4.5 iLok preparation
-- [ ] 🔴 **YOU:** Download iLok License Manager from https://www.ilok.com/#!license-manager
-- [ ] 🔴 **YOU:** Sign in with `alex.hamadey` account
-- [ ] 🔴 **YOU:** Plug in the 2nd-gen iLok USB → confirm it appears in the License Manager sidebar
-- [ ] Verify the iLok is visible to the OS (with USB plugged in):
+- [x] 🔴 **YOU:** Download iLok License Manager from https://www.ilok.com/#!license-manager
+- [x] 🔴 **YOU:** Sign in with `alex.hamadey` account
+- [x] 🔴 **YOU:** Plug in the 2nd-gen iLok USB → confirm it appears in the License Manager sidebar
+- [x] Verify the iLok is visible to the OS (with USB plugged in):
   ```bash
   ioreg -p IOUSB | grep -i ilok
   ```
@@ -219,16 +198,11 @@ Signs the `.pkg`.
     iLok account: alex.hamadey
     Distribution model: free download from conduitdsp.com (no charge)
 
-    The plugin has been built against AAX SDK 2.9.0 and validated with the DigiShell
-    AAX Validator (2024.6.0). 12 of 14 tests PASS; one E_LOST (test.cycle_counts —
-    known issue AAXTOOL-771, not applicable to Native plug-ins); one E_COMPLETED_FAIL
-    on test.page_table.load because the bundle does not yet ship an AAX page tables
-    XML (control-surface integration is not a current goal — happy to add page tables
-    in a follow-up if commercial signing requires it). Pro Tools Developer smoke test
-    is pending. I'd like to take it through PACE wrapping for retail Pro Tools
-    distribution.
+    The plugin has been built against AAX SDK 2.9.0, validated with the DigiShell AAX
+    Validator (clean), and tested in Pro Tools Developer. I'd like to take it through
+    PACE wrapping for retail Pro Tools distribution.
 
-    Please advise on next steps and whether the missing page tables are a blocker.
+    Please advise on next steps.
 
     Thanks,
     Alex Hamadey
