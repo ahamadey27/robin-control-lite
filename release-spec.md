@@ -63,7 +63,9 @@ Pick a path on the day Mac + Win VST3/AU builds are validated and stapled:
 
 **Trigger to commit to Path B:** if the date you're otherwise ready to ship is more than 7 days past Avid's first acknowledgment email and Wraptool/license still hasn't appeared, ship Path B and treat AAX as a fast-follow.
 
-- [ ] 🔴 **YOU:** Send the Avid commercial AAX license request **today** (template in §4.6) — longest-pole item, costs nothing to start
+> **Decision (2026-05-09): Path B committed.** Reasoning: free plug-in (no revenue clock), Avid lead-time unpredictable, user prefers a single coordinated launch over Mac-only fragmentation. Implication: §5 + §8 (Windows env + build) become critical-path; §7 + §4.4 + §4.6 follow-up + Pro Tools Developer iLok licensing all move to v1.0.1 timeline.
+
+- [x] 🔴 **YOU:** Send the Avid commercial AAX license request — **done; sent 2026-05-05** (longest-pole item; we're on Path B regardless of when Avid replies, but acceptance still needed for v1.0.1)
 
 ---
 
@@ -117,7 +119,7 @@ Signs the `.pkg`.
 
 ### 3.3 Create app-specific password for notarytool
 - [x] 🔴 **YOU:** Open https://appleid.apple.com → sign in as `hamadey@gmail.com`
-- [x] 🔴 **YOU:** Sidebar → **Sign-In and Security** → **App-Specific Passwords** → **+** → label `notarytool-robin-control-lite` → **Create** (jcxr-mepf-cxfn-ywhk)
+- [x] 🔴 **YOU:** Sidebar → **Sign-In and Security** → **App-Specific Passwords** → **+** → label `notarytool-robin-control-lite` → **Create** (password stored in keychain under `AC_PASSWORD`; rotated 2026-05-09 — old `jcxr-…-ywhk` password is revoked, do **not** re-create it)
 - [x] 🔴 **YOU:** Copy the one-time password (looks like `abcd-efgh-ijkl-mnop`) — it won't be shown again
 - [x] 🔴 **YOU:** Hand the password to Claude (or run yourself) so it can be stored in keychain:
   ```bash
@@ -165,10 +167,12 @@ Signs the `.pkg`.
   Pass = clean exit. Fix any conformance errors before submitting to Avid.
 
 ### 4.4 Smoke test in Pro Tools Developer
-- [ ] 🔴 **YOU:** Copy the eval `.aaxplugin` to `/Library/Application Support/Avid/Audio/Plug-Ins/`
-- [ ] 🔴 **YOU:** Launch Pro Tools Developer (Dev build, NOT retail)
+- [x] Copy the eval `.aaxplugin` to `/Library/Application Support/Avid/Audio/Plug-Ins/` — **done 2026-05-09** (cp without sudo; folder is admin-group writable)
+- [ ] 🔴 **YOU:** Launch Pro Tools Developer (Dev build, NOT retail) — **deferred 2026-05-09**: needs a Pro Tools Developer iLok license deposited on the USB. Existing iLok only has PT 10 + PT 11 (2013). Action: redeem PT Developer activation from `my.avid.com` → Products and Subscriptions → drag to USB iLok. Until then, retail PT will reject the eval-signed bundle (already observed: "Move Failed Plugins" dialog).
 - [ ] 🔴 **YOU:** New session → instrument track → insert "Robin Control Lite" → load samples → trigger MIDI
 - [ ] 🔴 **YOU:** Confirm: audio plays, no crash, parameter automation reaches the plugin
+
+> **§4.4 deferral note (2026-05-09):** Not blocking §6/§7/§8/§10 progress. PT Dev smoke test must be green before §9 final validation gate. Picking back up when PT Developer license is on the iLok.
 
 ### 4.5 iLok preparation
 - [x] 🔴 **YOU:** Download iLok License Manager from https://www.ilok.com/#!license-manager
@@ -180,7 +184,7 @@ Signs the `.pkg`.
   ```
 
 ### 4.6 Request Avid commercial AAX license (do this on day 1 of release work)
-- [ ] 🔴 **YOU:** Send this email today — longest-pole item:
+- [x] 🔴 **YOU:** Send this email today — longest-pole item:
   - **To:** `audiosdk@avid.com`
   - **Subject:** Commercial AAX license request — Robin Control Lite (free plugin)
   - **Body:**
@@ -256,7 +260,7 @@ All steps in this section are on the Windows laptop.
 Run in order. Substitute the cert common-name strings from §3.1/3.2 if they differ.
 
 ### 6.1 Clean Release build (universal)
-- [ ] Run:
+- [x] Run — **done 2026-05-09**:
   ```bash
   cd /Users/alex/Documents/Github/robin-control-redesign/NewProject
   rm -rf build-release
@@ -265,62 +269,45 @@ Run in order. Substitute the cert common-name strings from §3.1/3.2 if they dif
     -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
   cmake --build build-release --config Release
   ```
-- [ ] Verify universal:
-  ```bash
-  file "build-release/RobinControlLite_artefacts/Release/VST3/Robin Control Lite.vst3/Contents/MacOS/Robin Control Lite"
-  # expect: Mach-O universal binary with 2 architectures: x86_64, arm64
-  ```
+  Build SUCCEEDED. AAX SDK detected → all three formats built (VST3, AU, AAX).
+- [x] Verify universal — **done 2026-05-09**: VST3, AU, and AAX bundles all `Mach-O universal binary with 2 architectures: [x86_64] [arm64]`.
 
 ### 6.2 Sign each plugin bundle (Apple)
-- [ ] Run (after §3.1 cert exists):
+- [x] Run — **done 2026-05-09** (replaced JUCE's ad-hoc "Sign to Run Locally" sigs):
   ```bash
   cd /Users/alex/Documents/Github/robin-control-redesign/NewProject/build-release/RobinControlLite_artefacts/Release
 
-  CERT="Developer ID Application: Conduit DSP LLC (QS378YGT2W)"
+  CERT="Developer ID Application: CONDUIT DSP LLC (QS378YGT2W)"
 
   codesign --force --deep --options runtime --timestamp --sign "$CERT" "VST3/Robin Control Lite.vst3"
   codesign --force --deep --options runtime --timestamp --sign "$CERT" "AU/Robin Control Lite.component"
   ```
-- [ ] Verify each:
-  ```bash
-  codesign --verify --deep --strict --verbose=2 "VST3/Robin Control Lite.vst3"
-  codesign --verify --deep --strict --verbose=2 "AU/Robin Control Lite.component"
-  ```
-  Clean verify ends with `valid on disk` and `satisfies its Designated Requirement`.
+- [x] Verify each — **done 2026-05-09**: both bundles `valid on disk` + `satisfies its Designated Requirement`. Apple-issued timestamp + hardened runtime active.
 
 (AAX gets PACE-wrapped instead — see §7. Don't apply Apple `codesign` to the AAX bundle.)
 
 ### 6.3 Build the .pkg installer
-- [ ] Build (after §2 installer-script edits):
+- [x] Build — **done 2026-05-09**:
   ```bash
   cd /Users/alex/Documents/Github/robin-control-redesign
-  INSTALLER_SIGN="Developer ID Installer: Conduit DSP LLC (QS378YGT2W)" \
+  INSTALLER_SIGN="Developer ID Installer: CONDUIT DSP LLC (QS378YGT2W)" \
     ./installer/build-installer.sh
   ```
-  Output: `Releases/Installers/Robin Control Lite 1.0.0.pkg`
-- [ ] Verify the installer is signed:
-  ```bash
-  pkgutil --check-signature "Releases/Installers/Robin Control Lite 1.0.0.pkg"
-  ```
-  Should show `signed by a developer certificate issued by Apple for distribution`.
+  Output: `Releases/Installers/Robin Control Lite 1.0.0.pkg` (9.0 MB)
+- [x] Verify the installer is signed — **done 2026-05-09**: `signed by a developer certificate issued by Apple for distribution`, trusted timestamp 2026-05-09 16:53 UTC, full Apple cert chain, Installer cert expires 2027-02-01.
 
 ### 6.4 Notarize
-- [ ] Submit (after §3.3 keychain profile exists):
+- [x] Submit — **done 2026-05-09**: `status: Accepted` (submission id `dd401114-c324-4bba-b492-76a698b3afd4`, ~30s round-trip).
   ```bash
   cd /Users/alex/Documents/Github/robin-control-redesign
   xcrun notarytool submit "Releases/Installers/Robin Control Lite 1.0.0.pkg" \
     --keychain-profile AC_PASSWORD \
     --wait
   ```
-  `--wait` blocks until Apple returns a verdict (typically 1–10 min). Look for `status: Accepted`.
-- [ ] If `status: Invalid`, fetch the log to diagnose:
-  ```bash
-  xcrun notarytool log <submission-id> --keychain-profile AC_PASSWORD
-  ```
-  Common causes: missing `--options runtime`, missing `--timestamp`, embedded binary not signed.
+- [x] If `status: Invalid`, fetch the log to diagnose — **N/A, Accepted on first submit**.
 
 ### 6.5 Staple
-- [ ] Attach the notarization ticket to the `.pkg`:
+- [x] Attach the notarization ticket to the `.pkg` — **done 2026-05-09**: stapler staple + validate both passed. Bonus: `spctl --assess --type install` returned `accepted, source=Notarized Developer ID` (local Gatekeeper simulation confirms a clean Mac will accept this `.pkg` with no developer-verification dialog).
   ```bash
   xcrun stapler staple "Releases/Installers/Robin Control Lite 1.0.0.pkg"
   xcrun stapler validate "Releases/Installers/Robin Control Lite 1.0.0.pkg"

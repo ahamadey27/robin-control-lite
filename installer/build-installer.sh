@@ -11,7 +11,7 @@
 #
 # Signing (deferred — runs unsigned by default):
 #   When the Apple Developer ID Installer cert is in your keychain, set
-#     INSTALLER_SIGN="Developer ID Installer: Conduit DSP LLC (TEAMID)"
+#     INSTALLER_SIGN="Developer ID Installer: CONDUIT DSP LLC (TEAMID)"
 #   in the environment and re-run. The flag drops into productbuild as
 #   --sign "$INSTALLER_SIGN".
 
