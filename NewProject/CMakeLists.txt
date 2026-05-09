@@ -44,6 +44,14 @@ else()
     set(PLUGIN_FORMATS VST3 AU)
 endif()
 
+# Auto-copy after build is macOS-only. On Windows the spec ships via the Inno
+# installer (release-spec §8.4); manual copy for smoke testing per §5.4.
+if(APPLE)
+    set(RCL_COPY_AFTER_BUILD TRUE)
+else()
+    set(RCL_COPY_AFTER_BUILD FALSE)
+endif()
+
 # ============================================================
 # Plugin target
 # ============================================================
@@ -60,7 +68,7 @@ juce_add_plugin(RobinControlLite
     NEEDS_MIDI_OUTPUT               FALSE
     IS_MIDI_EFFECT                  FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS     FALSE
-    COPY_PLUGIN_AFTER_BUILD         TRUE
+    COPY_PLUGIN_AFTER_BUILD         ${RCL_COPY_AFTER_BUILD}
     VST3_COPY_DIR                   "$ENV{HOME}/Library/Audio/Plug-Ins/VST3"
     AU_COPY_DIR                     "$ENV{HOME}/Library/Audio/Plug-Ins/Components"
 

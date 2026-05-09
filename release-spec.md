@@ -221,34 +221,32 @@ Signs the `.pkg`.
 All steps in this section are on the Windows laptop.
 
 ### 5.1 One-time setup
-- [ ] 🔴 **YOU:** Install **Visual Studio 2022 Community** (free) → during setup tick **Desktop development with C++** workload
-- [ ] 🔴 **YOU:** Install **Git for Windows**
-- [ ] 🔴 **YOU:** Install **CMake** 3.22+ (cmake.org or `winget install Kitware.CMake`)
-- [ ] 🔴 **YOU:** Clone the repo:
-  ```powershell
-  cd $HOME\Documents\Github
-  git clone https://github.com/ahamadey27/robin-control-lite.git robin-control-redesign
-  ```
-- [ ] 🔴 **YOU:** First CMake configure auto-resolves JUCE 8.0.4 via FetchContent (no local checkout needed on Windows)
+- [x] 🔴 **YOU:** Install **Visual Studio 2022 Community** (free) → during setup tick **Desktop development with C++** workload — **done 2026-05-09**
+- [x] 🔴 **YOU:** Install **Git for Windows** — **done 2026-05-09** (`git 2.42.0.windows.2`)
+- [x] 🔴 **YOU:** Install **CMake** 3.22+ (cmake.org or `winget install Kitware.CMake`) — **done 2026-05-09** (`cmake 4.3.2` via winget; needed admin elevation for the MSI)
+- [x] 🔴 **YOU:** Clone the repo — **done** (cloned as `robin-control-lite\robin-control-lite`, not the spec's `robin-control-redesign` path; harmless — adjust paths in §5.3/§8.1 commands accordingly)
+- [x] 🔴 **YOU:** First CMake configure auto-resolves JUCE 8.0.4 via FetchContent (no local checkout needed on Windows) — **verified 2026-05-09** (`-- Local JUCE not found at /Documents/JUCE — fetching via FetchContent` → configure done in 47s)
 
-### 5.2 AAX SDK on Windows
+### 5.2 AAX SDK on Windows (NOT NOW...waiting for approval)
 - [ ] 🔴 **YOU:** Sign in to https://my.avid.com → **My Toolkits and Downloads** → **AAX SDK 2.9.0** → download the **Windows** variant
 - [ ] 🔴 **YOU:** Unpack to `C:\SDKs\aax-sdk-2-9-0\`
 - [ ] 🔴 **YOU:** Note: CMake gate looks at `%USERPROFILE%\SDKs\aax-sdk-2-9-0`. Either move there, or pass `cmake -DJUCE_AAX_SDK_PATH=C:/SDKs/aax-sdk-2-9-0`
 
 ### 5.3 First Windows build
-- [ ] 🔴 **YOU:** Run:
+- [x] 🔴 **YOU:** Run — **done 2026-05-09** (Path B: `-DJUCE_AAX_SDK_PATH=...` omitted; AAX gate fell back to VST3-only):
   ```powershell
-  cd $HOME\Documents\Github\robin-control-redesign\NewProject
-  cmake -B build -G "Visual Studio 17 2022" -A x64 -DJUCE_AAX_SDK_PATH="C:/SDKs/aax-sdk-2-9-0"
+  cd $HOME\Documents\GitHub\robin-control-lite\robin-control-lite\NewProject
+  cmake -B build -G "Visual Studio 17 2022" -A x64
   cmake --build build --config Release
   ```
   Outputs:
-  - `build\RobinControlLite_artefacts\Release\VST3\Robin Control Lite.vst3`
-  - `build\RobinControlLite_artefacts\Release\AAX\Robin Control Lite.aaxplugin` (eval-signed)
+  - `build\RobinControlLite_artefacts\Release\VST3\Robin Control Lite.vst3` (6.58 MB binary, x86_64-win)
+  - ~~`build\RobinControlLite_artefacts\Release\AAX\Robin Control Lite.aaxplugin`~~ (deferred per §5.2 / Path B)
+
+> **Windows portability fix (2026-05-09):** First build leaked a stray `C:\Library\Audio\Plug-Ins\VST3\Robin Control Lite.vst3` because JUCE's `COPY_PLUGIN_AFTER_BUILD` was unconditionally on with the Mac-only `$ENV{HOME}/Library/...` path (collapses to `C:\Library\...` on Windows). Patched `NewProject/CMakeLists.txt` to wrap auto-copy in `if(APPLE)` — Mac auto-copy still works, Windows skips it (Inno installer §8.4 + manual §5.4 copy handle distribution). Stray cleaned, VST3 manually copied to `C:\Program Files\Common Files\VST3\`.
 
 ### 5.4 Smoke install paths (Windows, manual copy for testing)
-- VST3: `C:\Program Files\Common Files\VST3\`
+- VST3: `C:\Program Files\Common Files\VST3\` — **VST3 installed here 2026-05-09; DAW smoke test pending**
 - AAX: `C:\Program Files\Common Files\Avid\Audio\Plug-Ins\`
 
 (The §8 installer handles this for distribution.)
