@@ -221,15 +221,15 @@ Signs the `.pkg`.
 All steps in this section are on the Windows laptop.
 
 ### 5.1 One-time setup
-- [ ] 🔴 **YOU:** Install **Visual Studio 2022 Community** (free) → during setup tick **Desktop development with C++** workload
-- [ ] 🔴 **YOU:** Install **Git for Windows**
-- [ ] 🔴 **YOU:** Install **CMake** 3.22+ (cmake.org or `winget install Kitware.CMake`)
-- [ ] 🔴 **YOU:** Clone the repo:
+- [x] 🔴 **YOU:** Install **Visual Studio 2022 Community** (free) → during setup tick **Desktop development with C++** workload
+- [x] 🔴 **YOU:** Install **Git for Windows**
+- [x] 🔴 **YOU:** Install **CMake** 3.22+ (cmake.org or `winget install Kitware.CMake`)
+- [x] 🔴 **YOU:** Clone the repo:
   ```powershell
   cd $HOME\Documents\Github
   git clone https://github.com/ahamadey27/robin-control-lite.git robin-control-redesign
   ```
-- [ ] 🔴 **YOU:** First CMake configure auto-resolves JUCE 8.0.4 via FetchContent (no local checkout needed on Windows)
+- [x] 🔴 **YOU:** First CMake configure auto-resolves JUCE 8.0.4 via FetchContent (no local checkout needed on Windows)
 
 ### 5.2 AAX SDK on Windows
 - [ ] 🔴 **YOU:** Sign in to https://my.avid.com → **My Toolkits and Downloads** → **AAX SDK 2.9.0** → download the **Windows** variant
@@ -237,7 +237,7 @@ All steps in this section are on the Windows laptop.
 - [ ] 🔴 **YOU:** Note: CMake gate looks at `%USERPROFILE%\SDKs\aax-sdk-2-9-0`. Either move there, or pass `cmake -DJUCE_AAX_SDK_PATH=C:/SDKs/aax-sdk-2-9-0`
 
 ### 5.3 First Windows build
-- [ ] 🔴 **YOU:** Run:
+- [x] 🔴 **YOU:** Run:
   ```powershell
   cd $HOME\Documents\Github\robin-control-redesign\NewProject
   cmake -B build -G "Visual Studio 17 2022" -A x64 -DJUCE_AAX_SDK_PATH="C:/SDKs/aax-sdk-2-9-0"
@@ -395,8 +395,8 @@ If you decide to buy a Windows code-signing certificate later:
 - Sign with `signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /a "Robin Control Lite.vst3"`
 
 ### 8.4 Installer (Inno Setup)
-- [ ] 🔴 **YOU:** Install Inno Setup 6 from https://jrsoftware.org/isinfo.php (free, scriptable)
-- [ ] 🔴 **YOU:** Create `installer/windows/RobinControlLite.iss`:
+- [x] 🔴 **YOU:** Install Inno Setup 6 from https://jrsoftware.org/isinfo.php (free, scriptable)
+- [x] 🔴 **YOU:** Create `installer/windows/RobinControlLite.iss`:
   ```pascal
   [Setup]
   AppName=Robin Control Lite

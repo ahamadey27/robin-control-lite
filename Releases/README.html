@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Robin Control Lite — README</title>
+<style>
+@page { size: Letter; margin: 0.75in; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body {
+  font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 11pt;
+  line-height: 1.5;
+  color: #1a1a1a;
+  max-width: 7in;
+  margin: 0 auto;
+  padding: 0.25in 0;
+}
+h1 { font-size: 24pt; margin: 0 0 0.2em; border-bottom: 2px solid #c9b87a; padding-bottom: 0.2em; }
+h2 { font-size: 16pt; margin: 1.4em 0 0.4em; color: #4a3a1a; }
+h3 { font-size: 12pt; margin: 1.2em 0 0.3em; color: #4a3a1a; }
+h1, h2, h3 { page-break-after: avoid; }
+p, ul, ol, table { page-break-inside: avoid; }
+hr { border: 0; border-top: 1px solid #ddd; margin: 1.6em 0; }
+a { color: #6b5320; text-decoration: none; }
+code {
+  font-family: "SF Mono", "Menlo", monospace;
+  font-size: 0.9em;
+  background: #f4efe2;
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+}
+pre {
+  background: #f4efe2;
+  padding: 0.8em 1em;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 9.5pt;
+  line-height: 1.4;
+  page-break-inside: avoid;
+}
+pre code { background: transparent; padding: 0; }
+blockquote {
+  border-left: 3px solid #c9b87a;
+  margin: 1em 0;
+  padding: 0.2em 1em;
+  color: #555;
+  background: #faf7ee;
+}
+table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+th, td { border: 1px solid #ddd; padding: 0.4em 0.7em; text-align: left; }
+th { background: #f4efe2; }
+img { max-width: 100%; height: auto; }
+ul, ol { padding-left: 1.4em; }
+li { margin: 0.2em 0; }
+</style>
+</head>
+<body>
+<h1 id="robin-control-lite">Robin Control Lite</h1>
+<p>A free monophonic sampler plugin by <a href="https://conduitdsp.com">conduit.dsp</a>. Drop in up to 20 audio samples, trigger them from any key on your MIDI controller, and shape them with built-in tone, randomization, and round-robin playback.</p>
+<p><a href="https://juce.com/"><img alt="JUCE" src="https://img.shields.io/badge/JUCE-8.0+-blue.svg" /></a>
+<a href=""><img alt="Formats" src="https://img.shields.io/badge/Formats-VST3%20%7C%20AU-green.svg" /></a>
+<a href=""><img alt="Platforms" src="https://img.shields.io/badge/Platforms-macOS%20%7C%20Windows-lightgrey.svg" /></a></p>
+<blockquote>
+<p>Status: pre-release. v1.0 ships when everything in <a href="spec.md"><code>spec.md</code></a> §7.11 is green.</p>
+</blockquote>
+<hr />
+<h2 id="what-it-does">What it does</h2>
+<ul>
+<li><strong>20 sample slots</strong> — load <code>.wav</code>, <code>.aif</code>, <code>.flac</code>, <code>.ogg</code>, <code>.mp3</code> via the file picker</li>
+<li><strong>Monophonic playback</strong> — one voice at a time, triggered from any MIDI key (no chromatic pitching in the free version — every key plays back at the sample's natural pitch, with global semitone + fine-tune offsets)</li>
+<li><strong>Round-robin playback</strong> — Series mode (cycle in order) or Random mode (no repeats until pool exhausted)</li>
+<li><strong>Per-note randomization</strong> — every parameter has independent negative and positive randomization ranges</li>
+<li><strong>Sample shaping</strong> — start/end trim, global pitch (semitones + cents), tone control (low + high shelf)</li>
+<li><strong>Trigger + Panic</strong> — fire the next round-robin sample without a MIDI input; cut all voices instantly</li>
+</ul>
+<p>Built for footsteps, foley, and any percussive sample-set work where slight per-note variation makes the difference between believable and obviously-looped.</p>
+<hr />
+<h2 id="install">Install</h2>
+<h3 id="macos-110-big-sur-or-newer-apple-silicon-intel">macOS (11.0 Big Sur or newer, Apple Silicon + Intel)</h3>
+<ol>
+<li>Download <code>RobinControlLite-x.y.z.pkg</code> from the latest release.</li>
+<li>Run the installer. It places:
+   - VST3 → <code>/Library/Audio/Plug-Ins/VST3/Robin Control Lite.vst3</code>
+   - AU → <code>/Library/Audio/Plug-Ins/Components/Robin Control Lite.component</code></li>
+<li>Rescan plugins in your DAW.</li>
+</ol>
+<p>The installer is signed and notarized by Apple. If macOS still flags it, right-click the <code>.pkg</code> → Open → confirm.</p>
+<h3 id="windows-10-1809-11">Windows (10 1809+ / 11)</h3>
+<ol>
+<li>Download <code>RobinControlLite-x.y.z-setup.exe</code> from the latest release.</li>
+<li>Run the installer. It places:
+   - VST3 → <code>C:\Program Files\Common Files\VST3\Robin Control Lite.vst3</code></li>
+<li>Rescan plugins in your DAW.</li>
+</ol>
+<p>Windows SmartScreen may show a warning on first run. Click "More info" → "Run anyway" if you trust the publisher (<code>conduit.dsp</code>).</p>
+<h3 id="tested-daws">Tested DAWs</h3>
+<p>Tier 1 (verified before every release): Logic Pro, Ableton Live 12, Reaper 7, FL Studio 21.
+Tier 2 (best-effort): Cubase 13, Studio One 6, Bitwig Studio, GarageBand, MainStage.
+Pro Tools (AAX) support is planned for v1.1.</p>
+<p>Full host matrix in <a href="spec.md"><code>spec.md</code></a> §7.3.</p>
+<hr />
+<h2 id="quick-start">Quick start</h2>
+<ol>
+<li>Click <strong>Load Samples</strong> in the header (or the "click to add samples" placeholder in the empty pool) and pick up to 20 audio files</li>
+<li>Press any key on your MIDI controller — samples trigger monophonically (one voice at a time)</li>
+<li>Adjust pitch, tone, sample start/end on the main panel</li>
+<li>Tweak the randomization range below each knob to add per-note variation</li>
+<li>Switch playback mode (Series ↔ Random) in the header</li>
+</ol>
+<h3 id="tip-audition-samples-before-loading">Tip: audition samples before loading</h3>
+<p>The Load Samples dialog is the macOS / Windows native file picker, which has built-in audio preview:</p>
+<ul>
+<li><strong>macOS</strong> — switch the dialog to <strong>Column view</strong> (the rightmost view button, or <code>⌘ 3</code>) to get a play button on each audio file. Or select a file and press <strong>Space</strong> to open QuickLook with playback.</li>
+<li><strong>Windows</strong> — select a file in the dialog and use the <strong>Preview pane</strong> (View → Preview pane in the dialog's toolbar) to scrub and play.</li>
+</ul>
+<p>Once samples are in the pool, click the speaker icon on any slot to audition it through the plugin's own engine (with your current tone / pitch / start-end settings applied).</p>
+<hr />
+<h2 id="reporting-issues">Reporting issues</h2>
+<ul>
+<li>Bug reports: open an issue on this repo with host + version, OS + version, and repro steps</li>
+<li>Support email: <code>hello@conduitdsp.com</code></li>
+</ul>
+<hr />
+<h2 id="for-developers">For developers</h2>
+<p>This repo is the authoritative codebase for Robin Control Lite. The full development plan (build, formats, signing, CI, testing strategy, license decisions) lives in <a href="spec.md"><code>spec.md</code></a>. Architecture and conventions for working in the source tree live in <a href="CLAUDE.md"><code>CLAUDE.md</code></a>.</p>
+<h3 id="build-from-source">Build from source</h3>
+<pre><code class="language-bash">cd NewProject
+cmake -B build
+cmake --build build --config Release
+</code></pre>
+<p>JUCE resolves to <code>~/Documents/JUCE</code> if present, else <code>FetchContent</code> pulls JUCE 8.0.4. Override with <code>cmake -DJUCE_PATH=/path/to/JUCE -B build</code>.</p>
+<p>Built artifacts land in <code>NewProject/build/RobinControlLite_artefacts/Release/{VST3,AU}/</code> and are auto-copied to the system plugin folders for testing. AAX (when the SDK is present at <code>~/SDKs/aax-sdk-2-9-0</code>) lands in the same tree but isn't auto-copied — see <a href="CLAUDE.md"><code>CLAUDE.md</code></a> for the manual copy path. See <a href="spec.md"><code>spec.md</code></a> §3 for the full build details and §5 for signing/notarization.</p>
+<h3 id="license">License</h3>
+<p>The plugin binary is distributed free of charge. Source license: see <code>LICENSE</code> (TBD — pending decision in <code>spec.md</code> §1.4).</p>
+<p>JUCE itself is used under the JUCE Personal license (pending confirmation; see <code>spec.md</code> §1.2).</p>
+<p>VST is a trademark of Steinberg Media Technologies GmbH. Audio Units is a trademark of Apple Inc.</p>
+<hr />
+<p><strong>conduit.dsp</strong> — <code>hello@conduitdsp.com</code></p>
+</body>
+</html>
