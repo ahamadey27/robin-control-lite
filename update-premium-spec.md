@@ -8,16 +8,20 @@
 
 If you have local access to the Lite repo, prefer `git show <sha> -- <path>` for exact diffs over re-deriving from this document. Commit SHAs are referenced inline below.
 
+**Last updated:** 2026-05-24. Reflects Lite state through commit `26fb902` (post-installer scaffolding, post Path-B decision). Older sections call out their own snapshot date where relevant.
+
 ---
 
 ## How to use this spec
 
 1. **Identity first.** Don't blindly copy strings — Pro keeps its own product name, bundle ID, plugin codes, EULA, and license. See §1.
-2. **Pro-only code stays active.** Lite has commented-out `ThreeBandEQ`, `TransientShaper`, `juce::ADSR`, paired-key infrastructure, and many randomization parameters. Pro must keep these alive. See §2.
+2. **Pro-only code is assumed already in place.** Lite strips `ThreeBandEQ`, `TransientShaper`, `juce::ADSR`, paired-key wiring, and the Pro-only randomization params. This spec assumes Pro has already kept those alive — §2 is now a short verification checklist, not a porting guide.
 3. **Apply backend fixes wholesale.** §3 — these are correctness/perf wins that aren't Lite-specific.
-4. **Audio formats + UX + About + bottom logo are largely portable.** §4–§7.
-5. **UI redesign is the largest body of work.** §8 — port aesthetic + LookAndFeel, but keep Pro-only controls visible (envelope, 3-band EQ, transient shaper sections that Lite hides).
-6. **Verify per §9.**
+4. **Audio formats + UX + bottom logo + CLAUDE.md mirror are largely portable.** §4–§7.
+5. **UI redesign is the largest body of work.** §8 — port aesthetic + LookAndFeel, keep Pro-only controls visible.
+6. **Build/release/installer infrastructure is new since 2026-04-27.** §9 covers CMake reshape (AAX gate, Standalone drop, deployment target), version stamping, Mac `.pkg` builder, `launch.json` switch, and the `Releases/` tree.
+7. **Release execution.** §10 covers the Path-A/B sequencing decision tree and the `release-spec.md` playbook pattern Pro should mirror.
+8. **Verify per §11.**
 
 > **Caveat:** Lite's UI may keep evolving. Treat §8 as a snapshot of where Lite stood on 2026-04-27, not a frozen contract. If you see Lite has moved further when you read this, prefer Lite's current state over this document's specifics.
 
@@ -43,22 +47,17 @@ Pro should have its own equivalents (`Robin Control` / `rcrp` or similar / same 
 
 ---
 
-## 2. Pro-only code Lite strips — DO NOT also strip
+## 2. Pro-only code — assumed already in place
 
-Lite's source has many sections marked `// COMMENTED FOR LITE — ACTIVE IN PREMIUM`. Pro **must keep these active**. Inventory:
+Per the user, Pro's core logic and parameters (ThreeBandEQ, TransientShaper, ADSR envelope, paired-key MIDI mapping, all the hidden APVTS params and their `*RndNeg`/`*RndPos` partners, the `rndPtrs.*` wiring in `RRVoice`, per-note randomization for env/EQ/transient, auditionGetters, the 3-band EQ override path in `processBlock`) is **already ported and active**. This section is retained as a quick checklist if you need to spot-check during the merge:
 
-- **`ThreeBandEQ`** (`Source/DSP/ThreeBandEQ.{h,cpp}`) — full 3-band EQ. Lite declares the member but never `prepareToPlay`s or processes it. Pro should call `threeBandEQ.prepareToPlay(sr, blockSize)`, `threeBandEQ.updateFilters(...)` per block, and `threeBandEQ.processBlock(buffer)` after the synth.
-- **`TransientShaper`** (`Source/DSP/TransientShaper.{h,cpp}`) — Lite same pattern. Pro processes after EQ, before volume.
-- **`juce::ADSR` envelope** in `RRVoice` — Lite advances it per sample but doesn't apply the gain. Pro applies envelope to output sample, and the dormant `envelope.noteOn()`/`noteOff()` in startNote/stopNote should drive actual amplitude.
-- **APVTS parameters Lite hides**: `envAttack`, `envDecay`, `lowGain`/`lowFreq`, `midGain`/`midFreq`, `highGain`/`highFreq`, `transientAttack`, `transientDecay`, plus all their `*RndNeg`/`*RndPos` partners. Lite's `createParameterLayout()` skips them. Pro's must include them — that's why `ParameterIDs::totalParameters = 48` exists (Pro count).
-- **Smoothers** for those: `smoothedEnvAttack`, `smoothedEnvDecay`, `smoothedTransientAttack`, `smoothedTransientDecay` — declared in `PluginProcessor.h` but unused in Lite.
-- **`rndPtrs.*` for those parameters** in `RRVoice::setRandomizationReferences()` — Lite comments out the assignments; Pro keeps them.
-- **Per-note randomization** in `RRVoice::startNote()` for envelope/EQ/transient — Lite comments those blocks out; Pro keeps them.
-- **Tone control + 3-band EQ override path** in `processBlock` — Lite has tone-only override of `randomizedToneLow/High`; Pro additionally overrides `randomizedLowGain`/`Freq`, etc.
-- **`auditionGetters`**: `getRandomizedLowGain()`, `getRandomizedLowFreq()`, `getRandomizedMidGain()`, etc. on `RRVoice` — Lite comments them out.
-- **Paired-key MIDI mapping** (`MidiMapper::NUM_KEY_PAIRS = 10`, `RRSound::keyPairIndex`, `RRSound::setKeyPairIndex`) — Lite ships unpitched / any-key-triggers. Pro likely uses paired-key per its product spec; keep the infrastructure wired.
+- `ThreeBandEQ::prepareToPlay` / `updateFilters` / `processBlock` are actually called in Pro's `processBlock` (not dormant).
+- `TransientShaper` runs after EQ, before volume.
+- `RRVoice` applies the ADSR envelope gain to the output sample, and `envelope.noteOn()/noteOff()` is wired in `startNote`/`stopNote`.
+- Pro's `createParameterLayout()` includes the Pro-only parameter IDs and partners; `ParameterIDs::totalParameters` matches Pro's count (Lite is 47, Pro should be 48 or whatever Pro's spec calls for).
+- The Pro-only smoothers (`smoothedEnvAttack`, `smoothedEnvDecay`, `smoothedTransientAttack`, `smoothedTransientDecay`) are advanced per block.
 
-When porting any code from Lite, **search the file for `COMMENTED FOR LITE` markers and uncomment the Pro side**, OR simply reject Lite's deletion of those blocks during the diff.
+When merging Lite changes from this point on, the rule is: if a Lite diff deletes a Pro-active block (e.g. removes an EQ/transient call), reject that part of the diff. Lite-only `// COMMENTED FOR LITE` markers can be ignored on the Pro side.
 
 ---
 
@@ -252,6 +251,33 @@ The window centering uses **actual** size (`aboutWindow.getWidth()/getHeight()`)
 
 The window's body height is measured via `juce::TextLayout` in the constructor so the gap above the close button matches the gap below the title (both 12px). See `PluginEditor.h::AboutWindow` for the implementation — uses `static constexpr int marginTop/titleH/gap/buttonH/marginBottom` and computes total height from measured `bodyHeight`.
 
+### 5c. Version stamp in About window — Lite commit `6542f83`
+
+The About window paints `"v" + JucePlugin_VersionString` in its bottom-right corner, dim warm gray (`0xff7a7468`), 9pt — same font family as the body. It sits at `(getWidth() - 50, getHeight() - 14, 40, 10)`, right-justified. Important: this draws **outside** the measured-text layout, so adding it doesn't perturb the title/body/gap math.
+
+`JucePlugin_VersionString` is emitted by `juce_add_plugin(VERSION ...)`. See §9d for the CMake side (Pro must set `VERSION` in its `juce_add_plugin` call or this define won't exist and the build will fail).
+
+```cpp
+// Inside AboutWindow::paint, after the body text is drawn:
+g.setFont(juce::Font(juce::FontOptions(9.f)));
+g.setColour(juce::Colour(0xff7a7468));
+g.drawText(juce::String("v") + JucePlugin_VersionString,
+           getWidth() - 50, getHeight() - 14, 40, 10,
+           juce::Justification::right);
+```
+
+### 5d. `getProgramName(0)` returns `"Default"` — Lite commit `6542f83`
+
+In `PluginProcessor.cpp`, `getProgramName(int index)` now returns `"Default"` instead of an empty string. Silences a pluginval warning. No functional effect for AU (which reports `AUPreset.presetNumber=-1` regardless until factory presets are registered).
+
+```cpp
+const juce::String NewProjectAudioProcessor::getProgramName(int index)
+{
+    juce::ignoreUnused(index);
+    return "Default";
+}
+```
+
 ---
 
 ## 6. Bottom-of-window logo
@@ -290,12 +316,16 @@ Pro should drop its own logo in `LOGOS/` and reference its `BinaryData::*` symbo
 
 Pro's `CLAUDE.md` (if it exists) should mirror these load-bearing rules, adapted for Pro's feature set:
 
-- **Audio/message-thread safety contract** — copy verbatim from Lite's CLAUDE.md "Key Design Decisions" section. The pattern (`getCallbackLock()`, `SampleLoader` taking `const juce::CriticalSection&`) is identical for Pro.
-- **`prepareToPlay` rebuild rule** — same; copy.
-- **Sample Start asymmetric edge case** — same; copy. Pro inherits the same trim semantics.
-- **ToneControl cache** — same; copy. Add a parallel paragraph for `ThreeBandEQ` if Pro applies the same caching pattern there.
-- **MP3 build gate** — same; copy.
-- **"Load Samples is additive"** — same UX; copy.
+- **Audio/message-thread safety contract** (§3a) — copy verbatim from Lite's CLAUDE.md "Key Design Decisions" section. The pattern (`getCallbackLock()`, `SampleLoader` taking `const juce::CriticalSection&`) is identical for Pro.
+- **`prepareToPlay` rebuild rule** (§3b) — same; copy.
+- **Sample Start asymmetric edge case** (§3c) — same; copy. Pro inherits the same trim semantics.
+- **ToneControl cache** (§3d) — same; copy. Add a parallel paragraph for `ThreeBandEQ` if Pro applies the same caching pattern there.
+- **MP3 build gate** (§4) — same; copy.
+- **"Load Samples is additive"** (§5a) — same UX; copy.
+- **Version is single-source-of-truth in CMakeLists.txt** (§9d) — the `juce_add_plugin(VERSION ...)` line + the `project(... VERSION)` line MUST match; the installer script greps the latter.
+- **macOS deployment target = 11.0** (§9a) — sync between `CMakeLists.txt`, `distribution.xml`, and any `cmake -D...` overrides.
+- **AAX SDK gate** (§9b) — document the env path (`~/SDKs/aax-sdk-2-9-0` on Mac, `%USERPROFILE%\SDKs\aax-sdk-2-9-0` on Windows) and the `JUCE_AAX_SDK_PATH` override.
+- **Standalone status** (§9c) — if Pro keeps Standalone, document the post-build copy hook; if dropped, document the removal and the attach-debug `launch.json` switch (§9f).
 
 Lite's CLAUDE.md is at the repo root: `/Users/alex/Documents/Github/robin-control-redesign/CLAUDE.md`. Read it directly for the exact wording — Pro's prose can match.
 
@@ -420,22 +450,218 @@ Worth porting if Pro doesn't already have one.
 
 ---
 
-## 9. Verification
+## 9. Build & release infrastructure (post-2026-04-27)
+
+Everything in this section landed after the original spec was written. It's mostly CMake reshape + Mac installer scaffolding + dev ergonomics, all driven by getting Lite to a shippable signed/notarized `.pkg`. Pro will hit the same checklist.
+
+### 9a. macOS deployment target → 11.0 — Lite commit `acfd637`
+
+`CMakeLists.txt` line 2 was lowered from `13.0` to `11.0`:
+
+```cmake
+set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
+```
+
+Rationale (from `spec.md` §7): 11.0 (Big Sur) covers Apple Silicon's first OS and Intel users on older machines. 13.0 was too aggressive for a free plugin's target audience. The `distribution.xml` installer also gates on `<os-version min="11.0"/>` — keep both in sync.
+
+### 9b. AAX SDK opt-in gate — Lite commit `acfd637`
+
+`CMakeLists.txt` now auto-detects the AAX SDK and adds AAX to `FORMATS` only when present, so fresh clones / Windows boxes without the SDK still configure cleanly:
+
+```cmake
+set(JUCE_AAX_SDK_PATH "$ENV{HOME}/SDKs/aax-sdk-2-9-0" CACHE PATH "Path to AAX SDK root")
+
+if(EXISTS "${JUCE_AAX_SDK_PATH}/Interfaces/AAX.h")
+    message(STATUS "AAX SDK found at ${JUCE_AAX_SDK_PATH} — enabling AAX format")
+    juce_set_aax_sdk_path("${JUCE_AAX_SDK_PATH}")
+    set(PLUGIN_FORMATS VST3 AU AAX)
+else()
+    message(STATUS "AAX SDK not found at ${JUCE_AAX_SDK_PATH} — building VST3/AU only")
+    set(PLUGIN_FORMATS VST3 AU)
+endif()
+
+juce_add_plugin(<TargetName>
+    # ...
+    FORMATS ${PLUGIN_FORMATS}
+)
+```
+
+Override per invocation: `cmake -DJUCE_AAX_SDK_PATH=/path/to/aax-sdk -B build`. On Windows, `%USERPROFILE%\SDKs\aax-sdk-2-9-0` is the default — same env-relative pattern.
+
+AAX has no `*_COPY_DIR` equivalent in JUCE; the eval `.aaxplugin` lands in `build/<Target>_artefacts/<Config>/AAX/` and you copy it manually to `/Library/Application Support/Avid/Audio/Plug-Ins/` for Pro Tools Developer testing.
+
+### 9c. Standalone format removed from v1.0 — Lite commit `acfd637` + `84345f0`
+
+Lite dropped Standalone for v1.0. Rationale: nobody asked for it, it doubled the signing/notarization surface area, and the `.app` post-build copy hook was an ongoing maintenance burden. `FORMATS` is now `VST3 AU` (plus AAX when gated), and the manual `add_custom_command(...)` block that copied the Standalone `.app` to `/Applications` was deleted from `CMakeLists.txt`.
+
+If Pro currently ships Standalone, **don't auto-follow** — Pro's audience may differ. But if you do drop it, the cleanup is:
+- Remove `Standalone` from the `FORMATS` line (or the `PLUGIN_FORMATS` set above).
+- Delete the `if(APPLE) add_custom_command(TARGET <Target>_Standalone POST_BUILD ...)` block.
+- Update `installer/build-installer.sh`, `installer/distribution.xml`, `installer/uninstall.sh` to drop the Standalone component pkg and the `/Applications` rm.
+- Update `.vscode/launch.json` per §9f.
+- Update README install/quick-start sections.
+
+### 9d. JUCE plugin `VERSION` binding — Lite commit `6542f83`
+
+`juce_add_plugin` now takes a `VERSION` argument:
+
+```cmake
+juce_add_plugin(<TargetName>
+    VERSION 1.0.0
+    COMPANY_NAME "..."
+    # ...
+)
+```
+
+This is what populates `JucePlugin_VersionString` (used by the About window version stamp — see §5c) AND what the installer build script greps out of `CMakeLists.txt`:
+
+```bash
+VERSION="$(grep -E '^project\(<TargetName> VERSION' "$CMAKE_FILE" \
+            | sed -E 's/.*VERSION ([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
+```
+
+`CMakeLists.txt` is the **single source of truth for version**. The `project(... VERSION x.y.z)` line at the top + the `juce_add_plugin(VERSION x.y.z)` line MUST match. Bump both together when cutting releases.
+
+### 9e. Mac installer scaffolding — `installer/` — Lite commits `6542f83` + `84345f0`
+
+Lite ships a productbuild-based `.pkg` builder under `installer/`. Pro should adopt the same pattern; the only changes are Pro's identity strings + artefact paths. Three files:
+
+**`installer/build-installer.sh`** — main entry point. Inputs are the Release artefacts at `NewProject/build-release/<Target>_artefacts/Release/{VST3,AU}/`; output is `Releases/Installers/<Product> <Version>.pkg`. Pipeline:
+
+1. Parse `VERSION` from `NewProject/CMakeLists.txt` (single source of truth).
+2. `pkgbuild` one component `.pkg` per format with stable identifier (e.g. `dsp.conduit.RobinControlLite.vst3`, `.au`), `--install-location` to the correct system plugin folder.
+3. Stage `EULA.md` as the installer GUI's `license.txt`.
+4. `sed` substitute `@VERSION@` in `distribution.xml` → staging dir.
+5. `productbuild --distribution ... --package-path ... --resources ... [--sign $INSTALLER_SIGN] <output>.pkg`.
+
+Optional signing: `INSTALLER_SIGN="Developer ID Installer: CONDUIT DSP LLC (TEAMID)"` env var threads through to `productbuild --sign`. Default is unsigned (for local smoke-testing via `sudo installer -pkg ... -target /`).
+
+**`installer/distribution.xml`** — distribution definition. Key elements:
+
+```xml
+<options customize="allow" require-scripts="false" hostArchitectures="x86_64,arm64" />
+<volume-check>
+    <allowed-os-versions>
+        <os-version min="11.0" />
+    </allowed-os-versions>
+</volume-check>
+<choices-outline>
+    <line choice="vst3" />
+    <line choice="au" />
+</choices-outline>
+<choice id="vst3" title="VST3" description="..."><pkg-ref id="dsp.conduit.RobinControlLite.vst3" /></choice>
+<choice id="au"   title="Audio Unit (AU)" description="..."><pkg-ref id="dsp.conduit.RobinControlLite.au" /></choice>
+<pkg-ref id="dsp.conduit.RobinControlLite.vst3" version="@VERSION@" auth="Root">RobinControlLite-VST3.pkg</pkg-ref>
+<pkg-ref id="dsp.conduit.RobinControlLite.au"   version="@VERSION@" auth="Root">RobinControlLite-AU.pkg</pkg-ref>
+```
+
+For Pro: rename all `dsp.conduit.RobinControlLite.*` identifiers to Pro's reverse-DNS, update `<title>` and `<organization>`, swap artefact filenames. Keep `customize="allow"` so users can deselect formats. Keep `@VERSION@` literally — `build-installer.sh` substitutes it at build time.
+
+**`installer/uninstall.sh`** — confirms with the user, then `sudo rm -rf` the system bundles, `rm -rf` the user-local dev copies in `~/Library/Audio/Plug-Ins/{VST3,Components}`, and `pkgutil --forget` the component identifiers so a re-install gets fresh receipts. Pro just needs the path/identifier strings updated.
+
+### 9f. `.vscode/launch.json` → attach-to-process — Lite commit `acfd637`
+
+Since Standalone is gone, there's no `.app` to launch directly. The launch config now attaches lldb to a running host:
+
+```json
+{
+    "name": "Attach lldb to host (DAW or AudioPluginHost)",
+    "type": "cppdbg",
+    "request": "attach",
+    "program": "/usr/bin/true",
+    "processId": "${command:pickProcess}",
+    "MIMode": "lldb",
+    "preLaunchTask": "cmake build"
+}
+```
+
+Workflow: `cmake --build build` → open the AU/VST3 in any DAW (Logic, Live, Reaper, JUCE AudioPluginHost) → run this config → pick the host's PID from the picker. If Pro keeps Standalone, keep the old launch config alongside this one; otherwise replace.
+
+### 9g. `Releases/` directory layout
+
+Lite's repo root now has a `Releases/` tree mirroring the distribution layout:
+
+```
+Releases/
+├── Installers/   # macOS .pkg files (build-installer.sh output)
+├── macOS/        # raw signed/notarized bundles before bundling
+├── Windows/      # Windows release artifacts (.exe installer when ready)
+├── README.html   # rendered README for in-installer or web display
+└── build_readme_pdf.py
+```
+
+The directory tree is preserved via `.gitkeep` files (the contents themselves are gitignored — `Releases/Installers/*.pkg` etc.). Pro should mirror the structure.
+
+**`Releases/build_readme_pdf.py`** — small Python script (uses the `markdown` package) that renders `README.md` to print-friendly HTML at `Releases/README.html`. Open in a browser → Export/Print to PDF. Embedded CSS uses Letter paper + 0.75in margins + a cream/brown palette matching the plugin. Worth porting verbatim and updating the CSS to match Pro's brand colors.
+
+### 9h. README updates worth mirroring — Lite commit `eca4cb0`
+
+The user pass on README that lands with Lite v1.0:
+
+- Drop all Standalone references (install paths, badges, "Drop a `.wav` onto any slot" language).
+- Quick Start step 1 now reads: "Click **Load Samples** in the header (or the 'click to add samples' placeholder in the empty pool) and pick up to 20 audio files" — matches the additive UX from §5a.
+- Drag-drop language is gone (Lite doesn't support drag-drop in v1.0; if Pro does, keep the drag-drop bullet but list it secondary to the file picker).
+- New "Tip: audition samples before loading" subsection points users at the native file picker's preview (macOS column view + Space for QuickLook; Windows preview pane). This is a low-cost UX win — users discover they can audition without committing pool slots.
+- Audio formats list now includes `.mp3`.
+
+---
+
+## 10. Release-spec playbook pattern
+
+Lite ships a `release-spec.md` at the repo root: a **sequential, command-level checklist with `[x]`/`[ ]` checkboxes** covering build config, Apple signing, AAX validation, Pro Tools test, Windows build, distribution, post-ship. It's the live tracker — updated as items are completed, with absolute dates next to each `[x]`. This is distinct from `spec.md` (which is the strategy/identity/scope doc); when they disagree on v1.0 specifics, `release-spec.md` wins.
+
+Pro should adopt the same pattern. Adapt headings to Pro's scope. Highlights worth lifting:
+
+### 10a. Path A vs Path B sequencing — Lite committed Path B 2026-05-09
+
+The AAX commercial signing process (PACE Wraptool + iLok license) requires a request to Avid (`audiosdk@avid.com`); lead time is **days to weeks** and unpredictable. Two sequencing strategies:
+
+- **Path A — One-shot ship.** Tag `v1.0.0` only after all three formats (VST3/AU/AAX) on both platforms (Mac/Win) are signed. Preferred if Avid grants in time.
+- **Path B — Staged ship.** Tag `v1.0.0` with VST3 (Mac+Win) + AU (Mac), notarized + Mac-signed, **no AAX**. Ship publicly. When Avid grants, build the AAX, PACE-sign, tag `v1.0.1` adding AAX-only artifacts. README install section gets an "AAX coming soon" line at v1.0, removed at v1.0.1.
+
+**Commit-to-Path-B trigger:** if the date you're otherwise ready to ship is >7 days past Avid's first acknowledgment email and Wraptool/license still hasn't appeared, ship Path B and treat AAX as fast-follow.
+
+Pro will hit the same decision. Send the Avid request on **day 1** of release work, not at the end.
+
+### 10b. Apple signing + notarization sequence
+
+`release-spec.md` §6 has the exact command sequence Pro will need. Outline:
+
+1. **Universal Release build:** `cmake -B build-release -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0`
+2. Verify universal: `file <bundle>/Contents/MacOS/<binary>` should report `Mach-O universal binary with 2 architectures: [x86_64] [arm64]` for each format.
+3. **Sign each plugin bundle** with `codesign --force --options runtime --timestamp --sign "$CERT" --deep <bundle>` where `$CERT="Developer ID Application: <COMPANY> (TEAMID)"`. **Don't apply Apple `codesign` to the AAX bundle** — AAX gets PACE-wrapped instead.
+4. **Build the .pkg installer:** `INSTALLER_SIGN="Developer ID Installer: ..." installer/build-installer.sh`.
+5. **Notarize:** `xcrun notarytool submit <pkg> --keychain-profile <profile> --wait`. Profile is set up once via `xcrun notarytool store-credentials` using the app-specific password generated at appleid.apple.com.
+6. **Staple:** `xcrun stapler staple <pkg>` then `xcrun stapler validate <pkg>`.
+7. **Gatekeeper test:** `spctl --assess --type install <pkg>` should return `accepted, source=Notarized Developer ID`.
+
+### 10c. Mirror `release-prep-checklist.md` for the lighter-weight version
+
+Lite also keeps a `release-prep-checklist.md` (smaller, more recent). Both files coexist — `release-spec.md` is the deep playbook, `release-prep-checklist.md` is the lighter status tracker.
+
+---
+
+## 11. Verification
 
 After porting, smoke-test on Pro:
 
-1. **Build clean** — `cmake -B build && cmake --build build`. Verify all formats build (VST3, AU, Standalone, AAX if Pro ships AAX).
+1. **Build clean** — `cmake -B build && cmake --build build`. Verify expected formats build (VST3, AU, AAX if Pro ships AAX, Standalone if Pro keeps it). Confirm AAX gate (§9b) reports the expected message based on SDK presence.
 2. **Identity** — open in DAW, confirm Pro's product name appears, not Lite's. Bundle ID, plugin code, manufacturer code distinct from Lite.
 3. **Backend correctness:**
    - Load 5 samples, hammer trigger ~10Hz, drag-reorder a slot. No crash, no glitch, no UI desync (race fix from §3a).
    - Open at 44.1k, switch DAW to 96k. All loaded samples replay fully without truncation (§3b).
    - Mixed-duration pool (2 long MP3s + 5 short WAVs), set Random Algorithm to 15/16/17. All 7 samples audible, not just MP3s (§3c).
-4. **CPU** — idle CPU should be lower than baseline (tone cache D); panning a long sample should be flat across pan positions (E).
+4. **CPU** — idle CPU should be lower than baseline (tone cache §3d); panning a long sample should be flat across pan positions (§3d).
 5. **Format** — drop in `.mp3`, confirm load + playback (§4).
-6. **UX** — Load Samples button appends instead of replaces (§5a). `?` toggles About (§5b).
-7. **Pro-only sections** — verify ENVELOPE, EQ, TRANSIENT (or whatever Pro exposes) still work after porting Lite's APVTS-load consolidation. The randomization for those parameters should fire on note-on. Pro is monophonic? polyphonic? — verify per-voice behavior matches Pro's design.
+6. **UX** — Load Samples button appends instead of replaces (§5a). `?` toggles About (§5b). About window shows `v<version>` in bottom-right (§5c).
+7. **Pro-only sections** — verify ENVELOPE, EQ, TRANSIENT (or whatever Pro exposes) still work after merging Lite's APVTS-load consolidation. The randomization for those parameters should fire on note-on. Pro is monophonic? polyphonic? — verify per-voice behavior matches Pro's design.
 8. **Visual** — section labels show the four-layer gradient treatment. Bottom-right logo present. About popup centered.
 9. **Preset compatibility** — save a preset, close, reopen, load. All Pro's parameters and sample paths restore correctly (Lite param-ID-frozen rule applies equally to Pro).
+10. **Version single-source** (§9d) — change `project(... VERSION x.y.z)` and `juce_add_plugin(VERSION x.y.z)` to a fresh version, rebuild, confirm About stamp updates and `installer/build-installer.sh` produces `... x.y.z.pkg`.
+11. **macOS deployment target** (§9a) — `otool -l <bundle>/Contents/MacOS/<binary> | grep -A2 LC_BUILD_VERSION` shows `minos 11.0` (or Pro's chosen floor). `distribution.xml`'s `<os-version min="..."/>` matches.
+12. **Installer end-to-end** (§9e) — `installer/build-installer.sh` (unsigned) produces a `.pkg` in `Releases/Installers/`. Install it with `sudo installer -pkg ... -target /` on a test Mac; confirm VST3 + AU land in `/Library/Audio/Plug-Ins/{VST3,Components}` and both load in their DAWs. Run `installer/uninstall.sh` and confirm both are removed plus `pkgutil --pkg-info <id>` returns "No receipt".
+13. **Signed/notarized install** (§10b) — once Apple certs are set up, repeat #12 with `INSTALLER_SIGN=...` and notarize. `spctl --assess --type install <pkg>` returns `accepted, source=Notarized Developer ID` on a clean Mac.
+14. **Attach-debug** (§9f) — if Pro dropped Standalone, confirm `.vscode/launch.json` attach-to-process works against a DAW host. If Pro kept Standalone, confirm the launch-Standalone config still runs.
 
 ---
 
@@ -451,6 +677,12 @@ If you have the Lite repo cloned:
 | About popup polish | `09348a9` | `PluginEditor.{h,cpp}` |
 | Logo darken + About body copy | `7ea87ea` | `PluginEditor.cpp` (and assets) |
 | Identity / paperwork (LICENSE/EULA/Privacy/spec) | `19826ff`, `2a2b77d`, `795043c`, `2d9204c` | repo-root docs |
+| Mac installer scaffolding + AU getProgramName fix + VERSION bind + About version stamp | `6542f83` | `installer/*`, `CMakeLists.txt`, `PluginProcessor.cpp`, `PluginEditor.h` |
+| AAX SDK gate + Standalone drop + deployment target 11.0 + launch.json attach-to-process | `acfd637` | `CMakeLists.txt`, `.vscode/launch.json`, `CLAUDE.md`, `release-spec.md` |
+| Installer scripts drop Standalone | `84345f0` | `installer/build-installer.sh`, `installer/distribution.xml`, `installer/uninstall.sh` |
+| README rewrite (drop Standalone, additive Load, audition tip) | `eca4cb0` | `README.md` |
+| Releases/ tree + README→HTML renderer | `26fb902` | `Releases/build_readme_pdf.py`, `release-spec.md` |
+| Release-spec checklist updates (Path B, AAX, signing) | `b6040cd`, `89446fa`, `f9c0e4c`, `26fb902` | `release-spec.md`, `CLAUDE.md` |
 
 `git -C /Users/alex/Documents/Github/robin-control-redesign show <sha> -- <path>` will show exact diffs.
 
