@@ -1,0 +1,145 @@
+name: Plugin Validation
+
+# Builds Robin Control Lite on macOS AND Windows on every push/PR, then runs the
+# free industry-standard validators (pluginval + auval) against the artefacts.
+#
+# WHY THIS EXISTS: the v1.0.0 FL Studio crash shipped because the Windows build
+# was never validated on Windows. This workflow compiles + validates Windows on
+# every commit, on GitHub's runners — no Windows machine required.
+#
+# JUCE is pulled automatically via FetchContent (the CMake falls back to it when
+# ~/Documents/JUCE is absent, which it always is on a fresh runner). AAX is
+# skipped automatically when the SDK isn't present.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:        # lets you run it manually from the Actions tab
+
+env:
+  PLUGINVAL_STRICTNESS: "10"
+
+jobs:
+  # ==========================================================================
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache JUCE (FetchContent)
+        uses: actions/cache@v4
+        with:
+          path: NewProject/build/_deps
+          key: juce-macos-8.0.4
+
+      - name: Configure (Release)
+        run: cmake -S NewProject -B NewProject/build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build NewProject/build -j3
+
+      - name: Locate artefacts
+        id: art
+        run: |
+          VST3=$(find NewProject/build/RobinControlLite_artefacts -name "*.vst3" -type d | head -1)
+          AU=$(find NewProject/build/RobinControlLite_artefacts -name "*.component" -type d | head -1)
+          echo "vst3=$VST3" >> "$GITHUB_OUTPUT"
+          echo "au=$AU"     >> "$GITHUB_OUTPUT"
+          echo "Found VST3: $VST3"
+          echo "Found AU:   $AU"
+
+      - name: Download pluginval
+        run: |
+          curl -sL https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_macOS.zip -o pluginval.zip
+          unzip -oq pluginval.zip
+          xattr -dr com.apple.quarantine pluginval.app || true
+
+      - name: pluginval — VST3
+        run: ./pluginval.app/Contents/MacOS/pluginval --strictness-level $PLUGINVAL_STRICTNESS --validate "${{ steps.art.outputs.vst3 }}"
+
+      - name: pluginval — AU
+        run: ./pluginval.app/Contents/MacOS/pluginval --strictness-level $PLUGINVAL_STRICTNESS --validate "${{ steps.art.outputs.au }}"
+
+      - name: Upload built plugins
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-plugins
+          path: |
+            NewProject/build/RobinControlLite_artefacts/**/*.vst3
+            NewProject/build/RobinControlLite_artefacts/**/*.component
+
+  # ==========================================================================
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache JUCE (FetchContent)
+        uses: actions/cache@v4
+        with:
+          path: NewProject/build/_deps
+          key: juce-windows-8.0.4
+
+      - name: Configure (Release)
+        run: cmake -S NewProject -B NewProject/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build NewProject/build --config Release -j3
+
+      - name: Locate VST3 artefact
+        id: art
+        shell: pwsh
+        run: |
+          $vst3 = Get-ChildItem -Path NewProject/build/RobinControlLite_artefacts -Recurse -Directory -Filter *.vst3 | Select-Object -First 1
+          echo "vst3=$($vst3.FullName)" >> $env:GITHUB_OUTPUT
+          echo "Found VST3: $($vst3.FullName)"
+
+      - name: Download pluginval
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Windows.zip -OutFile pluginval.zip
+          Expand-Archive -Path pluginval.zip -DestinationPath . -Force
+
+      - name: pluginval — VST3
+        shell: pwsh
+        run: ./pluginval.exe --strictness-level $env:PLUGINVAL_STRICTNESS --validate "${{ steps.art.outputs.vst3 }}"
+
+      - name: Upload built plugin
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-plugins
+          path: NewProject/build/RobinControlLite_artefacts/**/*.vst3
+
+  # ==========================================================================
+  # Correctness layer — JUCE UnitTest console app (pure-logic regressions).
+  unit-tests:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache JUCE (FetchContent)
+        uses: actions/cache@v4
+        with:
+          path: build-tests/_deps
+          key: juce-tests-8.0.4
+
+      - name: Configure (tests)
+        run: cmake -S NewProject -B build-tests -DRCL_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DJUCE_AAX_SDK_PATH=/nonexistent
+
+      - name: Build tests
+        run: cmake --build build-tests --target RobinControlLiteTests -j3
+
+      - name: Run unit tests
+        run: ./build-tests/tests/RobinControlLiteTests_artefacts/Debug/RobinControlLiteTests
+
+  # ==========================================================================
+  # Bug-class layer — ASan/UBSan + TSan over the test target (Clang only).
+  sanitizers:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run sanitizer passes (ASan+UBSan, then TSan)
+        run: scripts/test-sanitizers.sh

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
-project(RobinControlLite VERSION 1.0.0)
+project(RobinControlLite VERSION 1.0.1)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -47,8 +47,22 @@ endif()
 # ============================================================
 # Plugin target
 # ============================================================
+# Auto-copy install dirs are macOS-only — the paths below ($HOME/Library/...)
+# don't exist on Windows/Linux. On those platforms we skip the copy and let
+# tooling (CI validators, the installer) pick the artefact straight out of the
+# build tree. Keeps the local macOS dev loop identical while making Windows/CI
+# builds configure and link cleanly.
+set(_COPY_AFTER_BUILD FALSE)
+set(_VST3_COPY_DIR "")
+set(_AU_COPY_DIR   "")
+if(APPLE)
+    set(_COPY_AFTER_BUILD TRUE)
+    set(_VST3_COPY_DIR "$ENV{HOME}/Library/Audio/Plug-Ins/VST3")
+    set(_AU_COPY_DIR   "$ENV{HOME}/Library/Audio/Plug-Ins/Components")
+endif()
+
 juce_add_plugin(RobinControlLite
-    VERSION                         1.0.0
+    VERSION                         1.0.1
     COMPANY_NAME                    "conduit.dsp"
     BUNDLE_ID                       "dsp.conduit.RobinControlLite"
     PLUGIN_CODE                     "rcll"
@@ -60,9 +74,9 @@ juce_add_plugin(RobinControlLite
     NEEDS_MIDI_OUTPUT               FALSE
     IS_MIDI_EFFECT                  FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS     FALSE
-    COPY_PLUGIN_AFTER_BUILD         TRUE
-    VST3_COPY_DIR                   "$ENV{HOME}/Library/Audio/Plug-Ins/VST3"
-    AU_COPY_DIR                     "$ENV{HOME}/Library/Audio/Plug-Ins/Components"
+    COPY_PLUGIN_AFTER_BUILD         ${_COPY_AFTER_BUILD}
+    VST3_COPY_DIR                   "${_VST3_COPY_DIR}"
+    AU_COPY_DIR                     "${_AU_COPY_DIR}"
 
     FORMATS                         ${PLUGIN_FORMATS}
 )
@@ -198,3 +212,12 @@ target_link_libraries(RobinControlLite
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
+
+# ============================================================
+# Unit tests (correctness layer). Off by default so the plugin build is
+# unaffected; enable with:  cmake -DRCL_BUILD_TESTS=ON ...
+# ============================================================
+option(RCL_BUILD_TESTS "Build the Robin Control Lite unit-test console app" OFF)
+if(RCL_BUILD_TESTS)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../tests" "${CMAKE_BINARY_DIR}/tests")
+endif()
