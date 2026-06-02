@@ -24,7 +24,7 @@ Windows. The whole point of what follows is to make that class of bug
 | 1. Local host validation | `scripts/test-plugin.sh` (pluginval + auval) | ✅ wired & passing | Most VST3/AU host-compat bugs, lifecycle, state, automation |
 | 2. Unit / correctness tests | `tests/` (JUCE UnitTest) via `-DRCL_BUILD_TESTS=ON` | ✅ wired & passing | Logic regressions (randomization ranges, MIDI mapping, …) |
 | 3. Sanitizers (bug-class) | `scripts/test-sanitizers.sh` (ASan/UBSan + TSan) | ✅ wired & clean | OOB reads/writes, use-after-free, UB, data races |
-| 4. Cross-platform CI | `.github/workflows/validate.yml` | ✅ written, ⏳ push to activate | **Windows** build + validation without owning Windows |
+| 4. Cross-platform CI | `.github/workflows/validate.yml` | ✅ active & passing (since 2026-06-01) | **Windows** build + validation without owning Windows |
 | 5. Real-host smoke matrix | Manual checklist (§5) | ⏳ per-release | GUI/drag-drop, the FL-class quirks validators miss |
 | 6. Field crash telemetry | Crashpad → Sentry (§6) | ⏳ deferred (privacy decision) | Crashes on machines you'll never see |
 
@@ -111,12 +111,13 @@ whole process is instrumented; see §3).
 
 ---
 
-## 2. Layer 2 — CI validation (set up, needs a push)
+## 2. Layer 2 — CI validation (active & passing)
 
 `.github/workflows/validate.yml` builds on **macOS and Windows** and runs
-pluginval (strictness 10) on each. This is the single most important addition for
-this project: **it validates the Windows build on Windows, every commit, with no
-Windows machine.**
+pluginval (strictness 10) on each, plus the unit-test and sanitizer jobs. This is
+the single most important addition for this project: **it validates the Windows
+build on Windows, every commit, with no Windows machine.** All four jobs went
+green on the first run (2026-06-01).
 
 - JUCE is pulled via FetchContent automatically (no local JUCE on the runner).
 - AAX is skipped automatically (SDK not on the runner).
