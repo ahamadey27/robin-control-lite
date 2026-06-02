@@ -364,32 +364,97 @@ void NewProjectAudioProcessorEditor::addMoreSamples()
         juce::FileBrowserComponent::canSelectMultipleItems,
         [this](const juce::FileChooser& fc)
         {
-            auto results = fc.getResults();
-
-            // Find first empty slot
-            int slot = 0;
-            for (; slot < NewProjectAudioProcessor::NUM_SAMPLE_SLOTS; ++slot)
-                if (!audioProcessor.sampleSlots[slot].isLoaded)
-                    break;
-
-            for (const auto& file : results)
-            {
-                if (slot >= NewProjectAudioProcessor::NUM_SAMPLE_SLOTS) break;
-                if (file.existsAsFile())
-                {
-                    audioProcessor.sampleLoader.loadSample(slot, file);
-                    ++slot;
-                    // Skip to next empty slot
-                    while (slot < NewProjectAudioProcessor::NUM_SAMPLE_SLOTS &&
-                           audioProcessor.sampleSlots[slot].isLoaded)
-                        ++slot;
-                }
-            }
-
-            audioProcessor.rebuildLoadedIndices();
-            sampleManagerPanel.repaint();
+            addSamplesFromFiles(fc.getResults());
         }
     );
+}
+
+// Append each supported file to the next empty slot. Additive — never clears
+// the pool. Shared by the file chooser (addMoreSamples) and drag-and-drop
+// (filesDropped) so both entry points behave identically.
+void NewProjectAudioProcessorEditor::addSamplesFromFiles(const juce::Array<juce::File>& files)
+{
+    // Find first empty slot
+    int slot = 0;
+    for (; slot < NewProjectAudioProcessor::NUM_SAMPLE_SLOTS; ++slot)
+        if (!audioProcessor.sampleSlots[slot].isLoaded)
+            break;
+
+    for (const auto& file : files)
+    {
+        if (slot >= NewProjectAudioProcessor::NUM_SAMPLE_SLOTS) break;
+        if (file.existsAsFile())
+        {
+            audioProcessor.sampleLoader.loadSample(slot, file);
+            ++slot;
+            // Skip to next empty slot
+            while (slot < NewProjectAudioProcessor::NUM_SAMPLE_SLOTS &&
+                   audioProcessor.sampleSlots[slot].isLoaded)
+                ++slot;
+        }
+    }
+
+    audioProcessor.rebuildLoadedIndices();
+    sampleManagerPanel.repaint();
+}
+
+//==============================================================================
+// Drag-and-drop of audio files.
+//
+// SCOPE: This is the OS-level file-drop API. It reliably accepts files dragged
+// from the OS file manager (Windows Explorer / macOS Finder) even while the
+// plugin is hosted inside a DAW. Dragging from a DAW's OWN internal browser
+// (e.g. FL Studio's browser panel) only works if that host chooses to deliver
+// the drag as an OS file drop — many hosts, FL included, often do NOT, so that
+// path is host-dependent and outside the plugin's control. There is no separate
+// plugin-side API for it; FileDragAndDropTarget is the best (and only) hook.
+
+static bool isSupportedAudioFile(const juce::String& path)
+{
+    const juce::String ext = juce::File(path).getFileExtension().toLowerCase();
+    return ext == ".wav"  || ext == ".aif" || ext == ".aiff"
+        || ext == ".flac" || ext == ".ogg" || ext == ".mp3";
+}
+
+bool NewProjectAudioProcessorEditor::isInterestedInFileDrag(const juce::StringArray& files)
+{
+    for (const auto& f : files)
+        if (isSupportedAudioFile(f))
+            return true;
+    return false;
+}
+
+void NewProjectAudioProcessorEditor::fileDragEnter(const juce::StringArray& files, int, int)
+{
+    if (isInterestedInFileDrag(files) && !isFileDragHovering)
+    {
+        isFileDragHovering = true;
+        repaint();
+    }
+}
+
+void NewProjectAudioProcessorEditor::fileDragExit(const juce::StringArray&)
+{
+    if (isFileDragHovering)
+    {
+        isFileDragHovering = false;
+        repaint();
+    }
+}
+
+void NewProjectAudioProcessorEditor::filesDropped(const juce::StringArray& files, int, int)
+{
+    isFileDragHovering = false;
+
+    juce::Array<juce::File> audioFiles;
+    for (const auto& f : files)
+        if (isSupportedAudioFile(f))
+            audioFiles.add(juce::File(f));
+
+    if (!audioFiles.isEmpty())
+        addSamplesFromFiles(audioFiles);
+
+    repaint();
 }
 
 void NewProjectAudioProcessorEditor::updateSamplesInfo()
@@ -964,6 +1029,17 @@ void NewProjectAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
     drawArcOutline(toneHighSlider,     toneHighRndNegSlider,     toneHighRndPosSlider,     RRColors::toneCol);
     drawArcOutline(sampleStartSlider,  sampleStartRndNegSlider,  sampleStartRndPosSlider,  RRColors::trimCol);
     drawArcOutline(sampleEndSlider,    sampleEndRndNegSlider,    sampleEndRndPosSlider,    RRColors::trimCol);
+
+    // Drop-zone highlight — drawn last so it sits over everything while a valid
+    // audio-file drag hovers the editor.
+    if (isFileDragHovering)
+    {
+        auto r = getLocalBounds().toFloat().reduced(2.0f);
+        g.setColour(RRColors::s612RedDim.withAlpha(0.10f));
+        g.fillRoundedRectangle(r, 6.0f);
+        g.setColour(juce::Colour(0xffece5d4).withAlpha(0.85f));
+        g.drawRoundedRectangle(r, 6.0f, 2.0f);
+    }
 }
 
 void NewProjectAudioProcessorEditor::componentVisibilityChanged(juce::Component& component)
