@@ -17,10 +17,61 @@
 
 #include <JuceHeader.h>
 #include <iostream>
+#include <thread>
+#include <atomic>
+#include <chrono>
 
 #include "RandomizationEngine.h"
 #include "MidiMapper.h"
 #include "PluginProcessor.h"
+
+//==============================================================================
+// Shared helpers for the processor-level harnesses below.
+namespace rcltest
+{
+    // Writes `lengthSamples` of deterministic pseudo-noise as a 16-bit mono WAV to
+    // a temp file and returns it. The caller owns the file (call deleteFile()).
+    // A real loaded sample makes processBlock actually render — exercising the
+    // RRVoice playback / start-end clamp / tone path, not just an idle engine.
+    inline juce::File writeTempWav (juce::Random& rng, int lengthSamples, double sr = 44100.0)
+    {
+        auto file = juce::File::createTempFile (".wav");
+        juce::WavAudioFormat fmt;
+
+        if (auto os = file.createOutputStream())
+        {
+            std::unique_ptr<juce::OutputStream> stream (std::move (os));
+            const auto options = juce::AudioFormatWriterOptions{}
+                                     .withSampleRate (sr)
+                                     .withNumChannels (1)
+                                     .withBitsPerSample (16);
+            auto writer = fmt.createWriterFor (stream, options);
+
+            if (writer != nullptr)
+            {
+                juce::AudioBuffer<float> buf (1, lengthSamples);
+                for (int i = 0; i < lengthSamples; ++i)
+                    buf.setSample (0, i, rng.nextFloat() * 2.0f - 1.0f);
+                writer->writeFromAudioSampleBuffer (buf, 0, lengthSamples);
+            }
+        }
+        return file;
+    }
+
+    // Loads `wav` into the first `count` slots and wires the synth, mirroring the
+    // lock discipline the processor uses in setStateInformation's restore block.
+    inline void loadIntoSlots (NewProjectAudioProcessor& proc, const juce::File& wav, int count)
+    {
+        for (int i = 0; i < count; ++i)
+            proc.sampleLoader.loadSample (i, wav);
+        {
+            const juce::ScopedLock sl (proc.getCallbackLock());
+            proc.rebuildLoadedIndices();
+            proc.reshuffleIndices();
+        }
+        proc.sampleLoader.updateSynthesiserSounds();
+    }
+}
 
 //==============================================================================
 class RandomizationEngineTests : public juce::UnitTest
@@ -350,10 +401,214 @@ public:
 };
 
 //==============================================================================
+// Parameter / automation fuzz. Drives every APVTS parameter across its range
+// (including the 0.0 / 1.0 extremes) interleaved with rendering of a real loaded
+// sample — the "automation hammering" pluginval applies at strictness 8–10, but
+// in-process so sanitizers see it. Catches UB in smoothing / voice-param updates
+// and any listener (parameterChanged) mishandling.
+class ProcessorAutomationTests : public juce::UnitTest
+{
+public:
+    ProcessorAutomationTests() : juce::UnitTest ("ProcessorAutomation") {}
+
+    void runTest() override
+    {
+        juce::Random rng (0xA0B1C2);
+        beginTest ("sweep all parameters while rendering a loaded sample");
+        {
+            auto wav = rcltest::writeTempWav (rng, 22050);   // ~0.5 s @ 44.1k
+            auto proc = std::make_unique<NewProjectAudioProcessor>();
+            rcltest::loadIntoSlots (*proc, wav, 3);
+            proc->prepareToPlay (48000.0, 256);
+
+            auto& params = proc->getParameters();
+            expect (params.size() > 0, "processor exposes no parameters");
+
+            // Pin every parameter to both extremes once — the values most likely
+            // to expose a clamp/divide/denormal bug.
+            for (auto* p : params) { p->setValueNotifyingHost (0.0f); p->setValueNotifyingHost (1.0f); }
+
+            juce::AudioBuffer<float> buffer (2, 256);
+            for (int iter = 0; iter < 4000; ++iter)
+            {
+                // A few random automation moves per block.
+                const int moves = rng.nextInt ({ 1, 6 });
+                for (int m = 0; m < moves; ++m)
+                    if (auto* p = params[rng.nextInt (params.size())])
+                        p->setValueNotifyingHost (rng.nextFloat());
+
+                buffer.clear();
+                juce::MidiBuffer midi;
+                if (rng.nextInt (4) == 0)
+                    midi.addEvent (juce::MidiMessage::noteOn (1, rng.nextInt ({ 24, 96 }),
+                                                             (juce::uint8) rng.nextInt ({ 1, 128 })), 0);
+                proc->processBlock (buffer, midi);
+
+                for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+                    for (int s = 0; s < buffer.getNumSamples(); ++s)
+                        expect (std::isfinite (buffer.getSample (ch, s)), "non-finite under automation");
+            }
+
+            proc->releaseResources();
+            wav.deleteFile();
+        }
+    }
+};
+
+//==============================================================================
+// Lifecycle / repeated load-unload. Constructs, prepares, loads samples,
+// renders, save/restores, releases, and destroys the whole processor many times.
+// This is the classic crash class pluginval's repeated open/close hits — a
+// dangling parameter listener (missing removeListener in the dtor), a static
+// left in a bad state, or a leak the JUCE leak-detector will assert on.
+class ProcessorLifecycleTests : public juce::UnitTest
+{
+public:
+    ProcessorLifecycleTests() : juce::UnitTest ("ProcessorLifecycle") {}
+
+    void runTest() override
+    {
+        juce::Random rng (0xD3E4F5);
+        beginTest ("repeated construct/prepare/load/process/save-restore/destroy cycles");
+        {
+            auto wav = rcltest::writeTempWav (rng, 8000);
+            const double srs[] { 44100.0, 48000.0, 96000.0 };
+
+            for (int cycle = 0; cycle < 40; ++cycle)
+            {
+                auto proc = std::make_unique<NewProjectAudioProcessor>();
+                const double sr = srs[cycle % 3];
+                const int    bs = 1 << (6 + (cycle % 4));   // 64..512
+
+                // ~1 in 5 cycles: construct and destroy without ever preparing or
+                // processing — the bare open/close a host does when scanning. The
+                // rest run the full prepare→process path (a host never calls
+                // processBlock before prepareToPlay, so we never do either).
+                if (rng.nextInt (5) == 0)
+                {
+                    if (rng.nextBool())
+                        rcltest::loadIntoSlots (*proc, wav, rng.nextInt ({ 1, 4 }));
+                    continue;   // proc destructs here — dtor must unwind cleanly.
+                }
+
+                proc->prepareToPlay (sr, bs);
+
+                if (rng.nextBool())
+                    rcltest::loadIntoSlots (*proc, wav, rng.nextInt ({ 1, 4 }));
+
+                juce::AudioBuffer<float> buffer (2, bs);
+                for (int b = 0; b < 6; ++b)
+                {
+                    buffer.clear();
+                    juce::MidiBuffer midi;
+                    if (b == 0) midi.addEvent (juce::MidiMessage::noteOn (1, 48, 0.9f), 0);
+                    proc->processBlock (buffer, midi);
+                }
+
+                juce::MemoryBlock state;
+                proc->getStateInformation (state);
+                proc->setStateInformation (state.getData(), (int) state.getSize());
+
+                if (rng.nextBool()) proc->releaseResources();   // vary teardown order
+                // proc destructs here — must remove its parameter listeners cleanly.
+            }
+
+            wav.deleteFile();
+            expect (true, "survived repeated lifecycle cycles");
+        }
+    }
+};
+
+//==============================================================================
+// Thread-race harness — the TSan target TESTING.md §3 calls out explicitly:
+// setStateInformation / pool edits / automation on the message thread racing
+// processBlock on the audio thread. We emulate the host faithfully: the audio
+// thread holds getCallbackLock() around processBlock (JUCE format wrappers do
+// this), which is the lock the message-thread mutators take internally. A clean
+// TSan run proves nothing shared escapes that lock.
+class ProcessorConcurrencyTests : public juce::UnitTest
+{
+public:
+    ProcessorConcurrencyTests() : juce::UnitTest ("ProcessorConcurrency") {}
+
+    void runTest() override
+    {
+        juce::Random rng (0x1A2B3C);
+        beginTest ("concurrent state I/O + automation vs processBlock");
+        {
+            auto wav = rcltest::writeTempWav (rng, 16000);
+            auto proc = std::make_unique<NewProjectAudioProcessor>();
+            rcltest::loadIntoSlots (*proc, wav, 4);
+            proc->prepareToPlay (48000.0, 256);   // fixed block size for the whole race
+
+            // A valid saved state (sample present) for the restore storm.
+            juce::MemoryBlock saved;
+            proc->getStateInformation (saved);
+
+            std::atomic<bool> stop { false };
+            std::atomic<int>  audioBlocks { 0 };
+
+            // Audio thread: render under the callback lock, as a host wrapper does.
+            std::thread audio ([&]
+            {
+                juce::Random arng (0x5EED5);
+                juce::AudioBuffer<float> buf (2, 256);
+                while (! stop.load (std::memory_order_relaxed))
+                {
+                    buf.clear();
+                    juce::MidiBuffer midi;
+                    if (arng.nextInt (3) == 0)
+                        midi.addEvent (juce::MidiMessage::noteOn (1, arng.nextInt ({ 24, 96 }), 0.8f), 0);
+                    {
+                        const juce::ScopedLock sl (proc->getCallbackLock());
+                        proc->processBlock (buf, midi);
+                    }
+                    audioBlocks.fetch_add (1, std::memory_order_relaxed);
+                    // Emulate the inter-buffer gap a real host leaves (256/48k ≈
+                    // 5 ms). Without this the lock-holding loop starves the message
+                    // thread — a test artifact, not a plugin defect.
+                    std::this_thread::sleep_for (std::chrono::microseconds (300));
+                }
+            });
+
+            // Message thread (here): hammer everything a host/UI can do live.
+            auto& params = proc->getParameters();
+            for (int i = 0; i < 600; ++i)
+            {
+                if (auto* p = params[rng.nextInt (params.size())])
+                    p->setValueNotifyingHost (rng.nextFloat());
+
+                switch (rng.nextInt (8))
+                {
+                    case 0: proc->setStateInformation (saved.getData(), (int) saved.getSize()); break;
+                    case 1: proc->swapSamples   (rng.nextInt (4), rng.nextInt (4)); break;
+                    case 2: proc->insertSample  (rng.nextInt (4), rng.nextInt (4)); break;
+                    case 3: proc->auditionSample (rng.nextInt (4)); break;
+                    case 4: proc->resetPlaybackPosition(); break;
+                    case 5: proc->requestTrigger(); break;
+                    case 6: proc->requestPanic(); break;
+                    default: break;
+                }
+            }
+
+            stop.store (true, std::memory_order_relaxed);
+            audio.join();
+
+            proc->releaseResources();
+            wav.deleteFile();
+            expect (audioBlocks.load() > 0, "audio thread never ran a block");
+        }
+    }
+};
+
+//==============================================================================
 // Auto-registering instances.
 static RandomizationEngineTests randomizationEngineTests;
 static MidiMapperTests          midiMapperTests;
 static ProcessorFuzzTests        processorFuzzTests;
+static ProcessorAutomationTests  processorAutomationTests;
+static ProcessorLifecycleTests   processorLifecycleTests;
+static ProcessorConcurrencyTests processorConcurrencyTests;
 
 int main (int, char**)
 {

@@ -102,22 +102,34 @@ The target is **off by default** (`RCL_BUILD_TESTS=ON` to enable) so the plugin
 build is untouched. It's a plain console app, so the **whole process is
 instrumented** under a sanitizer (see §3). Two layers live in the one binary:
 1. **Pure-logic units** — `RandomizationEngine`, `MidiMapper` (fast, header-light).
-2. **Processor crash-class harness** (`ProcessorFuzzTests`) — instantiates the
-   real `NewProjectAudioProcessor` headlessly (full engine + JUCE modules, minus
-   `juce_audio_plugin_client`; the few `JucePlugin_*` macros are hand-defined in
-   `tests/CMakeLists.txt`) and hammers `processBlock` / `setStateInformation` with
-   adversarial inputs: sample-rate flips, varied/oversized/zero-sample blocks,
-   mono-bus switch, MIDI floods, trigger/panic races, and malformed/truncated
-   saved state. A fixed-seed `juce::Random` makes any sanitizer hit reproducible.
+2. **Processor harnesses** — instantiate the real `NewProjectAudioProcessor`
+   headlessly (full engine + JUCE modules, minus `juce_audio_plugin_client`; the
+   few `JucePlugin_*` macros are hand-defined in `tests/CMakeLists.txt`). A
+   fixed-seed `juce::Random` makes any sanitizer hit reproducible. Four classes:
+   - `ProcessorFuzzTests` — hammers `processBlock` / `setStateInformation` with
+     sample-rate flips, varied/oversized/zero-sample blocks, mono-bus switch,
+     MIDI floods, trigger/panic races, and malformed/truncated saved state.
+   - `ProcessorAutomationTests` — sweeps every APVTS parameter across its range
+     (incl. 0.0/1.0 extremes) while rendering a real loaded sample — the
+     "automation hammering" pluginval applies at strictness 8–10, in-process.
+   - `ProcessorLifecycleTests` — repeated construct → prepare → load → process →
+     save/restore → release → destroy cycles (the open/close crash class: a
+     dangling parameter listener, a bad static, a leak the detector asserts on).
+   - `ProcessorConcurrencyTests` — **the TSan target**: an audio thread renders
+     under `getCallbackLock()` (as JUCE format wrappers do) while the message
+     thread fires automation, `setStateInformation`, and pool edits
+     (swap/insert/audition/reset). Proves nothing shared escapes that lock.
 
-> **Done (2026-06-12).** Building the harness immediately surfaced two real
-> robustness bugs, both fixed: (a) `ToneControl::processBlock` tripped a JUCE
-> assert and did pointless work on a legal **zero-sample block** (now early-returns);
-> (b) the processor **double-registered `MP3AudioFormat`** — `registerBasicFormats()`
-> already adds it when `JUCE_USE_MP3AUDIOFORMAT=1` (which CMake sets), so the
-> explicit call tripped JUCE's "same format twice" assert and left a duplicate
-> reader (the explicit call is now guarded). The §3 sanitizers cover both crash
-> paths automatically from here on.
+> **Done (2026-06-12).** Both increments green — all tests pass; ASan/UBSan **and**
+> TSan clean. Building the harnesses surfaced **two real robustness bugs, both
+> fixed**: (a) `ToneControl::processBlock` tripped a JUCE assert and did pointless
+> work on a legal **zero-sample block** (now early-returns); (b) the processor
+> **double-registered `MP3AudioFormat`** — `registerBasicFormats()` already adds it
+> when `JUCE_USE_MP3AUDIOFORMAT=1` (which CMake sets), so the explicit call tripped
+> JUCE's "same format twice" assert and left a duplicate reader (now guarded).
+> **Next increment:** load/decode fuzzing — feed `SampleLoader` truncated/garbage
+> and odd-format (8-bit, 8-channel, extreme-SR) audio files; and a brief soak
+> (longer concurrency run) under TSan in a nightly-only CI job.
 
 ---
 
