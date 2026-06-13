@@ -47,6 +47,18 @@ struct SampleSlot
         if (reader == nullptr)
             return false;
 
+        // Guard the int64 -> int narrowing below. A corrupt or crafted header can
+        // report a decoded length far beyond the file's actual size — SampleLoader's
+        // 200 MB cap is on FILE bytes, not decoded length, and compressed formats
+        // carry the length in metadata that can lie. Without this, a value past
+        // INT_MAX wraps negative and setSize() would assert/misbehave, and an
+        // enormous-but-positive value would OOM the (numChannels x numSamples) read
+        // buffer. 50M frames mirrors the 200 MB file cap (200 MB / 4 bytes-per-float)
+        // — far longer than any real one-shot/loop this sampler loads.
+        constexpr juce::int64 maxDecodedSamples = 50000000LL;
+        if (reader->lengthInSamples <= 0 || reader->lengthInSamples > maxDecodedSamples)
+            return false;
+
         const int numSamples = static_cast<int>(reader->lengthInSamples);
         sampleRate = reader->sampleRate;
 

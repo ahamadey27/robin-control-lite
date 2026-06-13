@@ -58,6 +58,84 @@ namespace rcltest
         return file;
     }
 
+    // Writes a real audio file in `fmt` with the given shape. Returns an empty
+    // (zero-byte) file if the format can't honour the combo (e.g. OGG + 24-bit) —
+    // callers should check getSize() and skip. `ext` includes the leading dot.
+    inline juce::File writeAudioFile (juce::Random& rng, juce::AudioFormat& fmt,
+                                      const juce::String& ext, int numChannels,
+                                      int bits, double sr, int lengthSamples)
+    {
+        auto file = juce::File::createTempFile (ext);
+        if (auto os = file.createOutputStream())
+        {
+            std::unique_ptr<juce::OutputStream> stream (std::move (os));
+            const auto options = juce::AudioFormatWriterOptions{}
+                                     .withSampleRate (sr)
+                                     .withNumChannels (numChannels)
+                                     .withBitsPerSample (bits);
+            if (auto writer = fmt.createWriterFor (stream, options))
+            {
+                juce::AudioBuffer<float> buf (numChannels, lengthSamples);
+                for (int ch = 0; ch < numChannels; ++ch)
+                    for (int i = 0; i < lengthSamples; ++i)
+                        buf.setSample (ch, i, rng.nextFloat() * 2.0f - 1.0f);
+                writer->writeFromAudioSampleBuffer (buf, 0, lengthSamples);
+            }
+            else
+            {
+                stream.reset();   // release the file handle so we can size/delete it
+            }
+        }
+        return file;
+    }
+
+    // Writes `len` random bytes to a temp file with extension `ext` — a "valid
+    // extension, garbage contents" file that must be rejected, not crash.
+    inline juce::File writeGarbage (juce::Random& rng, const juce::String& ext, int len)
+    {
+        auto file = juce::File::createTempFile (ext);
+        juce::MemoryBlock mb ((size_t) juce::jmax (0, len));
+        for (int i = 0; i < len; ++i)
+            mb[i] = (char) rng.nextInt (256);
+        file.replaceWithData (mb.getData(), mb.getSize());
+        return file;
+    }
+
+    // Hand-builds a canonical 16-bit-mono WAV whose `data` chunk size CLAIMS
+    // `claimedFrames` frames while only `actualDataBytes` of real samples follow.
+    // Used to exercise SampleSlot::loadFromFile's decoded-length guard without
+    // allocating (or OOM-ing on) the claimed size.
+    inline juce::File writeWavWithClaimedFrames (juce::int64 claimedFrames,
+                                                 int actualDataBytes, double sr = 44100.0)
+    {
+        const int blockAlign = 2;   // 1 channel * 16-bit
+        const juce::int64 claimedData = claimedFrames * blockAlign;
+
+        juce::MemoryOutputStream mo;
+        mo.write ("RIFF", 4);
+        mo.writeInt ((int) (36 + claimedData));      // RIFF size (claimed)
+        mo.write ("WAVE", 4);
+        mo.write ("fmt ", 4);
+        mo.writeInt (16);
+        mo.writeShort (1);                            // PCM
+        mo.writeShort (1);                            // mono
+        mo.writeInt ((int) sr);
+        mo.writeInt ((int) sr * blockAlign);          // byte rate
+        mo.writeShort ((short) blockAlign);
+        mo.writeShort (16);                           // bits
+        mo.write ("data", 4);
+        mo.writeInt ((int) claimedData);              // the lie: claimed data size
+        if (actualDataBytes > 0)
+        {
+            std::vector<char> zeros ((size_t) actualDataBytes, 0);
+            mo.write (zeros.data(), zeros.size());
+        }
+
+        auto file = juce::File::createTempFile (".wav");
+        file.replaceWithData (mo.getData(), mo.getDataSize());
+        return file;
+    }
+
     // Loads `wav` into the first `count` slots and wires the synth, mirroring the
     // lock discipline the processor uses in setStateInformation's restore block.
     inline void loadIntoSlots (NewProjectAudioProcessor& proc, const juce::File& wav, int count)
@@ -572,8 +650,14 @@ public:
             });
 
             // Message thread (here): hammer everything a host/UI can do live.
+            // Duration scales with RCL_SOAK_SECONDS: a PR run does the quick fixed
+            // pass (600 iters); the nightly TSan soak sets it to run for minutes,
+            // giving races far more chances to interleave. See TESTING.md §3.
+            const int soakSeconds = juce::SystemStats::getEnvironmentVariable ("RCL_SOAK_SECONDS", "0")
+                                        .getIntValue();
             auto& params = proc->getParameters();
-            for (int i = 0; i < 600; ++i)
+
+            auto oneStep = [&] (int i)
             {
                 if (auto* p = params[rng.nextInt (params.size())])
                     p->setValueNotifyingHost (rng.nextFloat());
@@ -589,6 +673,21 @@ public:
                     case 6: proc->requestPanic(); break;
                     default: break;
                 }
+                juce::ignoreUnused (i);
+            };
+
+            if (soakSeconds > 0)
+            {
+                logMessage ("SOAK MODE: running concurrency race for " + juce::String (soakSeconds) + "s");
+                const auto deadline = juce::Time::getMillisecondCounter() + (juce::uint32) soakSeconds * 1000;
+                int i = 0;
+                while (juce::Time::getMillisecondCounter() < deadline)
+                    oneStep (i++);
+            }
+            else
+            {
+                for (int i = 0; i < 600; ++i)
+                    oneStep (i);
             }
 
             stop.store (true, std::memory_order_relaxed);
@@ -602,6 +701,162 @@ public:
 };
 
 //==============================================================================
+// Sample load / decode fuzz. Decoding untrusted audio files is a real crash
+// surface (it's exactly what a user dropping a random file exercises). Feeds
+// SampleLoader::loadSample garbage, truncated, empty, and odd-but-valid files via
+// the processor, then renders — so any bad buffer surfaces in audio too. The
+// truncation cases keep a real header (which over-claims the sample count)
+// against short data — exercising the read-past-EOF / claimed-vs-actual-length
+// path that `static_cast<int>(reader->lengthInSamples)` rides on.
+class SampleLoaderFuzzTests : public juce::UnitTest
+{
+public:
+    SampleLoaderFuzzTests() : juce::UnitTest ("SampleLoaderFuzz") {}
+
+    void runTest() override
+    {
+        juce::Random rng (0xF1E2D3);
+
+        auto proc = std::make_unique<NewProjectAudioProcessor>();
+        proc->prepareToPlay (48000.0, 256);
+
+        auto renderABit = [&]
+        {
+            juce::AudioBuffer<float> buf (2, 256);
+            for (int b = 0; b < 3; ++b)
+            {
+                buf.clear();
+                juce::MidiBuffer midi;
+                if (b == 0) midi.addEvent (juce::MidiMessage::noteOn (1, 48, 0.9f), 0);
+                proc->processBlock (buf, midi);
+                for (int ch = 0; ch < buf.getNumChannels(); ++ch)
+                    for (int s = 0; s < buf.getNumSamples(); ++s)
+                        expect (std::isfinite (buf.getSample (ch, s)), "non-finite after load");
+            }
+        };
+
+        beginTest ("garbage bytes with audio extensions never crash the loader");
+        {
+            // NOTE: we do NOT assert rejection. MP3 is sync-word based with no
+            // container header, so the decoder leniently "decodes" random bytes as
+            // noise rather than rejecting them (and may log its own internal
+            // jassert on malformed frames — JUCE's domain, not ours). The contract
+            // we enforce is: no crash, and whatever lands renders finite audio.
+            const char* exts[] { ".wav", ".aiff", ".flac", ".ogg", ".mp3" };
+            for (int t = 0; t < 60; ++t)
+            {
+                auto f = rcltest::writeGarbage (rng, exts[rng.nextInt (5)], rng.nextInt ({ 0, 8192 }));
+                proc->sampleLoader.loadSample (rng.nextInt (4), f);
+                {
+                    const juce::ScopedLock sl (proc->getCallbackLock());
+                    proc->rebuildLoadedIndices();
+                }
+                proc->sampleLoader.updateSynthesiserSounds();
+                renderABit();
+                f.deleteFile();
+            }
+        }
+
+        beginTest ("empty files are rejected");
+        {
+            auto f = juce::File::createTempFile (".wav");
+            f.replaceWithData ("", 0);
+            expect (! proc->sampleLoader.loadSample (0, f), "empty file reported as loaded");
+            renderABit();
+            f.deleteFile();
+        }
+
+        beginTest ("truncations of a real WAV decode or reject without crashing");
+        {
+            juce::WavAudioFormat wav;
+            auto whole = rcltest::writeAudioFile (rng, wav, ".wav", 2, 16, 44100.0, 22050);
+            juce::MemoryBlock bytes;
+            expect (whole.loadFileAsData (bytes), "could not read back generated WAV");
+            expect (bytes.getSize() > 64, "generated WAV implausibly small");
+
+            const int step = juce::jmax (1, (int) bytes.getSize() / 40);
+            for (int cut = 0; cut <= (int) bytes.getSize(); cut += step)
+            {
+                auto t = juce::File::createTempFile (".wav");
+                t.replaceWithData (bytes.getData(), (size_t) cut);
+                proc->sampleLoader.loadSample (rng.nextInt (4), t);   // may pass or fail; must not crash
+                {
+                    const juce::ScopedLock sl (proc->getCallbackLock());
+                    proc->rebuildLoadedIndices();
+                }
+                proc->sampleLoader.updateSynthesiserSounds();
+                renderABit();
+                t.deleteFile();
+            }
+            whole.deleteFile();
+        }
+
+        beginTest ("a header over-claiming the decoded length is rejected, not allocated");
+        {
+            // Claims 60M frames (> SampleSlot's 50M cap) but carries ~100 bytes of
+            // real data. The decoded-length guard must reject this before allocating
+            // the claimed ~120 MB read buffer. Robust to whether the WAV reader
+            // trusts or clamps the header: either way, no crash and no huge alloc.
+            auto f = rcltest::writeWavWithClaimedFrames (60000000LL, 100);
+            const bool ok = proc->sampleLoader.loadSample (0, f);
+            expect (! ok, "over-claiming header was accepted (guard not engaged)");
+            renderABit();
+            f.deleteFile();
+        }
+
+        beginTest ("odd-but-valid formats fold to mono, resample, and play");
+        {
+            // Generation is WAV/AIFF only (JUCE's own uncompressed writers). We do
+            // NOT encode FLAC/OGG here: the product only DECODES them, and driving
+            // the vendored libFLAC/Vorbis ENCODERS trips third-party UBSan findings
+            // for code the plugin never runs. FLAC/OGG decoder reject-paths are
+            // still covered by the garbage-bytes test above; valid-compressed-file
+            // decode is left to pluginval + real-host testing (would otherwise need
+            // checked-in binary fixtures).
+            struct Spec { juce::String ext; int ch; int bits; double sr; int len; };
+            const Spec specs[]
+            {
+                { ".wav",  1, 8,   8000.0,   1 },
+                { ".wav",  2, 24,  192000.0, 7 },
+                { ".wav",  6, 16,  48000.0,  512 },
+                { ".wav",  8, 16,  44100.0,  256 },
+                { ".aiff", 1, 16,  44100.0,  128 },
+                { ".aiff", 2, 24,  96000.0,  64 },
+            };
+
+            for (const auto& s : specs)
+            {
+                std::unique_ptr<juce::AudioFormat> fmt;
+                if (s.ext == ".wav") fmt = std::make_unique<juce::WavAudioFormat>();
+                else                 fmt = std::make_unique<juce::AiffAudioFormat>();
+
+                auto f = rcltest::writeAudioFile (rng, *fmt, s.ext, s.ch, s.bits, s.sr, s.len);
+                if (f.getSize() == 0) { f.deleteFile(); continue; }   // combo unsupported by writer
+
+                const bool ok = proc->sampleLoader.loadSample (0, f);
+                expect (ok, "valid " + s.ext + " (" + juce::String (s.ch) + "ch/"
+                              + juce::String (s.bits) + "bit) failed to load");
+                {
+                    const juce::ScopedLock sl (proc->getCallbackLock());
+                    proc->rebuildLoadedIndices();
+                    proc->reshuffleIndices();
+                }
+                proc->sampleLoader.updateSynthesiserSounds();
+
+                // Flip the engine SR to force a resample of the just-loaded slot.
+                proc->prepareToPlay (s.sr > 48000.0 ? 44100.0 : 96000.0, 256);
+                renderABit();
+                proc->prepareToPlay (48000.0, 256);
+
+                f.deleteFile();
+            }
+        }
+
+        proc->releaseResources();
+    }
+};
+
+//==============================================================================
 // Auto-registering instances.
 static RandomizationEngineTests randomizationEngineTests;
 static MidiMapperTests          midiMapperTests;
@@ -609,6 +864,7 @@ static ProcessorFuzzTests        processorFuzzTests;
 static ProcessorAutomationTests  processorAutomationTests;
 static ProcessorLifecycleTests   processorLifecycleTests;
 static ProcessorConcurrencyTests processorConcurrencyTests;
+static SampleLoaderFuzzTests     sampleLoaderFuzzTests;
 
 int main (int, char**)
 {

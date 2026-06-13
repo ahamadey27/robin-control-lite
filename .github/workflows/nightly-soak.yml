@@ -1,0 +1,38 @@
+name: Nightly TSan Soak
+
+# A LONG concurrency soak under sanitizers — the deep-coverage complement to the
+# quick sanitizer job in validate.yml (which runs on every push/PR).
+#
+# WHY SEPARATE: data races are probabilistic — a short run may never hit the
+# unlucky interleaving. ProcessorConcurrencyTests scales its duration with
+# RCL_SOAK_SECONDS; here we run the race for minutes so setStateInformation /
+# pool-edit / automation vs processBlock get far more chances to collide. Too
+# slow to gate every commit, so it runs nightly (and on demand).
+#
+# Runs the full scripts/test-sanitizers.sh: the soak executes under BOTH
+# ASan/UBSan (catches use-after-free in the race) and TSan (catches data races).
+# RCL_SOAK_SECONDS is inherited by the test binary the script launches.
+
+on:
+  schedule:
+    - cron: "0 7 * * *"     # 07:00 UTC daily
+  workflow_dispatch:
+    inputs:
+      soak_seconds:
+        description: "Seconds to run the concurrency race per sanitizer pass"
+        required: false
+        default: "120"
+
+env:
+  # Manual runs honour the dispatch input; scheduled runs use 120s.
+  RCL_SOAK_SECONDS: ${{ github.event.inputs.soak_seconds || '120' }}
+
+jobs:
+  tsan-soak:
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run sanitizer soak (ASan+UBSan, then TSan)
+        run: scripts/test-sanitizers.sh

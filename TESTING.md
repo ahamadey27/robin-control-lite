@@ -119,6 +119,17 @@ instrumented** under a sanitizer (see §3). Two layers live in the one binary:
      under `getCallbackLock()` (as JUCE format wrappers do) while the message
      thread fires automation, `setStateInformation`, and pool edits
      (swap/insert/audition/reset). Proves nothing shared escapes that lock.
+   - `SampleLoaderFuzzTests` — feeds `SampleLoader::loadSample` garbage bytes (all
+     five extensions), empty files, truncations of a real WAV (header over-claims
+     the sample count vs short data), and odd-but-valid WAV/AIFF files (8-bit,
+     24-bit, 6/8-channel, 8 k / 192 k SR) — then renders. Decoding untrusted files
+     is the exact path a user dropping a random file exercises. Two deliberate
+     scoping calls: (1) garbage `.mp3` is *not* asserted to be rejected — MP3 is
+     sync-word based and leniently decodes random bytes to noise, so the contract
+     is no-crash + finite audio; (2) odd-format *generation* is WAV/AIFF only — the
+     product decodes FLAC/OGG but never encodes them, and driving the vendored
+     libFLAC/Vorbis encoders trips third-party UBSan findings for code that never
+     ships (FLAC/OGG *decoder* reject-paths are still covered by the garbage test).
 
 > **Done (2026-06-12).** Both increments green — all tests pass; ASan/UBSan **and**
 > TSan clean. Building the harnesses surfaced **two real robustness bugs, both
@@ -175,6 +186,18 @@ scripts/test-sanitizers.sh
 Any sanitizer hit aborts with a non-zero exit → CI gate. These are
 **Clang/GCC** tools (not MSVC), so run on macOS/Linux; most defects they find are
 cross-platform, so catching them on Mac still fixes Windows.
+
+### Nightly soak (`.github/workflows/nightly-soak.yml`)
+Data races are probabilistic — a short run may never hit the unlucky interleave.
+`ProcessorConcurrencyTests` scales its race duration with the **`RCL_SOAK_SECONDS`**
+env var (default `0` → the quick fixed pass used by every push/PR). The nightly
+workflow sets it to 120 s and runs the **full** sanitizer script, so the race
+executes for minutes under *both* ASan/UBSan (use-after-free in the race) and TSan
+(data races). Too slow to gate every commit; runs on a daily cron + on demand
+(`workflow_dispatch`, with a `soak_seconds` input). Run a soak locally with:
+```bash
+RCL_SOAK_SECONDS=120 scripts/test-sanitizers.sh
+```
 
 | Sanitizer | Finds |
 |---|---|
