@@ -57,6 +57,12 @@ void ToneControl::processBlock(juce::AudioBuffer<float>& buffer)
     if (!isPrepared)
         return;
 
+    // Hosts legally hand empty blocks (transport edges, loop boundaries). A
+    // 0-sample dsp::AudioBlock trips getChannelPointer's numSamples>0 assert and
+    // does no useful work, so bail early.
+    if (buffer.getNumSamples() == 0)
+        return;
+
     juce::dsp::AudioBlock<float> block(buffer);
     juce::dsp::ProcessContextReplacing<float> context(block);
 

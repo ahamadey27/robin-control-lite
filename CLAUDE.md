@@ -58,7 +58,7 @@ Still useful for manual checks: JUCE AudioPluginHost or any DAW (the real-host s
 
 ### Audio formats supported
 
-WAV, AIFF, FLAC, OGG, **MP3** (decode-only). MP3 is gated behind `JUCE_USE_MP3AUDIOFORMAT=1` in `CMakeLists.txt` (`target_compile_definitions`) — JUCE 8's basic format pack does NOT include it by default. `MP3AudioFormat` is also explicitly registered in `PluginProcessor` after `formatManager.registerBasicFormats()`. JUCE's MP3 decoder ships royalty-free; safe for distribution. The picker filters and `SampleLoader::supportedFormats` array must list `.mp3` too — all three places stay in sync.
+WAV, AIFF, FLAC, OGG, **MP3** (decode-only). MP3 is gated behind `JUCE_USE_MP3AUDIOFORMAT=1` in `CMakeLists.txt` (`target_compile_definitions`). With that flag set, `formatManager.registerBasicFormats()` **already registers `MP3AudioFormat`** — so the explicit `registerFormat(new MP3AudioFormat())` in `PluginProcessor`'s constructor is only a fallback for if the flag is ever turned off, and is **guarded against double-registration** (registering the same format twice trips a JUCE assert in Debug and duplicates the reader). Don't remove that guard. JUCE's MP3 decoder ships royalty-free; safe for distribution. The picker filters and `SampleLoader::supportedFormats` array must list `.mp3` too — all three places stay in sync.
 
 ### Plugin identity (for DAW registry)
 

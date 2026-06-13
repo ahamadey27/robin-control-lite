@@ -99,15 +99,25 @@ cmake --build build-tests --target RobinControlLiteTests -j3
 Exit code is non-zero on any failed test → CI gate.
 
 The target is **off by default** (`RCL_BUILD_TESTS=ON` to enable) so the plugin
-build is untouched. It compiles the units-under-test directly — no plugin-client
-wrapper, no GUI — which keeps it fast and, crucially, **sanitizer-friendly** (the
-whole process is instrumented; see §3).
+build is untouched. It's a plain console app, so the **whole process is
+instrumented** under a sanitizer (see §3). Two layers live in the one binary:
+1. **Pure-logic units** — `RandomizationEngine`, `MidiMapper` (fast, header-light).
+2. **Processor crash-class harness** (`ProcessorFuzzTests`) — instantiates the
+   real `NewProjectAudioProcessor` headlessly (full engine + JUCE modules, minus
+   `juce_audio_plugin_client`; the few `JucePlugin_*` macros are hand-defined in
+   `tests/CMakeLists.txt`) and hammers `processBlock` / `setStateInformation` with
+   adversarial inputs: sample-rate flips, varied/oversized/zero-sample blocks,
+   mono-bus switch, MIDI floods, trigger/panic races, and malformed/truncated
+   saved state. A fixed-seed `juce::Random` makes any sanitizer hit reproducible.
 
-> **Next increment:** extend this target to instantiate `NewProjectAudioProcessor`
-> and hammer `processBlock` / `setStateInformation` with adversarial inputs
-> (oversized buffers, sample-rate flips, zero channels, malformed state). That
-> turns it into an in-process fuzz harness for the *crash* class — and §3's
-> sanitizers then cover those paths automatically.
+> **Done (2026-06-12).** Building the harness immediately surfaced two real
+> robustness bugs, both fixed: (a) `ToneControl::processBlock` tripped a JUCE
+> assert and did pointless work on a legal **zero-sample block** (now early-returns);
+> (b) the processor **double-registered `MP3AudioFormat`** — `registerBasicFormats()`
+> already adds it when `JUCE_USE_MP3AUDIOFORMAT=1` (which CMake sets), so the
+> explicit call tripped JUCE's "same format twice" assert and left a duplicate
+> reader (the explicit call is now guarded). The §3 sanitizers cover both crash
+> paths automatically from here on.
 
 ---
 

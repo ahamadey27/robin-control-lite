@@ -37,10 +37,19 @@ NewProjectAudioProcessor::NewProjectAudioProcessor()
     }
 
     formatManager.registerBasicFormats();
-    // registerBasicFormats() does NOT include MP3. Register it explicitly so
-    // users can drop in .mp3 files. JUCE's MP3 reader is decode-only and ships
-    // royalty-free with the framework — safe for distribution.
-    formatManager.registerFormat(new juce::MP3AudioFormat(), false);
+    // With JUCE_USE_MP3AUDIOFORMAT=1 (set in CMakeLists), registerBasicFormats()
+    // ALREADY registers MP3 — so this explicit call is a fallback only for if that
+    // flag is ever turned off. Guard against a double-add: registering the same
+    // format twice trips a jassert and leaves a duplicate reader in the manager.
+    // JUCE's MP3 reader is decode-only and ships royalty-free — safe to distribute.
+    const juce::String mp3Name = juce::MP3AudioFormat().getFormatName();
+    bool mp3AlreadyRegistered = false;
+    for (int i = 0; i < formatManager.getNumKnownFormats(); ++i)
+        if (formatManager.getKnownFormat(i)->getFormatName() == mp3Name)
+            mp3AlreadyRegistered = true;
+
+    if (! mp3AlreadyRegistered)
+        formatManager.registerFormat(new juce::MP3AudioFormat(), false);
 
     DBG("=== Robin Control Lite Initialized ===");
     DBG("Synthesiser ready with " + juce::String(synthesiser.getNumVoices()) + " voice(s)");
