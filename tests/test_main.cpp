@@ -40,12 +40,12 @@ namespace rcltest
 
         if (auto os = file.createOutputStream())
         {
-            std::unique_ptr<juce::OutputStream> stream (std::move (os));
-            const auto options = juce::AudioFormatWriterOptions{}
-                                     .withSampleRate (sr)
-                                     .withNumChannels (1)
-                                     .withBitsPerSample (16);
-            auto writer = fmt.createWriterFor (stream, options);
+            // Use the classic createWriterFor overload: it's the API present in the
+            // pinned CI JUCE (8.0.4). The newer AudioFormatWriterOptions form isn't
+            // in 8.0.4. It's [[deprecated]] in newer JUCE but still compiles (no
+            // -Werror). Takes ownership of the stream and deletes it on failure.
+            std::unique_ptr<juce::AudioFormatWriter> writer (
+                fmt.createWriterFor (os.release(), sr, 1, 16, {}, 0));
 
             if (writer != nullptr)
             {
@@ -68,22 +68,20 @@ namespace rcltest
         auto file = juce::File::createTempFile (ext);
         if (auto os = file.createOutputStream())
         {
-            std::unique_ptr<juce::OutputStream> stream (std::move (os));
-            const auto options = juce::AudioFormatWriterOptions{}
-                                     .withSampleRate (sr)
-                                     .withNumChannels (numChannels)
-                                     .withBitsPerSample (bits);
-            if (auto writer = fmt.createWriterFor (stream, options))
+            // Classic createWriterFor overload — present in the pinned CI JUCE 8.0.4
+            // (the AudioFormatWriterOptions form is newer). Takes ownership of the
+            // stream and deletes it (closing the file handle) on failure, so an
+            // unsupported combo leaves an empty file the caller skips on getSize()==0.
+            std::unique_ptr<juce::AudioFormatWriter> writer (
+                fmt.createWriterFor (os.release(), sr, (unsigned int) numChannels, bits, {}, 0));
+
+            if (writer != nullptr)
             {
                 juce::AudioBuffer<float> buf (numChannels, lengthSamples);
                 for (int ch = 0; ch < numChannels; ++ch)
                     for (int i = 0; i < lengthSamples; ++i)
                         buf.setSample (ch, i, rng.nextFloat() * 2.0f - 1.0f);
                 writer->writeFromAudioSampleBuffer (buf, 0, lengthSamples);
-            }
-            else
-            {
-                stream.reset();   // release the file handle so we can size/delete it
             }
         }
         return file;
