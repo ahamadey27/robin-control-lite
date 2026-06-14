@@ -46,11 +46,19 @@ Xcode project lands at `NewProject/build/RobinControlLite.xcodeproj`.
 
 A Projucer file (`NewProject/RobinControlLite.jucer`) is kept in sync with CMake, but **CMake is the authoritative build**. The old `NewProject/Builds/` tree is stale Projucer output — do not rely on it; safe to delete.
 
-No automated tests yet. Test manually via JUCE AudioPluginHost or any DAW. `pluginval` is on the roadmap (see spec.md §7).
+### Testing
+
+A layered automated testing platform exists — **`TESTING.md` is the source of truth**. Quick reference:
+- `scripts/test-plugin.sh` — local pluginval (strictness 10) + auval. Run before every release.
+- `tests/` — JUCE `UnitTest` console app for pure-logic units (RandomizationEngine, MidiMapper). Build with `cmake -DRCL_BUILD_TESTS=ON` (off by default; does not affect the plugin build).
+- `scripts/test-sanitizers.sh` — ASan/UBSan + TSan over the test target (Clang/macOS only).
+- `.github/workflows/validate.yml` — CI on every push: builds + validates on **macOS and Windows**, plus unit-test and sanitizer jobs. **Green as of 2026-06-01.**
+
+Still useful for manual checks: JUCE AudioPluginHost or any DAW (the real-host smoke matrix in `TESTING.md §5`). **Next testing increment:** grow `tests/` to instantiate `NewProjectAudioProcessor` and fuzz `processBlock`/`setStateInformation` so sanitizers cover the crash-class paths. The whole platform is plugin-agnostic and designed to be lifted into the Pro version (`TESTING.md §7`).
 
 ### Audio formats supported
 
-WAV, AIFF, FLAC, OGG, **MP3** (decode-only). MP3 is gated behind `JUCE_USE_MP3AUDIOFORMAT=1` in `CMakeLists.txt` (`target_compile_definitions`) — JUCE 8's basic format pack does NOT include it by default. `MP3AudioFormat` is also explicitly registered in `PluginProcessor` after `formatManager.registerBasicFormats()`. JUCE's MP3 decoder ships royalty-free; safe for distribution. The picker filters and `SampleLoader::supportedFormats` array must list `.mp3` too — all three places stay in sync.
+WAV, AIFF, FLAC, OGG, **MP3** (decode-only). MP3 is gated behind `JUCE_USE_MP3AUDIOFORMAT=1` in `CMakeLists.txt` (`target_compile_definitions`). With that flag set, `formatManager.registerBasicFormats()` **already registers `MP3AudioFormat`** — so the explicit `registerFormat(new MP3AudioFormat())` in `PluginProcessor`'s constructor is only a fallback for if the flag is ever turned off, and is **guarded against double-registration** (registering the same format twice trips a JUCE assert in Debug and duplicates the reader). Don't remove that guard. JUCE's MP3 decoder ships royalty-free; safe for distribution. The picker filters and `SampleLoader::supportedFormats` array must list `.mp3` too — all three places stay in sync.
 
 ### Plugin identity (for DAW registry)
 

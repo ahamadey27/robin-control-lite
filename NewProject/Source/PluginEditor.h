@@ -8,6 +8,7 @@
 
 class NewProjectAudioProcessorEditor : public juce::AudioProcessorEditor,
                                         public juce::ComponentListener,
+                                        public juce::FileDragAndDropTarget,
                                         private juce::Timer
 {
 public:
@@ -18,6 +19,13 @@ public:
     void paintOverChildren(juce::Graphics&) override;
     void componentVisibilityChanged(juce::Component&) override;
     void timerCallback() override;
+
+    // Drag-and-drop of audio files from the OS file manager (Explorer/Finder),
+    // and from any DAW whose browser delivers an OS-level file drop (host-dependent).
+    bool isInterestedInFileDrag(const juce::StringArray& files) override;
+    void fileDragEnter(const juce::StringArray& files, int x, int y) override;
+    void fileDragExit(const juce::StringArray& files) override;
+    void filesDropped(const juce::StringArray& files, int x, int y) override;
 
 private:
     NewProjectAudioProcessor& audioProcessor;
@@ -184,6 +192,14 @@ private:
     void setupSlider(juce::Slider& s);
     void setupKnob(juce::Slider& s);
     void addMoreSamples();
+
+    // Shared loader used by both the file chooser and drag-and-drop: appends each
+    // supported file to the next empty slot (additive — never clears the pool).
+    void addSamplesFromFiles(const juce::Array<juce::File>& files);
+
+    // True while a valid audio-file drag is hovering the editor (drives the
+    // drop-zone highlight in paintOverChildren).
+    bool isFileDragHovering = false;
     void updateSamplesInfo();
     void savePreset();
     void loadPreset();

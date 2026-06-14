@@ -404,10 +404,20 @@ NewProject/build/
 NewProject/build-*/
 NewProject/Builds/
 
+# Test/sanitizer build dirs + downloaded tools (repo-root, created by scripts/)
+/build-tests/
+/build-asan/
+/build-tsan/
+/build/
+.tools/
+*.cfg.log
+*.build.log
+
 # Release artifacts (per spec.md §9) — track folder structure via .gitkeep
 Releases/macOS/*
 Releases/Windows/*
 Releases/Installers/*
+Releases/Testing/*
 !Releases/**/.gitkeep
 
 # Xcode
