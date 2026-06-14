@@ -1,13 +1,13 @@
-; Inno Setup script for Robin Control Lite v1.0 (Windows VST3-only, Path B).
+; Inno Setup script for Robin Control Lite v1.0.1 (Windows VST3-only, Path B).
 ; Build the installer with:
 ;   iscc installer\windows\RobinControlLite.iss
-; Output: Releases\Installers\RobinControlLite-1.0.0-Windows.exe
+; Output: Releases\Installers\RobinControlLite-1.0.1-Windows.exe
 ;
-; AAX is deferred to v1.0.1 per release-spec.md §1 (Path B). When AAX returns,
-; uncomment the AAX [Files] entry below.
+; AAX remains deferred (Path B). When AAX returns, uncomment the AAX [Files]
+; entry below.
 
 #define MyAppName       "Robin Control Lite"
-#define MyAppVersion    "1.0.0"
+#define MyAppVersion    "1.0.1"
 #define MyAppPublisher  "Conduit DSP LLC"
 #define MyAppURL        "https://conduitdsp.com"
 ; Build dir under NewProject/. release-spec §8.1 uses "build-release" for the
