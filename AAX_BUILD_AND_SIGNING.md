@@ -17,9 +17,11 @@ to AAX: the installed WrapTool supports the Apple signature as part of signing.
 | PACE tool | `/Applications/PACEAntiPiracy/Eden/Fusion/Current/bin/wraptool` |
 | PACE tool version | 6.0.1 GM, build 6847, built 2026-08-25 |
 | PACE installation | AAX Code Signing Tools 6; `wraptool` is not on shell PATH |
+| Installer provenance | Alex confirms installing `PACECodeSigningForAAXSDKMac_v6.0.1_f802503d.zip` downloaded from PACE Central (2026-09-20), matching the installed tool version/revision |
 | iLok License Manager | `/Applications/iLok License Manager.app` exists |
 | Apple application identity | `Developer ID Application: CONDUIT DSP LLC (QS378YGT2W)` verified outside sandbox |
-| Avid/PACE authorization | Alex reports an approval email; actual signing credentials not yet verified |
+| PACE onboarding | Welcome email supplied by Alex on 2026-09-20 explicitly confirms access to the digital-signing-only Fusion SDK subset; signing configuration remains unverified |
+| Signing method | Application receipt specifies Cloud AAX Signing: No; follow the local developer iLok USB workflow |
 | Developer tool entitlements | Alex reports “Pace Tools”, “Pace Central Access”, and “Edan Tools” on the physical iLok, plus a PACE Central UI area (2026-09-20); names/status not independently inspected |
 | Signing-capable iLok / publisher configuration | Unverified; do not infer from tool installation |
 | Signed AAX / retail Pro Tools acceptance | Pending |
@@ -70,11 +72,45 @@ AAX that retail Pro Tools refuses. Do not label an unsigned bundle distributable
 
 ## Authorization checkpoint — next user-assisted step
 
+Alex supplied the PACE welcome email and application receipt on 2026-09-20.
+The welcome email establishes signing-only SDK access; the application receipt
+alone is not approval evidence. Neither email provides a publisher number,
+configuration GUID, or confirmation of a working signing certificate. The
+agreement contains both commercial and evaluation terms, so do not infer the
+active distribution entitlement just from those generic clauses. Confirm the
+active entitlement in the authorized account before public distribution.
+Do not copy the full email, agreement, personal contact details, or account
+identifier into repository documentation.
+
+PACE's supplied onboarding route is iLok License Manager → **PACE CENTRAL**
+button → **DEVELOPER > SDK Download** → the macOS `PACECodeSigningForAAXSDK`.
+The portal must be launched through that button, not a guessed direct URL.
+The developer reports that the button and key licenses are already present,
+and the tools are installed; do not repeat installation unnecessarily.
+
+On 2026-09-20 Alex confirmed completing all welcome-email steps, but could not
+find signing setup details in the portal or access the emailed documentation.
+The SDK's own documentation shortcut also points to an online page unavailable
+through the automated browser. `wraptool list` succeeded outside the sandbox
+but printed no cached configurations. This does not query or prove the absence
+of server-side account entitlements. Its sandbox failure (`connect(): Operation
+not permitted`) was a local-service access restriction, not a licensing error.
+
+The welcome email does not instruct the developer to await another email.
+If authenticated documentation remains inaccessible, reply to PACE onboarding
+or contact the support address in that email, requesting the current PACE 6.0.1
+signing-only setup instructions, confirmation of USB signing-certificate
+provisioning, and the publisher identifier/configuration required for signing.
+Do not send the user back through completed installation steps or assume a
+publisher identifier is displayed in a particular portal menu. No support
+message has been sent by the agent.
+
 1. Plug in the developer's iLok USB and sign into iLok License Manager.
 2. Inspect the connected iLok's details and icon. Official iLok help says an iLok
    certified for digital signing has a **certificate seal** on its icon.
-3. Review the Avid/PACE approval instructions for the exact publisher account,
-   signing authorization, and wrap configuration or publisher identifier.
+3. Use PACE Central and its authenticated signing documentation to establish
+   the exact signing authorization and configuration or publisher identifier;
+   these were not included in the supplied emails.
    Do not assume the entitlement must be named “AAX Commercial”; the exact
    setup must come from the actual approval and PACE instructions.
 4. Open the PACE documentation linked below while signed into the authorized
@@ -86,8 +122,8 @@ AAX that retail Pro Tools refuses. Do not label an unsigned bundle distributable
 The installed tool documents secure credential caching in the Keychain. iLok
 License Manager login and WrapTool credentials are separate. Use the official
 interactive setup for initial authentication; do not put a password into a
-build script. If the signing service is offered, confirm account entitlement
-before using it; tool support alone does not establish access.
+build script. The supplied application specifies no Cloud AAX Signing; do not
+enable the cloud signing service or assume access from tool support alone.
 
 ## Signing checkpoint
 
@@ -172,6 +208,13 @@ codesign -dv --verbose=4 "$AAX_SIGNED_BUNDLE"
 
 ## References
 
+- [PACE's public AAX signing onboarding overview](https://paceap.com/getting-started-with-aax-code-signing-for-pro-tools-plugins/)
+  — PACE provides onboarding support following Avid approval; local signing uses
+  an iLok USB to hold the signing certificate. Signing and customer licensing
+  are distinct.
+- [Digital Signature Protection (including AAX)](https://docs.paceap.com/fusion-protection/getting-started/aax-dsig/)
+  — current onboarding link from the user-supplied PACE welcome email; automated
+  browser access failed on 2026-09-20. Read via the authorized account.
 - [Avid AAX developer program](https://developer.avid.com/aax/)
 - [PACE AAX Code Signing Tools documentation](https://docs.paceap.com/lite/SDK/aax/overview/)
   — link shipped with the installed tools; requires authenticated access here.

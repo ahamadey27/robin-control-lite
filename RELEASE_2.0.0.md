@@ -21,6 +21,8 @@ account, USB key, or Cloud requirement. Pro Tools' own licensing is separate.
 - [x] Version set to 2.0.0 in authoritative CMake and Projucer metadata.
 - [x] Plugin/test version macros derive from the CMake project version.
 - [x] AAX SDK, validator, and PACE tool installation located.
+- [x] User-supplied PACE welcome email confirms signing-only SDK access;
+      application specifies no Cloud AAX Signing. No customer DRM authorized.
 - [x] Apple Developer ID Application identity checked outside sandbox.
 - [x] Build universal Release VST3, AU, and AAX.
 - [x] Verify all three bundle versions: 2.0.0; architectures: x86_64 + arm64;
@@ -112,8 +114,11 @@ before claiming AAX release readiness. The last result in the log is PASS but
 does not summarize the whole run.
 
 AAX signing setup is still unverified. PACE 6.0.1 is installed, and Alex reports
-an approval email plus “Pace Tools”, “Pace Central Access”, and “Edan Tools”
-entitlements on the physical iLok. This is evidence of developer-tool access,
-not confirmation of a signing certificate or publisher configuration. The next
-user-assisted step is to check those against the approval instructions, as
-described in `AAX_BUILD_AND_SIGNING.md`. No PACE signing has been attempted.
+“Pace Tools”, “Pace Central Access”, and “Edan Tools” entitlements on the physical
+iLok. The supplied welcome email confirms digital-signing-only SDK access;
+the application receipt specifies no Cloud AAX Signing. Neither supplies a
+publisher/configuration identifier or confirms a working signing certificate.
+Next, open PACE Central through iLok License Manager and consult the authenticated
+signing setup documentation, as described in `AAX_BUILD_AND_SIGNING.md`.
+Confirm the active distribution entitlement before publishing. No PACE signing
+has been attempted.
