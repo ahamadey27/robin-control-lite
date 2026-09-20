@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
-project(RobinControlLite VERSION 1.0.1)
+project(RobinControlLite VERSION 2.0.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -65,9 +65,10 @@ if(APPLE)
     set(_VST3_COPY_DIR "$ENV{HOME}/Library/Audio/Plug-Ins/VST3")
     set(_AU_COPY_DIR   "$ENV{HOME}/Library/Audio/Plug-Ins/Components")
 endif()
+option(RCL_COPY_PLUGIN_AFTER_BUILD "Install local plugin builds into user plugin folders" ${_COPY_AFTER_BUILD})
 
 juce_add_plugin(RobinControlLite
-    VERSION                         1.0.1
+    VERSION                         ${PROJECT_VERSION}
     COMPANY_NAME                    "conduit.dsp"
     BUNDLE_ID                       "dsp.conduit.RobinControlLite"
     PLUGIN_CODE                     "rcll"
@@ -79,7 +80,7 @@ juce_add_plugin(RobinControlLite
     NEEDS_MIDI_OUTPUT               FALSE
     IS_MIDI_EFFECT                  FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS     FALSE
-    COPY_PLUGIN_AFTER_BUILD         ${_COPY_AFTER_BUILD}
+    COPY_PLUGIN_AFTER_BUILD         ${RCL_COPY_PLUGIN_AFTER_BUILD}
     VST3_COPY_DIR                   "${_VST3_COPY_DIR}"
     AU_COPY_DIR                     "${_AU_COPY_DIR}"
 

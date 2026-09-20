@@ -6,7 +6,9 @@ For company-level brand, business, marketing, commerce, privacy, product-portfol
 
 ## Project
 
-**Robin Control Lite** is a free monophonic sampler plugin by `conduit.dsp`, built with JUCE 8+ and C++17. Current code version: **1.0.1**. Public formats are macOS VST3/AU and Windows VST3; AAX development is SDK-gated but not publicly distributed, and Standalone is not part of the release.
+**Robin Control Lite** is a free monophonic sampler plugin by `conduit.dsp`, built with JUCE 8+ and C++17. Current code version: **2.0.0 (release preparation; not yet published)**. Existing public formats are macOS VST3/AU and Windows VST3. The 2.0.0 candidate adds AAX to the intended release, pending verified PACE signing and retail Pro Tools testing. Standalone is for local testing only.
+
+For current release work, read **`RELEASE_2.0.0.md`** (build commands, artifact paths, evidence, and open checkpoints) and **`AAX_BUILD_AND_SIGNING.md`** (AAX/PACE handoff for future agents). These take precedence over historical v1.0 signing instructions in `release-spec.md` for the 2.0.0 release. Do not infer AAX authorization from an installed SDK or WrapTool.
 
 As of 2026-04-25 this folder is the **authoritative project**. It was originally a UI-redesign sandbox forked from `../round-robin-lite`, but has been promoted to be the main codebase. The sibling folder `../round-robin-lite` is retired — kept on disk as read-only legacy reference, not built or installed.
 

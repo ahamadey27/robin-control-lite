@@ -1,5 +1,9 @@
 # release-spec.md — Robin Control Lite v1.0 Ship Playbook
 
+> **2.0.0 work:** use [RELEASE_2.0.0.md](RELEASE_2.0.0.md) and
+> [AAX_BUILD_AND_SIGNING.md](AAX_BUILD_AND_SIGNING.md). The v1.0 evidence below is
+> historical; its PACE command examples have not been verified with PACE 6.
+
 > **Purpose.** Sequential, command-level checklist to take the current build to a signed, notarized, distributable v1.0 across **AU + VST3 + AAX** on **Mac + Windows** (no Standalone). The broader `spec.md` covers identity decisions, format rationale, host matrix, and migration history; this file is execution-only.
 >
 > **Companion docs.** `spec.md` (decisions/reference), `release-prep-checklist.md` (pre-ship technical state), `spec-paperwork.md` (admin/legal). When this file disagrees with anything older, this file wins for v1.0 ship.

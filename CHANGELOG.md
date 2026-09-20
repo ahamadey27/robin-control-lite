@@ -5,7 +5,7 @@ This project follows [semantic versioning](https://semver.org/).
 
 ---
 
-## Unreleased
+## v2.0.0 — release candidate (not yet published)
 
 ### Added
 - Optional local standalone app and direct VS Code F5 launch for development testing.
@@ -16,6 +16,12 @@ This project follows [semantic versioning](https://semver.org/).
 
 ### Fixed
 - Updated font measurement calls for compatibility with newer local JUCE builds.
+
+### Changed
+- Header button accents match Robin Control: green Size, orange Load, muted red
+  Save, and amber Trigger.
+- Preparing universal macOS VST3, AU, and AAX builds. AAX distribution remains
+  gated on verified PACE signing and retail Pro Tools testing.
 
 ---
 

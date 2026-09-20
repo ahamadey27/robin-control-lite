@@ -64,7 +64,7 @@ target_compile_definitions(RobinControlLiteTests
         JucePlugin_WantsMidiInput=1
         JucePlugin_ProducesMidiOutput=0
         JucePlugin_IsMidiEffect=0
-        JucePlugin_VersionString="1.0.1")
+        JucePlugin_VersionString="${PROJECT_VERSION}")
 
 target_link_libraries(RobinControlLiteTests
     PRIVATE

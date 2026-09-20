@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="BSkQsP" name="RobinControlLite" projectType="audioplug" useAppConfig="0"
+<JUCERPROJECT id="BSkQsP" name="RobinControlLite" version="2.0.0" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" companyName="conduit.dsp"
               pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn"
-              pluginCode="rcll" pluginFormats="buildStandalone,buildVST3">
+              pluginManufacturerCode="Cdsp" pluginCode="rcll" bundleIdentifier="dsp.conduit.RobinControlLite"
+              pluginFormats="buildAU,buildVST3,buildAAX">
   <MAINGROUP id="ayCzMd" name="RobinControlLite">
     <GROUP id="{16DB8BBD-FC25-C9E3-2064-70988F6ACE3E}" name="Source">
       <GROUP id="{5BB2D9F1-BAFB-C54D-87A0-C718464F3EB2}" name="DSP">

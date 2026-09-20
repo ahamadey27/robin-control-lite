@@ -19,7 +19,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-ARTEFACTS="$REPO_ROOT/NewProject/build-release/RobinControlLite_artefacts/Release"
+ARTEFACTS="${RCL_ARTEFACTS:-$REPO_ROOT/NewProject/build-release/RobinControlLite_artefacts/Release}"
 OUTPUT_DIR="$REPO_ROOT/Releases/Installers"
 STAGE_DIR="$(mktemp -d -t rcl-installer)"
 trap 'rm -rf "$STAGE_DIR"' EXIT
@@ -47,6 +47,12 @@ for fmt_dir in "VST3/Robin Control Lite.vst3" \
         echo "ERROR: missing artefact $ARTEFACTS/$fmt_dir" >&2
         echo "       Run a Release build first:" >&2
         echo "         cd NewProject && cmake --build build-release --config Release" >&2
+        exit 1
+    fi
+    bundle_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' \
+        "$ARTEFACTS/$fmt_dir/Contents/Info.plist")"
+    if [[ "$bundle_version" != "$VERSION" ]]; then
+        echo "ERROR: $fmt_dir is version $bundle_version; expected $VERSION. Refusing to package stale artifacts." >&2
         exit 1
     fi
 done
