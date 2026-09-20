@@ -855,7 +855,89 @@ public:
 };
 
 //==============================================================================
+// Playback notifications cross from audio to UI without reading mutable pool state.
+class PlaybackEventTests : public juce::UnitTest
+{
+public:
+    PlaybackEventTests() : juce::UnitTest("Playback events") {}
+
+    void runTest() override
+    {
+        NewProjectAudioProcessor proc;
+        proc.prepareToPlay(44100.0, 128);
+        juce::AudioBuffer<float> buffer(2, 128);
+        juce::MidiBuffer midi;
+        auto render = [&]
+        {
+            const juce::ScopedLock lock(proc.getCallbackLock());
+            proc.processBlock(buffer, midi);
+            midi.clear();
+        };
+
+        beginTest("Empty pool does not report playback");
+        expectEquals(NewProjectAudioProcessor::getPlaybackEventSlot(proc.getPlaybackEvent()), -1);
+        proc.requestTrigger();
+        render();
+        expect(proc.getPlaybackEvent() == 0);
+
+        juce::Random rng(1234);
+        const auto wav = rcltest::writeTempWav(rng, 4096);
+        expect(proc.sampleLoader.loadSample(3, wav));
+        proc.rebuildLoadedIndices();
+
+        beginTest("MIDI and repeated Trigger hits publish distinct events for the same slot");
+        midi.addEvent(juce::MidiMessage::noteOn(1, 72, 0.8f), 0);
+        render();
+        auto previous = proc.getPlaybackEvent();
+        expectEquals(NewProjectAudioProcessor::getPlaybackEventSlot(previous), 3);
+        proc.requestTrigger();
+        render();
+        expect(proc.getPlaybackEvent() != previous);
+        expectEquals(NewProjectAudioProcessor::getPlaybackEventSlot(proc.getPlaybackEvent()), 3);
+
+        beginTest("Idle, note-off, and Panic do not flash");
+        previous = proc.getPlaybackEvent();
+        render();
+        expect(proc.getPlaybackEvent() == previous);
+        midi.addEvent(juce::MidiMessage::noteOff(1, 72), 0);
+        render();
+        expect(proc.getPlaybackEvent() == previous);
+        proc.requestTrigger();
+        proc.requestPanic();
+        render();
+        expect(proc.getPlaybackEvent() == previous);
+
+        beginTest("Audition reports the selected row and ignores empty or invalid slots");
+        expect(proc.sampleLoader.loadSample(12, wav));
+        proc.rebuildLoadedIndices();
+        proc.auditionSample(12);
+        expect(proc.getPlaybackEvent() != previous);
+        expectEquals(NewProjectAudioProcessor::getPlaybackEventSlot(proc.getPlaybackEvent()), 12);
+        previous = proc.getPlaybackEvent();
+        proc.auditionSample(-1);
+        proc.auditionSample(20);
+        proc.auditionSample(0);
+        expect(proc.getPlaybackEvent() == previous);
+
+        beginTest("Series reports the slot actually selected, including gaps in the pool");
+        auto* mode = proc.apvts.getParameter(ParameterIDs::playbackMode);
+        mode->setValueNotifyingHost(0.0f);
+        proc.resetPlaybackPosition();
+        for (int expectedSlot : { 3, 12, 3 })
+        {
+            proc.requestTrigger();
+            render();
+            expectEquals(NewProjectAudioProcessor::getPlaybackEventSlot(proc.getPlaybackEvent()),
+                         expectedSlot);
+        }
+
+        proc.releaseResources();
+        wav.deleteFile();
+    }
+};
+
 // Auto-registering instances.
+static PlaybackEventTests        playbackEventTests;
 static RandomizationEngineTests randomizationEngineTests;
 static MidiMapperTests          midiMapperTests;
 static ProcessorFuzzTests        processorFuzzTests;

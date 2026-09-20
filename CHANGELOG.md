@@ -5,6 +5,20 @@ This project follows [semantic versioning](https://semver.org/).
 
 ---
 
+## Unreleased
+
+### Added
+- Optional local standalone app and direct VS Code F5 launch for development testing.
+- Plugin size menu: 25%, 50%, 75%, 100%, 125%, and 150%. Defaults to 100%
+  and remembers the user's choice separately from Robin Control.
+- A translucent white, 180 ms flash on the triggered sample row for MIDI,
+  Trigger, and sample audition playback.
+
+### Fixed
+- Updated font measurement calls for compatibility with newer local JUCE builds.
+
+---
+
 ## v1.0.1 — 2026-06-14
 
 ### Added

@@ -41,7 +41,16 @@ private:
     juce::TextButton panicButton;
     juce::TextButton savePresetButton;
     juce::TextButton loadPresetButton;
+    juce::TextButton sizeButton;
     std::unique_ptr<juce::FileChooser> fileChooser;
+
+    // Keep the 1400 x 400 layout in logical pixels; compose user and host DPI scales.
+    std::unique_ptr<juce::PropertiesFile> uiPrefs;
+    float userScale = 1.0f;
+    float hostScale = 1.0f;
+    void setEditorScale(float newScale);
+    void setScaleFactor(float newScale) override;
+    void applyCombinedScale();
 
     // Main sliders
     juce::Slider semitoneSlider, fineTuneSlider;
@@ -122,7 +131,7 @@ private:
             titleFont = titleFont.boldened();
             g.setFont(titleFont);
             const juce::String mainTitle = "Robin Control";
-            const int titleW = titleFont.getStringWidth(mainTitle);
+            const int titleW = juce::GlyphArrangement::getStringWidthInt(titleFont, mainTitle);
             const int liteW  = 42;
             const int totalW = titleW + 6 + liteW;
             const int tx = (getWidth() - totalW) / 2;
@@ -186,6 +195,7 @@ private:
     // displayedLevel with a fast-attack / slow-release envelope, then repaints
     // just the meter rect.
     float displayedLevel { 0.0f };   // linear gain
+    juce::uint64 lastPlaybackEvent = 0;
     juce::Rectangle<int> meterBounds;
 
     // Helpers

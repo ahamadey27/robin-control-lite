@@ -47,6 +47,50 @@ SampleManagerPanel::~SampleManagerPanel()
     resetPoolButton.setLookAndFeel(nullptr);
 }
 
+void SampleManagerPanel::triggerPlayedSampleHighlight(int slotIndex)
+{
+    if (slotIndex < 0 || slotIndex >= NewProjectAudioProcessor::NUM_SAMPLE_SLOTS)
+        return;
+
+    const int previousSlot = highlightedSlot;
+    highlightedSlot = slotIndex;
+    highlightStartMs = juce::Time::getMillisecondCounterHiRes();
+
+    // A new event can interrupt the old row's fade. Invalidate that row too,
+    // otherwise its last translucent paint remains until an unrelated repaint.
+    bool foundCurrent = false;
+    bool foundPrevious = previousSlot < 0;
+    for (const auto& hit : rowHitAreas)
+    {
+        if (hit.slotIndex == slotIndex || hit.slotIndex == previousSlot)
+            repaint(hit.rowArea);
+        foundCurrent  = foundCurrent  || hit.slotIndex == slotIndex;
+        foundPrevious = foundPrevious || hit.slotIndex == previousSlot;
+    }
+
+    if (!foundCurrent || !foundPrevious)
+        repaint();
+}
+
+void SampleManagerPanel::advancePlayedSampleHighlight()
+{
+    if (highlightedSlot < 0)
+        return;
+
+    const int slotToRepaint = highlightedSlot;
+    if (juce::Time::getMillisecondCounterHiRes() - highlightStartMs >= highlightDurationMs)
+        highlightedSlot = -1;
+
+    for (const auto& hit : rowHitAreas)
+        if (hit.slotIndex == slotToRepaint)
+        {
+            repaint(hit.rowArea);
+            return;
+        }
+
+    repaint();
+}
+
 juce::String SampleManagerPanel::truncateName(const juce::String& name, int maxChars)
 {
     if (name.length() <= maxChars)
@@ -263,6 +307,14 @@ void SampleManagerPanel::paint(juce::Graphics& g)
             {
                 g.setColour(ledGreen);
                 g.fillRect(colX, y - 1, halfW, 2);
+            }
+            if (highlightedSlot == i)
+            {
+                const double elapsed = juce::Time::getMillisecondCounterHiRes() - highlightStartMs;
+                const float remaining = (float) juce::jlimit(0.0, 1.0,
+                    1.0 - elapsed / highlightDurationMs);
+                g.setColour(juce::Colours::white.withAlpha(0.35f * remaining));
+                g.fillRect(hit.rowArea);
             }
         }
     }

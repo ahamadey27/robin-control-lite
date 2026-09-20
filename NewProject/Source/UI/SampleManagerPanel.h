@@ -21,6 +21,9 @@ public:
 
     juce::String getTooltip() override { return currentTooltip; }
 
+    void triggerPlayedSampleHighlight(int slotIndex);
+    void advancePlayedSampleHighlight();
+
     // Callbacks wired by the editor
     std::function<void()> onLoadSamplesClicked;
     std::function<void()> onClearSamplesClicked;
@@ -59,6 +62,9 @@ private:
     std::vector<RowHitAreas> rowHitAreas;
 
     juce::String currentTooltip;
+    int highlightedSlot = -1;
+    double highlightStartMs = 0.0;
+    static constexpr double highlightDurationMs = 180.0;
 
     // Drag state
     bool isDragging = false;

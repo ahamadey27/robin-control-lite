@@ -47,6 +47,11 @@ endif()
 # ============================================================
 # Plugin target
 # ============================================================
+option(RCL_BUILD_STANDALONE "Build the standalone app for local testing (not distributed)" OFF)
+if(RCL_BUILD_STANDALONE)
+    list(APPEND PLUGIN_FORMATS Standalone)
+endif()
+
 # Auto-copy install dirs are macOS-only — the paths below ($HOME/Library/...)
 # don't exist on Windows/Linux. On those platforms we skip the copy and let
 # tooling (CI validators, the installer) pick the artefact straight out of the

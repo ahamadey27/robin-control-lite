@@ -1,9 +1,27 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "BinaryData.h"
+#include <array>
+
+namespace
+{
+    constexpr std::array<float, 6> kUIScaleOptions { 0.25f, 0.50f, 0.75f, 1.00f, 1.25f, 1.50f };
+
+    // Per-user preferences, owned by the editor so JUCE timers die before GUI shutdown.
+    std::unique_ptr<juce::PropertiesFile> createUIPrefs()
+    {
+        juce::PropertiesFile::Options opts;
+        opts.applicationName     = "RobinControlLite";
+        opts.filenameSuffix      = "settings";
+        opts.osxLibrarySubFolder = "Application Support";
+        opts.folderName          = "RobinControlLite";
+        opts.storageFormat       = juce::PropertiesFile::storeAsXML;
+        return std::make_unique<juce::PropertiesFile>(opts);
+    }
+}
 
 NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioProcessor& p)
-    : AudioProcessorEditor(&p), audioProcessor(p),
+    : AudioProcessorEditor(&p), audioProcessor(p), uiPrefs(createUIPrefs()),
     semitoneAttachment(p.apvts, ParameterIDs::semitone, semitoneSlider),
     fineTuneAttachment(p.apvts, ParameterIDs::fineTune, fineTuneSlider),
     volumeAttachment(p.apvts, ParameterIDs::volume, volumeSlider),
@@ -100,9 +118,9 @@ NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioPr
             audioProcessor.auditionSample(slotIndex);
         };
 
-    // Trigger button — original muted red
+    // Header accents match Robin Control: amber Trigger, red Save, orange Load.
     triggerButton.setButtonText("Trigger");
-    triggerButton.setColour(juce::TextButton::buttonColourId, RRColors::s612RedDim);
+    triggerButton.setColour(juce::TextButton::buttonColourId, RRColors::amber);
     triggerButton.setColour(juce::TextButton::textColourOnId, RRColors::screenPrint);
     triggerButton.setLookAndFeel(&buttonLAF);
     triggerButton.onClick = [this]() { audioProcessor.requestTrigger(); };
@@ -140,20 +158,47 @@ NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioPr
     addAndMakeVisible(aboutButton);
     aboutWindow.addComponentListener(this);
 
-    // User Presets — muted dark green accent (distinct from red actions)
+    // User Presets — Robin Control's Save and Browse accent colors.
     savePresetButton.setButtonText("Save");
-    savePresetButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff3e5a40));
+    savePresetButton.setColour(juce::TextButton::buttonColourId, RRColors::s612RedDim);
     savePresetButton.setColour(juce::TextButton::textColourOnId, RRColors::screenPrint);
     savePresetButton.setLookAndFeel(&buttonLAF);
     savePresetButton.onClick = [this]() { savePreset(); };
     addAndMakeVisible(savePresetButton);
 
     loadPresetButton.setButtonText("Load");
-    loadPresetButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff3e5a40));
+    loadPresetButton.setColour(juce::TextButton::buttonColourId, RRColors::algoCol);
     loadPresetButton.setColour(juce::TextButton::textColourOnId, RRColors::screenPrint);
     loadPresetButton.setLookAndFeel(&buttonLAF);
     loadPresetButton.onClick = [this]() { loadPreset(); };
     addAndMakeVisible(loadPresetButton);
+
+    // Size dropdown (UI scale 25–150%). Button text reflects current scale.
+    sizeButton.setButtonText("100%");
+    sizeButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff3e5a40));
+    sizeButton.setColour(juce::TextButton::textColourOnId, RRColors::screenPrint);
+    sizeButton.setLookAndFeel(&buttonLAF);
+    sizeButton.onClick = [this]()
+        {
+            juce::PopupMenu menu;
+            for (size_t i = 0; i < kUIScaleOptions.size(); ++i)
+            {
+                const float s = kUIScaleOptions[i];
+                const bool isCurrent = std::abs(s - userScale) < 0.001f;
+                menu.addItem((int) i + 1,
+                             juce::String(juce::roundToInt(s * 100)) + "%",
+                             true, isCurrent);
+            }
+            menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(sizeButton),
+                [safeThis = juce::Component::SafePointer<NewProjectAudioProcessorEditor>(this)](int result)
+                {
+                    if (safeThis == nullptr || result <= 0) return;
+                    const size_t idx = (size_t) (result - 1);
+                    if (idx < kUIScaleOptions.size())
+                        safeThis->setEditorScale(kUIScaleOptions[idx]);
+                });
+        };
+    addAndMakeVisible(sizeButton);
 
     // REMOVED FOR LITE: samplesInfoLabel
     //samplesInfoLabel.setText("No samples loaded", juce::dontSendNotification);
@@ -298,7 +343,16 @@ NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioPr
     setSize(1400, 400);
     resized();
 
+    // Do not replay an old hit when the editor is reopened.
+    lastPlaybackEvent = audioProcessor.getPlaybackEvent();
     startTimerHz(30);
+
+    const float savedScale = (float) uiPrefs->getDoubleValue("uiScale", 1.0);
+    for (const float option : kUIScaleOptions)
+        if (std::abs(savedScale - option) < 0.001f)
+            userScale = option;
+    sizeButton.setButtonText(juce::String(juce::roundToInt(userScale * 100)) + "%");
+    applyCombinedScale();
 }
 
 //==============================================================================
@@ -312,13 +366,46 @@ NewProjectAudioProcessorEditor::~NewProjectAudioProcessorEditor()
                      &randomAlgorithmSlider })
         s->setLookAndFeel(nullptr);
 
-    for (auto* b : { &triggerButton, &panicButton, &savePresetButton, &loadPresetButton, &aboutButton })
+    for (auto* b : { &triggerButton, &panicButton, &savePresetButton, &loadPresetButton, &aboutButton, &sizeButton })
         b->setLookAndFeel(nullptr);
 }
 
 //==============================================================================
+void NewProjectAudioProcessorEditor::setEditorScale(float newScale)
+{
+    userScale = newScale;
+    sizeButton.setButtonText(juce::String(juce::roundToInt(newScale * 100)) + "%");
+    uiPrefs->setValue("uiScale", (double) newScale);
+    uiPrefs->saveIfNeeded();
+    applyCombinedScale();
+}
+
+void NewProjectAudioProcessorEditor::setScaleFactor(float newScale)
+{
+    // Host-driven DPI scaling. Record it and reapply combined transform so
+    // user-chosen scale survives host scale changes.
+    hostScale = newScale;
+    applyCombinedScale();
+}
+
+void NewProjectAudioProcessorEditor::applyCombinedScale()
+{
+    // Forward to base so hostScaleTransform and the editor's transform are set
+    // together — that's what satisfies the jassert in editorResized().
+    juce::AudioProcessorEditor::setScaleFactor(hostScale * userScale);
+}
+
 void NewProjectAudioProcessorEditor::timerCallback()
 {
+    const auto event = audioProcessor.getPlaybackEvent();
+    if (event != lastPlaybackEvent)
+    {
+        lastPlaybackEvent = event;
+        sampleManagerPanel.triggerPlayedSampleHighlight(
+            NewProjectAudioProcessor::getPlaybackEventSlot(event));
+    }
+    sampleManagerPanel.advancePlayedSampleHighlight();
+
     // Pull the latest peak from the processor and run it through a fast-attack /
     // slow-release envelope so the LEDs rise instantly but fall smoothly.
     const float target = audioProcessor.outputPeakLevel.load(std::memory_order_relaxed);
@@ -617,7 +704,7 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
     g.setColour(RRColors::screenPrint);
     g.drawText("Robin Control", 16, 9, 240, 28, juce::Justification::left);
 
-    const int liteX = 16 + rrFont.getStringWidth("Robin Control") + 6;
+    const int liteX = 16 + juce::GlyphArrangement::getStringWidthInt(rrFont, "Robin Control") + 6;
     g.setColour(RRColors::liteShade);
     g.setFont(juce::Font(juce::FontOptions(15.0f)).italicised());
     g.drawText("Lite", liteX, 13, 60, 22, juce::Justification::left);
@@ -1092,6 +1179,7 @@ void NewProjectAudioProcessorEditor::resized()
     constexpr int secKx1   = secKx0 + knobW + knobGap;
 
     // ── Header buttons ──────────────────────────────────────────────────────
+    sizeButton.setBounds(getWidth() - 402, 11, 60, 26);
     loadPresetButton.setBounds(getWidth() - 334, 11, 60, 26);
     savePresetButton.setBounds(getWidth() - 266, 11, 60, 26);
     triggerButton.setBounds   (getWidth() - 198, 11, 70, 26);

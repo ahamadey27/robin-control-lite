@@ -75,6 +75,7 @@ Pick a path on the day Mac + Win VST3/AU builds are validated and stapled:
 - [x] AAX SDK gate detects `~/SDKs/aax-sdk-2-9-0/Interfaces/AAX.h` → enables AAX format; absent → builds VST3/AU only — **done 2026-05-02**
 - [x] Standalone `/Applications` post-build copy hook removed from CMakeLists — **done 2026-05-02**
 - [x] `.vscode/launch.json` switched to attach-to-process pattern (Standalone gone) — **done 2026-05-02**
+- [x] Local standalone debugging restored behind `RCL_BUILD_STANDALONE=ON`, default OFF; F5 builds and launches the app. Public installers still exclude Standalone — **done 2026-09-20**
 - [x] CLAUDE.md "Build" section updated (drop Standalone bullet, document attach-debug pattern) — **done 2026-05-02**
 - [x] **Edit `installer/build-installer.sh`** to drop the Standalone component pkg — **done 2026-05-05**
 - [x] **Edit `installer/distribution.xml`** to remove the Standalone choice line — **done 2026-05-05**

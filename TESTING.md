@@ -19,6 +19,13 @@ Windows. The whole point of what follows is to make that class of bug
 
 ## 0. TL;DR — the layered pipeline
 
+For local standalone testing in VS Code, select **Launch Robin Control Lite
+(Standalone)** in Run and Debug and press **F5**. The task enables
+`RCL_BUILD_STANDALONE=ON`, builds the Debug app, and launches it with CodeLLDB.
+Load samples and use Trigger or the row audition buttons; MIDI devices can be
+selected through the standalone app's audio/MIDI settings. The CMake option
+defaults to OFF for release builds, and the standalone app is not distributed.
+
 | Layer | Tool | Status | Catches |
 |---|---|---|---|
 | 1. Local host validation | `scripts/test-plugin.sh` (pluginval + auval) | ✅ wired & passing | Most VST3/AU host-compat bugs, lifecycle, state, automation |
@@ -235,6 +242,10 @@ Keep a short manual checklist per release. You don't need to *own* every DAW:
 ### Per-host smoke checklist
 - [ ] Plugin scans/loads without crashing
 - [ ] GUI opens; **click every button** (Load, Save, Trigger, Panic, About)
+- [ ] Size menu starts at 100% with no saved preference; all six sizes (25–150%)
+      resize the host window, keep controls clickable, and survive editor reopen.
+- [ ] MIDI, Trigger, and row audition flash the correct sample row in white;
+      repeated hits restart the fade, and the flash disappears after 180 ms.
 - [ ] Load a sample via the file chooser
 - [ ] **Drag a file in from Explorer/Finder** (works), and from the DAW browser (host-dependent)
 - [ ] Play notes; automate a parameter

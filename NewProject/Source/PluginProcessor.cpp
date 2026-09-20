@@ -328,6 +328,15 @@ void NewProjectAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, ju
         synthesiser.allNotesOff(0, false);
     }
 
+    // Publish only a note that survives Panic, and only when the pool is loaded.
+    if (!loadedSlotIndices.empty())
+        for (const auto metadata : midiMessages)
+            if (metadata.getMessage().isNoteOn())
+            {
+                publishPlaybackEvent(lastPlayedSlot);
+                break;
+            }
+
     //==============================================================================
     // RENDER AUDIO FROM SYNTHESISER
 
@@ -1041,12 +1050,11 @@ void NewProjectAudioProcessor::advanceRoundRobin()
 //==============================================================================
 void NewProjectAudioProcessor::auditionSample(int slotIndex)
 {
+    const juce::ScopedLock sl(getCallbackLock());
     if (slotIndex < 0 || slotIndex >= NUM_SAMPLE_SLOTS || !sampleSlots[slotIndex].isLoaded)
         return;
 
     {
-        const juce::ScopedLock sl(getCallbackLock());
-
         // Force the synth to play this specific slot without advancing round-robin
         if (synthesiser.getNumSounds() == 0)
         {
@@ -1062,6 +1070,18 @@ void NewProjectAudioProcessor::auditionSample(int slotIndex)
     }
 
     synthesiser.noteOn(1, 60, 1.0f);
+    publishPlaybackEvent(slotIndex);
+}
+
+void NewProjectAudioProcessor::publishPlaybackEvent(int slotIndex) noexcept
+{
+    if (slotIndex < 0 || slotIndex >= NUM_SAMPLE_SLOTS)
+        return;
+
+    // Both writers (processBlock and auditionSample) hold the callback lock.
+    const auto nextSequence = (playbackEvent.load(std::memory_order_relaxed) >> 8) + 1;
+    playbackEvent.store((nextSequence << 8) | static_cast<juce::uint64>(slotIndex + 1),
+                        std::memory_order_release);
 }
 
 void NewProjectAudioProcessor::swapSamples(int indexA, int indexB)

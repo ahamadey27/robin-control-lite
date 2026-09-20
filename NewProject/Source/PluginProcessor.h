@@ -84,6 +84,17 @@ public:
     // read by the editor's level-meter timer. Linear gain, not dB.
     std::atomic<float> outputPeakLevel { 0.0f };
 
+    // Sequence and slot travel together so repeated hits on one row still flash.
+    juce::uint64 getPlaybackEvent() const noexcept
+    {
+        return playbackEvent.load(std::memory_order_acquire);
+    }
+
+    static int getPlaybackEventSlot(juce::uint64 event) noexcept
+    {
+        return static_cast<int>(event & 0xff) - 1;
+    }
+
 private:
     //==============================================================================
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
@@ -107,6 +118,8 @@ private:
     // Trigger flag (set by UI, consumed by processBlock)
     std::atomic<bool> triggerPending{ false };
     std::atomic<bool> panicPending{ false };
+    std::atomic<juce::uint64> playbackEvent { 0 };
+    void publishPlaybackEvent(int slotIndex) noexcept;
 
     // Current global pitch values
     std::atomic<float> globalSemitones{ 0.0f };
