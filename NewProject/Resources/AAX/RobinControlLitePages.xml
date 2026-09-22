@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AAX Native IDs are JUCE defaults for mono/stereo output. PgTL includes
+     every active APVTS parameter, in processor order, plus JUCE master bypass.
+     Keep this list in sync with createParameterLayout(); never rename IDs. -->
+<PageTables vers="6.4.0.89">
+  <PageTableLayouts>
+    <Plugin manID="Cdsp" prodID="rcll" plugID="jcab">
+      <Desc>Robin Control Lite Mono</Desc>
+      <Layout>LiteLayout</Layout>
+    </Plugin>
+    <Plugin manID="Cdsp" prodID="rcll" plugID="jcac">
+      <Desc>Robin Control Lite Stereo</Desc>
+      <Layout>LiteLayout</Layout>
+    </Plugin>
+    <PTLayout name="LiteLayout">
+      <PageTable type="PgTL" pgsz="1">
+        <Page num="1">
+          <ID>MasterBypassID</ID>
+        </Page>
+        <Page num="2">
+          <ID>semitone</ID>
+        </Page>
+        <Page num="3">
+          <ID>fineTune</ID>
+        </Page>
+        <Page num="4">
+          <ID>volume</ID>
+        </Page>
+        <Page num="5">
+          <ID>pan</ID>
+        </Page>
+        <Page num="6">
+          <ID>panRndNeg</ID>
+        </Page>
+        <Page num="7">
+          <ID>panRndPos</ID>
+        </Page>
+        <Page num="8">
+          <ID>toneLow</ID>
+        </Page>
+        <Page num="9">
+          <ID>toneHigh</ID>
+        </Page>
+        <Page num="10">
+          <ID>toneLowRndNeg</ID>
+        </Page>
+        <Page num="11">
+          <ID>toneLowRndPos</ID>
+        </Page>
+        <Page num="12">
+          <ID>toneHighRndNeg</ID>
+        </Page>
+        <Page num="13">
+          <ID>toneHighRndPos</ID>
+        </Page>
+        <Page num="14">
+          <ID>sampleStart</ID>
+        </Page>
+        <Page num="15">
+          <ID>sampleEnd</ID>
+        </Page>
+        <Page num="16">
+          <ID>sampleStartRndNeg</ID>
+        </Page>
+        <Page num="17">
+          <ID>sampleStartRndPos</ID>
+        </Page>
+        <Page num="18">
+          <ID>sampleEndRndNeg</ID>
+        </Page>
+        <Page num="19">
+          <ID>sampleEndRndPos</ID>
+        </Page>
+        <Page num="20">
+          <ID>randomAlgorithm</ID>
+        </Page>
+        <Page num="21">
+          <ID>playbackMode</ID>
+        </Page>
+        <Page num="22">
+          <ID>semitoneRndNeg</ID>
+        </Page>
+        <Page num="23">
+          <ID>semitoneRndPos</ID>
+        </Page>
+        <Page num="24">
+          <ID>fineTuneRndNeg</ID>
+        </Page>
+        <Page num="25">
+          <ID>fineTuneRndPos</ID>
+        </Page>
+        <Page num="26">
+          <ID>volumeRndNeg</ID>
+        </Page>
+        <Page num="27">
+          <ID>volumeRndPos</ID>
+        </Page>
+      </PageTable>
+    </PTLayout>
+  </PageTableLayouts>
+</PageTables>

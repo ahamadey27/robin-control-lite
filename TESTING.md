@@ -89,6 +89,31 @@ extra rather than a requirement.
 
 ---
 
+### AAX Native validation (macOS)
+
+Build the universal AAX using `RELEASE_2.0.0.md`, then run:
+
+```bash
+python3 scripts/test-aax-native.py \
+  'NewProject/build-release-2.0.0/RobinControlLite_artefacts/Release/AAX/Robin Control Lite.aaxplugin' \
+  --output Releases/Testing/2.0.0/aax-native-new-run
+```
+
+Use a new output directory each time. The validator needs unrestricted local
+sockets and writes helper logs in its SDK installation. The runner checks each
+result and returns nonzero on failure; DigiShell itself can exit 0 on failures.
+It confirms Lite's Native-only descriptor and runs every installed test except
+`test.cycle_counts`, which Avid defines as an AAX DSP/HDX hardware test. That
+exclusion is recorded as N/A, not a pass. See `AAX_BUILD_AND_SIGNING.md` for the
+independent DAE helper failure reproduced without loading a plugin.
+
+`NewProject/Resources/AAX/RobinControlLitePages.xml` must include every active
+parameter ID in its `PgTL` automation list, plus JUCE's `MasterBypassID`, and
+match the existing mono/stereo AAX type IDs. Avid's loading and automation-list
+tests verify this resource in the actual bundle. Rerun this suite on the final
+PACE-signed AAX and after later Moonbase integration; these checks do not replace
+retail Pro Tools host testing.
+
 ## 1b. Unit / correctness tests (set up, passing)
 
 `tests/test_main.cpp` is a console app built on **JUCE's built-in `UnitTest`

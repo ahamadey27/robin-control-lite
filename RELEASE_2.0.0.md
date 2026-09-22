@@ -40,7 +40,8 @@ does not cover it. Activation policies remain unspecified.
 - [x] Run unit tests against the 2.0.0 sources — passed.
 - [x] Release VST3 pluginval strictness 10 — passed, reports version 2.0.0.
 - [ ] Release AU validation confirmed as 2.0.0 — see registry caveat below.
-- [ ] Pre-sign AAX full validation — unresolved failures below.
+- [x] Pre-sign AAX Native validation — all 13 applicable checks passed September 22;
+      Avid's DSP/HDX cycle-count test is N/A, with evidence below.
 - [x] ASan/UBSan and TSan release checks — both clean.
 - [x] Installer rejects stale 1.0.1 artifacts when source version is 2.0.0.
 - [x] Confirm signing iLok certificate-seal indicator in post-sync screenshot.
@@ -48,7 +49,10 @@ does not cover it. Activation policies remain unspecified.
 - [x] Confirm PACE account/publisher configuration through successful signing and verification.
 - [x] Sign a separate AAX candidate; PACE and strict Apple signature verification pass.
 - [ ] Sign final staged VST3/AU and AAX; verify both Apple and PACE signatures.
-- [ ] Validate signed AAX and complete retail Pro Tools host smoke test.
+- [x] Validate corrected, signed AAX — all 13 applicable checks passed September 22.
+- [x] Install corrected signed AAX for Pro Tools testing; installed PACE/Apple
+      signatures and every file hash/symlink match the validated candidate.
+- [ ] Complete retail Pro Tools host smoke test.
 - [ ] Extend installer and uninstaller for the signed AAX.
 - [ ] Sign, notarize, staple, and inspect the final three-format installer.
 - [ ] Complete clean-install and real-host smoke checks from `TESTING.md`.
@@ -118,20 +122,71 @@ registry/version discrepancy, then rerun. Both original installed AU bundles
 were restored after testing. Do not report the temporary test install as a
 completed 2.0.0 installation.
 
-**AAX validator:** the SDK-path executable reports DigiShell v24.9.0x14. The
-full stdin `runtests` run returned exit code 0 but was **not an overall pass**:
-`test.page_table.load` failed for two realtime types, reporting “Failed to load
-page tables library”; `test.cycle_counts` returned `E_LOST` with a broken-pipe
-helper error. The other reported stages passed. Investigate these two checks
-before claiming AAX release readiness. The last result in the log is PASS but
-does not summarize the whole run.
+**AAX validator investigation — September 22:** DigiShell v24.9.0x14's original
+September 20 `runtests` run exited 0 despite two failures. The page-table failure
+was caused by the missing registered XML resource, now added through JUCE's
+`AAXClientExtensions` and packaged by CMake. The rebuilt universal 2.0.0 AAX
+passes loading and automation-list validation with all 26 active parameter IDs
+plus JUCE's master bypass.
+
+`test.cycle_counts` is an Avid **AAX DSP/HDX** test, inapplicable to Lite's
+Native-only descriptor. Its helper also terminates on `load_dish DAE` with no
+plugin loaded (exit 255); the original trace records Mach exception 1 / signal
+11 at that step. The toolkit was not patched and that independent DAE failure
+was not repaired. Record this check as **N/A, never PASS**. The new
+`scripts/test-aax-native.py` confirms Native-only types before excluding just
+this test, runs all other installed tests, and rejects failed/incomplete results.
+Evidence: `Releases/Testing/2.0.0/aax-native-20260922/`.
+
+**Result:** all 13 applicable validator checks passed on the rebuilt universal
+unsigned 2.0.0 AAX, including both page-table checks, all three parameter traversal
+modes, parameter behavior, lifecycle, and 1,000 load/unload iterations. The rebuilt
+unit/processor suite also passed. The result parser was checked against actual
+PASS output and synthetic lost, failed, canceled, aborted, missing, duplicate,
+mismatched, and helper-error results; it rejected every failure case. Windows
+resource packaging is wired but still requires a Windows build/validation run.
+
+The rebuilt AAX replaces the unsigned build output; the original
+`artifact-manifest.json` remains historical September 20 evidence. Use the new
+run's `summary.json` for the rebuilt executable/resource hashes. The September
+20 signed bundle remains unchanged and does **not** contain the page-table fix.
+Moonbase integration remains deferred and will require a fresh validation pass.
+
+**Corrected signing checkpoint — September 22:** the connected developer iLok
+and WrapTool's default cached credentials signed the corrected AAX into
+`Releases/Testing/2.0.0/signing-validated-20260922/AAX/Robin Control Lite.aaxplugin`.
+Independent PACE and strict Apple verification passed outside the sandbox.
+PACE reports **signed, not wrapped**, timestamp `2026-09-22T13:30:21Z`;
+Apple reports the Conduit DSP Developer ID and hardened runtime. Both x86_64
+and arm64 still target macOS 11.0. The page-table XML is unchanged and included
+in the signed bundle; the unsigned input is unchanged.
+
+Signing again printed a diagnostic about validating the input's existing
+signature but exited 0; independent output verification passed. Evidence is in
+`signing-validated-20260922/signing-evidence.json` and adjacent verification logs.
+All 13 applicable signed-bundle checks passed; results are under
+`aax-native-signed-20260922/`. The candidate was installed using `ditto` to
+`/Library/Application Support/Avid/Audio/Plug-Ins/Robin Control Lite.aaxplugin`
+while Pro Tools was closed. No prior Lite AAX existed at that location.
+Every installed file hash and symlink matches the verified candidate, and both
+installed PACE and strict Apple signature verification passed. Installation
+evidence is `signing-validated-20260922/installation.json` and adjacent logs.
+
+Alex confirmed the test host is regular Pro Tools / Intro; installed application
+metadata reports version `26.4.1.179`. Retail host acceptance is **not yet tested**.
+Next user check: launch Pro Tools, insert Lite on mono/stereo Instrument tracks,
+load samples and play MIDI, check Trigger/Panic and UI resizing/reopening, automate
+a parameter, and save/reopen the session. Check for any Lite activation prompt.
+Customer testing without developer signing entitlements remains part of the host
+matrix; Pro Tools' own licensing is separate. Notarization remains pending.
+This candidate does not include Moonbase.
 
 PACE 6.0.1 is installed. The welcome email confirms digital-signing-only SDK
 access, and the application receipt specifies no Cloud AAX Signing. Subsequent
 screenshots and portal details establish the developer licenses, certificate
 indicator, and product configuration. End-to-end AAX signing now succeeds.
 
-**Latest signing checkpoint:** Alex supplied the active product and Signing Only
+**Historical first signing checkpoint — September 20:** Alex supplied the active product and Signing Only
 configuration with Wrap GUID `8F95C7F0-B538-11F1-8437-00505692AD3E`.
 The first trial stopped with a missing-password error. After Alex completed local
 authentication, the retry succeeded. PACE and strict Apple verification both
@@ -141,8 +196,9 @@ retains version 2.0.0 and both architectures; the original input is unchanged.
 
 Signed AAX: `Releases/Testing/2.0.0/signing-trial/AAX/Robin Control Lite.aaxplugin`.
 Evidence: `Releases/Testing/2.0.0/aax-signing-evidence.json`.
-This is a test candidate, not a finished release: validator issues, retail Pro
-Tools tests, remaining format signing, packaging, and notarization remain open.
+This is a historical test candidate; use the corrected September 22 signing
+output above for further testing. Retail Pro Tools tests, remaining format
+signing, packaging, and notarization remain open.
 See the AAX handoff for signing diagnostics and symlink-preserving copy guidance.
 
 Further research found a working PACE documentation sign-in route behind the

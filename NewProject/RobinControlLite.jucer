@@ -6,6 +6,8 @@
               pluginManufacturerCode="Cdsp" pluginCode="rcll" bundleIdentifier="dsp.conduit.RobinControlLite"
               pluginFormats="buildAU,buildVST3,buildAAX">
   <MAINGROUP id="ayCzMd" name="RobinControlLite">
+    <FILE id="RclAaxPT" name="RobinControlLitePages.xml" compile="0" resource="0"
+          xcodeResource="1" file="Resources/AAX/RobinControlLitePages.xml"/>
     <GROUP id="{16DB8BBD-FC25-C9E3-2064-70988F6ACE3E}" name="Source">
       <GROUP id="{5BB2D9F1-BAFB-C54D-87A0-C718464F3EB2}" name="DSP">
         <FILE id="JvhuqK" name="RandomizationEngine.cpp" compile="1" resource="0"

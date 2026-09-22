@@ -1,6 +1,6 @@
 # AAX build and signing handoff
 
-Last checked: 2026-09-20. Product: **Robin Control Lite**. Release candidate: **2.0.0**.
+Last checked: 2026-09-22. Product: **Robin Control Lite**. Release candidate: **2.0.0**.
 
 This is the AAX implementation handoff for future agents. Read `AGENTS.md`,
 `TESTING.md`, and `RELEASE_2.0.0.md` first. The historical v1.0 commands in
@@ -25,15 +25,54 @@ to AAX: the installed WrapTool supports the Apple signature as part of signing.
 | Developer tool entitlements | User screenshot confirms PACE Tools, PACE Central Access, and Eden Tools on the selected physical iLok; displayed expiration 2027-10-01 |
 | Signing-capable iLok | Certificate seal confirmed; subsequent local signing succeeded on 2026-09-20 |
 | Publisher configuration | SDK 6 / Signing Only configuration successfully used; PACE verification identifies Conduit DSP LLC and Robin Control Lite |
-| Signed AAX | PACE and strict Apple verification passed outside sandbox; timestamp 2026-09-20T21:21:29Z; signed, not wrapped |
+| Signed AAX | Corrected September 22 candidate: PACE and strict Apple verification passed outside sandbox; timestamp 2026-09-22T13:30:21Z; signed, not wrapped |
 | Retail Pro Tools acceptance / notarization | Still pending |
 
-The unsigned 2.0.0 AAX compiled for x86_64 + arm64, but the full validator run
-was **not clean**. `test.page_table.load` reported two failures (“Failed to load
-page tables library”), and `test.cycle_counts` ended `E_LOST` with a broken-pipe
-helper error. Other reported stages passed. These need investigation before
-release; do not assume either is harmless or caused by missing PACE signing.
-Logs are under `Releases/Testing/2.0.0/`.
+The original 2026-09-20 full validator run was **not clean**. Investigation on
+2026-09-22 established two separate causes:
+
+- **Page tables:** Lite registered no XML resource. The processor now reports
+  `RobinControlLitePages.xml` through JUCE's `AAXClientExtensions`; CMake packages
+  it under `Contents/Resources`. Its `PgTL` automation table includes all 26
+  active APVTS parameters plus JUCE's master bypass, using the existing IDs.
+  It maps both Native mono/stereo type IDs (`jcab`/`jcac`). Both page-table
+  loading and automation-list validation pass on the rebuilt universal AAX.
+- **Cycle counts:** Avid's readme, `.valconfig`, and Ruby script identify
+  `test.cycle_counts` as an **AAX DSP/HDX** test. The script starts DAE and
+  acquires an HDX deck before iterating DSP types, even for a Native-only plugin.
+  Running just `load_dish DAE` in its helper, with **no plugin loaded**, also
+  terminated (exit 255). The original trace records Mach exception 1 / signal 11
+  at the same DAE-loading step. Lite has no DSP types. This test is **N/A**, not
+  PASS; the underlying Avid DAE helper failure has not been repaired.
+
+Use `scripts/test-aax-native.py` for Lite. It confirms the Native-only descriptor,
+discovers the installed tests, excludes only `test.cycle_counts`, and fails on
+failed/missing/incomplete results even if DigiShell exits 0. It does not modify
+the SDK or validator. Logs and the exclusion evidence are under
+`Releases/Testing/2.0.0/aax-native-20260922/`.
+
+All **13 applicable checks passed** on the rebuilt unsigned universal 2.0.0 AAX
+on September 22, including all parameter traversal modes and parameter behavior.
+The rebuilt unit/processor tests also passed. Windows resource packaging is wired
+in CMake but has not been built or validated in this pass.
+
+The September 20 signed candidate is preserved and **does not contain this fix**.
+The corrected candidate was signed on September 22 using the connected developer
+iLok and WrapTool's default cached credentials, without supplying account/password
+arguments. PACE and strict Apple verification passed outside the sandbox.
+The new output is `Releases/Testing/2.0.0/signing-validated-20260922/AAX/Robin Control Lite.aaxplugin`;
+evidence is in `signing-validated-20260922/signing-evidence.json` and adjacent logs.
+All 13 applicable signed checks passed; evidence is under
+`aax-native-signed-20260922/`. The corrected bundle is now installed at
+`/Library/Application Support/Avid/Audio/Plug-Ins/Robin Control Lite.aaxplugin`.
+Pro Tools was closed and no previous Lite bundle existed at that path. `ditto`
+preserved the signed symlinks; every installed file and symlink matches the
+validated candidate. Installed PACE and strict Apple signature verification
+also passed. See `signing-validated-20260922/installation.json` and adjacent logs.
+Alex confirmed regular Pro Tools / Intro for the manual test (installed metadata:
+`26.4.1.179`); retail-host acceptance remains pending user testing.
+Moonbase remains deferred; none of this work integrates or exercises customer DRM.
+Rerun signing and validation after its later integration.
 
 ### Product/configuration supplied on 2026-09-20
 
@@ -55,7 +94,7 @@ retry exited 2: **You must specify a password for your account.** Alex then ran
 the local setup script. Retrying the same command without a password argument
 succeeded using the cached credentials.
 
-The signed candidate is:
+The historical September 20 signed candidate is:
 `Releases/Testing/2.0.0/signing-trial/AAX/Robin Control Lite.aaxplugin`.
 PACE `verify` returned 0, identified Conduit DSP LLC / Robin Control Lite, and
 explicitly reported **The binary was signed, but not wrapped.** Publisher ID:
@@ -196,7 +235,7 @@ device serial or copy the screenshots into the repository.
 
 The portal product/signing configuration and iLok certificate-seal checks are
 now done, as are local authentication and the first verified signing operation.
-Next: resolve validator issues and test the signed candidate in retail Pro Tools.
+Next: test the installed corrected signed candidate in retail Pro Tools.
 No evidence currently establishes that another onboarding email is required.
 Only if these steps fail should support be asked about documentation access or
 certificate/configuration provisioning. Do not repeat completed installation
@@ -272,17 +311,18 @@ codesign -dv --verbose=4 "$AAX_SIGNED_BUNDLE"
 
 ## Validation and packaging checkpoints
 
-1. Run DigiShell against the built AAX, then again against the final signed AAX:
+1. Run the Native validation runner against the built AAX, then again against the
+   final signed AAX. Each invocation requires a new evidence directory:
 
    ```sh
-   printf '%s\n' \
-     'load_dish aaxval' \
-     "runtests \"$AAX_SIGNED_BUNDLE\"" \
-     'exit' | /Users/alex/SDKs/aax-validator-dsh-2024-6-0/CommandLineTools/dsh
+   python3 scripts/test-aax-native.py "$AAX_SIGNED_BUNDLE" \
+     --output Releases/Testing/2.0.0/aax-native-signed
    ```
 
-   Require **every** test result to pass, with no `E_COMPLETED_FAIL`, `E_LOST`,
-   or failed/incomplete helper suite. A final `E_COMPLETED_PASS` can describe
+   Require **every applicable** test result to pass, with no `E_COMPLETED_FAIL`,
+   `E_LOST`, or failed/incomplete helper suite. Only the documented DSP-only
+   cycle-count check is excluded for Lite; never silently ignore failed tests.
+   A final `E_COMPLETED_PASS` can describe
    only the last test; it is not proof the overall run passed. DigiShell returned
    exit code 0 for the partial-failure run observed here.
    The older `-e validator-batch=...` command in `release-spec.md` fails with

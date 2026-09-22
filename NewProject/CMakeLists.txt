@@ -90,6 +90,23 @@ juce_add_plugin(RobinControlLite
 # Generate JuceHeader.h (required because source files use #include <JuceHeader.h>)
 juce_generate_juce_header(RobinControlLite)
 
+# AAX's automation page table is a bundle resource, not embedded BinaryData.
+if(TARGET RobinControlLite_AAX)
+    set(RCL_AAX_PAGE_TABLE "${CMAKE_CURRENT_SOURCE_DIR}/Resources/AAX/RobinControlLitePages.xml")
+    if(APPLE)
+        target_sources(RobinControlLite_AAX PRIVATE "${RCL_AAX_PAGE_TABLE}")
+        set_source_files_properties("${RCL_AAX_PAGE_TABLE}" PROPERTIES
+            HEADER_FILE_ONLY TRUE MACOSX_PACKAGE_LOCATION Resources)
+    elseif(WIN32)
+        set_property(TARGET RobinControlLite_AAX APPEND PROPERTY LINK_DEPENDS "${RCL_AAX_PAGE_TABLE}")
+        add_custom_command(TARGET RobinControlLite_AAX POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RobinControlLite_AAX>/../Resources"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${RCL_AAX_PAGE_TABLE}"
+                "$<TARGET_FILE_DIR:RobinControlLite_AAX>/../Resources/RobinControlLitePages.xml"
+            VERBATIM)
+    endif()
+endif()
+
 # ============================================================
 # Binary resources (logos, images)
 # ============================================================

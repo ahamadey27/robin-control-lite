@@ -33,6 +33,8 @@ public:
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override;
 
+    juce::AAXClientExtensions& getAAXClientExtensions() override { return aaxExtensions; }
+
     //==============================================================================
     const juce::String getName() const override;
     bool acceptsMidi() const override;
@@ -96,6 +98,11 @@ public:
     }
 
 private:
+    struct AAXExtensions final : juce::AAXClientExtensions
+    {
+        juce::String getPageFileName() const override { return "RobinControlLitePages.xml"; }
+    } aaxExtensions;
+
     //==============================================================================
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
