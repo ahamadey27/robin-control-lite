@@ -20,11 +20,13 @@ to AAX: the installed WrapTool supports the Apple signature as part of signing.
 | Installer provenance | Alex confirms installing `PACECodeSigningForAAXSDKMac_v6.0.1_f802503d.zip` downloaded from PACE Central (2026-09-20), matching the installed tool version/revision |
 | iLok License Manager | `/Applications/iLok License Manager.app` exists |
 | Apple application identity | `Developer ID Application: CONDUIT DSP LLC (QS378YGT2W)` verified outside sandbox |
-| PACE onboarding | Welcome email supplied by Alex on 2026-09-20 explicitly confirms access to the digital-signing-only Fusion SDK subset; signing configuration remains unverified |
+| PACE onboarding | Welcome email supplied by Alex on 2026-09-20 explicitly confirms access to the digital-signing-only Fusion SDK subset |
 | Signing method | Application receipt specifies Cloud AAX Signing: No; follow the local developer iLok USB workflow |
-| Developer tool entitlements | Alex reports “Pace Tools”, “Pace Central Access”, and “Edan Tools” on the physical iLok, plus a PACE Central UI area (2026-09-20); names/status not independently inspected |
-| Signing-capable iLok / publisher configuration | Unverified; do not infer from tool installation |
-| Signed AAX / retail Pro Tools acceptance | Pending |
+| Developer tool entitlements | User screenshot confirms PACE Tools, PACE Central Access, and Eden Tools on the selected physical iLok; displayed expiration 2027-10-01 |
+| Signing-capable iLok | Certificate seal confirmed; subsequent local signing succeeded on 2026-09-20 |
+| Publisher configuration | SDK 6 / Signing Only configuration successfully used; PACE verification identifies Conduit DSP LLC and Robin Control Lite |
+| Signed AAX | PACE and strict Apple verification passed outside sandbox; timestamp 2026-09-20T21:21:29Z; signed, not wrapped |
+| Retail Pro Tools acceptance / notarization | Still pending |
 
 The unsigned 2.0.0 AAX compiled for x86_64 + arm64, but the full validator run
 was **not clean**. `test.page_table.load` reported two failures (“Failed to load
@@ -32,6 +34,60 @@ page tables library”), and `test.cycle_counts` ended `E_LOST` with a broken-pi
 helper error. Other reported stages passed. These need investigation before
 release; do not assume either is harmless or caused by missing PACE signing.
 Logs are under `Releases/Testing/2.0.0/`.
+
+### Product/configuration supplied on 2026-09-20
+
+- Wrap GUID: `8F95C7F0-B538-11F1-8437-00505692AD3E`.
+- Product GUID: `7B367AC0-B538-11F1-B096-005056920FF7`.
+- PACE Auth ID: `0x3599977b` (PACE metadata, not a replacement for JUCE's frozen plugin identity).
+- Product: Robin Control Lite; status Active; Use Dev Data No.
+- SDK version 6; Experience version 2; Customer Experience **Signing Only**.
+- Digitally sign binary true; Encrypt binary false; no beta expiry set.
+- Generic portal fields also display licensing warnings and LicenseSupport
+  autoinstall settings. Do not interpret those fields alone as actual runtime
+  behavior. Always use explicit `wraptool sign`, never `wrap`, and verify the
+  final plugin in a customer environment for absence of PACE activation prompts.
+
+First signing trial used this GUID, the confirmed Apple identity, `--dsigharden`,
+and a separate output at `Releases/Testing/2.0.0/signing-trial/AAX/`.
+The sandbox initially blocked the PACE local service. The approved unsandboxed
+retry exited 2: **You must specify a password for your account.** Alex then ran
+the local setup script. Retrying the same command without a password argument
+succeeded using the cached credentials.
+
+The signed candidate is:
+`Releases/Testing/2.0.0/signing-trial/AAX/Robin Control Lite.aaxplugin`.
+PACE `verify` returned 0, identified Conduit DSP LLC / Robin Control Lite, and
+explicitly reported **The binary was signed, but not wrapped.** Publisher ID:
+`0x412b8238`. Apple `codesign --verify --strict --verbose=2` returned 0 outside
+the sandbox. Certificate chain ends in Apple Root CA; the Developer ID identity
+and team are the expected Conduit DSP values. Timestamp: 2026-09-20T21:21:29Z;
+hardened runtime enabled; version 2.0.0; x86_64 + arm64 retained. Original AAX
+executable SHA-256 still matches the unsigned manifest. File hashes and recorded
+verification results are in `Releases/Testing/2.0.0/aax-signing-evidence.json`.
+
+Two diagnostic caveats from this successful run:
+- Signing printed an exception about validating an existing signature but exited
+  0. Subsequent independent PACE and Apple verification passed. Do not classify
+  the diagnostic alone as final failure, or exit 0 alone as proof of success.
+- Sandboxed Apple verification misleadingly reported an invalid arm64 signature
+  and unavailable authority. The identical unmodified bundle passed outside the
+  sandbox, where the full certificate chain and bound Info.plist were visible.
+
+PACE's default v1 signature compatibility adds a symlink to the package. Preserve
+symlinks when staging/packaging (e.g. `ditto`); do not use a copy mode that follows
+or discards them. This candidate is not yet notarized or retail-host validated.
+
+For a new signing machine or missing credentials, run
+`python3 scripts/setup-pace-signing.py` personally in a local interactive
+Terminal to authenticate and synchronize PACE's cache. The script prompts for
+the account and a hidden password, then invokes the installed tool's documented
+`sync` operation. PACE caches credentials in Keychain. The script stores no
+password file and redacts the password from captured output; no secret is typed
+into shell history. WrapTool's documented interface requires the password as a
+child-process argument, so it is briefly present in process arguments. Do not
+run with process tracing or share diagnostic process dumps during setup.
+After successful synchronization, retry `sign` and verify the resulting bundle.
 
 The sandboxed `security find-identity -v -p codesigning` returned zero identities;
 the approved check outside the sandbox found the identity above. An empty
@@ -48,7 +104,13 @@ sandbox result is not proof of a missing certificate.
 - **User requirement confirmed 2026-09-20: no customer iLok DRM.** Lite remains
   free. Use developer AAX code signing only; do not add a protection wrapper,
   runtime PACE licensing checks, or a Lite requirement for an iLok account,
-  activation, USB key, or iLok Cloud session. Pro Tools' own licensing is separate.
+  iLok activation, USB key, or iLok Cloud session. Pro Tools' own licensing is separate.
+- **Customer licensing provider: Moonbase DRM**, explicitly chosen by Alex on
+  2026-09-20 for free Lite and all future products. The no-DRM restriction above
+  is specific to PACE/iLok; it is not a prohibition on Moonbase integration.
+  Moonbase is required for final v2.0.0 and explicitly excluded from Beta 1
+  (the user's “beta v1”). Activation policies remain unspecified. Beta 1 still
+  requires PACE signing for retail Pro Tools; omitting Moonbase does not waive it.
 - Standalone is a local debugging option, OFF in release builds.
 
 Licenses for PACE developer tools on Alex's USB key do not by themselves impose
@@ -96,13 +158,49 @@ but printed no cached configurations. This does not query or prove the absence
 of server-side account entitlements. Its sandbox failure (`connect(): Operation
 not permitted`) was a local-service access restriction, not a licensing error.
 
-The welcome email does not instruct the developer to await another email.
-If authenticated documentation remains inaccessible, reply to PACE onboarding
-or contact the support address in that email, requesting the current PACE 6.0.1
-signing-only setup instructions, confirmation of USB signing-certificate
-provisioning, and the publisher identifier/configuration required for signing.
-Do not send the user back through completed installation steps or assume a
-publisher identifier is displayed in a particular portal menu. No support
+Further online research on 2026-09-20 corrected the initial recommendation to
+contact support immediately:
+
+- The welcome-email documentation URL responds successfully to ordinary HTTP
+  requests and redirects to `/login?redirect=...`. Its JavaScript login component
+  invokes `https://docs.paceap.com/login/initiate-oauth`, which reaches a rendered
+  **PACE Antipiracy — DOCUMENTATION** sign-in form (User ID and Password).
+  The account-recovery link points to iLok.com. This establishes a working login
+  route, not that this account has successfully authenticated or that the final
+  article is accessible. The web research tool's error did not establish a dead
+  link. Have the user sign in privately; never collect the password.
+- Auburn Sounds' own Dplug AAX guide describes creating product and wrap
+  configurations in PACE Central. A developer's first-hand JUCE forum report
+  explicitly describes a **Signing Only** configuration. These explain a route
+  to obtaining a configuration GUID without waiting for it in an email. They
+  are older guidance, not verification of the current PACE 6 portal layout.
+  A signing-only configuration does not authorize PACE customer DRM or `wrap`.
+- A developer's first-hand account of March 2026 setup reports that synchronizing
+  the physical iLok after license activation downloaded the signing certificate.
+  Treat this as a troubleshooting lead, not a guarantee for Alex's account.
+  Official iLok help documents right-click → **Synchronize** and a certificate
+  seal icon for keys certified for digital signing. Both synchronization and
+  the seal are now confirmed below. Do not confuse this action in iLok
+  License Manager with the separate `wraptool sync` cache command.
+
+Alex confirmed synchronizing the physical iLok on 2026-09-20. A subsequent
+`wraptool list` completed successfully with no output, as before. This lists
+cached signing configurations, not certificates on the USB key, so it cannot
+establish whether certificate provisioning changed. The subsequent close-up
+screenshot (16:59:45) clearly shows the certificate seal above the device icon;
+the earlier full-window screenshot (16:59:11) does not. This confirms the
+digital-signing certification indicator after synchronization. Actual signing
+was subsequently verified as described above. Do not repeat synchronization
+or ask for the seal again unless a new error warrants it. Do not record the
+device serial or copy the screenshots into the repository.
+
+The portal product/signing configuration and iLok certificate-seal checks are
+now done, as are local authentication and the first verified signing operation.
+Next: resolve validator issues and test the signed candidate in retail Pro Tools.
+No evidence currently establishes that another onboarding email is required.
+Only if these steps fail should support be asked about documentation access or
+certificate/configuration provisioning. Do not repeat completed installation
+steps or assume a publisher number appears in a particular menu. No support
 message has been sent by the agent.
 
 1. Plug in the developer's iLok USB and sign into iLok License Manager.
@@ -141,14 +239,14 @@ The 6.0.1 help establishes:
   specify `sign` explicitly rather than invoking the default operation.
 - macOS signing accepts `--signid` for the Apple Developer ID Application identity.
 - `--wcguid` supplies a verified wrap configuration. An alternative documented
-  signing form uses explicit publisher name/number. Choose the form authorized
-  for this publisher; neither value has been verified yet.
+  signing form uses explicit publisher name/number. This project now has the
+  user-supplied GUID above; a separate customer number is not required for that form.
 - `--dsigharden` enables the signing options needed when notarizing separately.
 - `--out` permits preserving the original input; otherwise signing can be in place.
 - `verify --in` verifies the PACE signature.
 
-The following is a **template, not a verified signing invocation**. Use only
-after the account, signing iLok, and actual configuration have been confirmed:
+The following invocation successfully signed the separate candidate after local
+authentication. Use the GUID above as `PACE_WCGUID` and preserve unsigned input:
 
 ```sh
 "/Applications/PACEAntiPiracy/Eden/Fusion/Current/bin/wraptool" sign \
@@ -208,6 +306,14 @@ codesign -dv --verbose=4 "$AAX_SIGNED_BUNDLE"
 
 ## References
 
+- [Auburn Sounds Dplug AAX guide, code signing](https://github.com/AuburnSounds/Dplug/wiki/Dplug-AAX-Guide#step-7-code-signing)
+  — framework maintainers' instructions for product/wrap configuration setup.
+- [First-hand signing-only setup report on the JUCE forum](https://forum.juce.com/t/problem-signing-my-aax-plugin/46177)
+  — 2021; evidence of the signing-only configuration route, not current UI labels.
+- [Developer's March 2026 AAX setup account](https://note.com/kawato3/n/ne11473420ad5?hl=en)
+  — first-hand report of synchronization downloading the signing certificate.
+- [Official iLok USB synchronization guidance](https://help.ilok.com/faq_ilok.html)
+  — sign in, right-click the physical iLok, synchronize.
 - [PACE's public AAX signing onboarding overview](https://paceap.com/getting-started-with-aax-code-signing-for-pro-tools-plugins/)
   — PACE provides onboarding support following Avid approval; local signing uses
   an iLok USB to hold the signing certificate. Signing and customer licensing

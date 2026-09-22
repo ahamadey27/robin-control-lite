@@ -10,6 +10,8 @@ For company-level brand, business, marketing, commerce, privacy, product-portfol
 
 For current release work, read **`RELEASE_2.0.0.md`** (build commands, artifact paths, evidence, and open checkpoints) and **`AAX_BUILD_AND_SIGNING.md`** (AAX/PACE handoff for future agents). These take precedence over historical v1.0 signing instructions in `release-spec.md` for the 2.0.0 release. Do not infer AAX authorization from an installed SDK or WrapTool.
 
+**Licensing direction, user-confirmed 2026-09-20:** Moonbase DRM is the chosen customer licensing system for this free product and all future products. It is required for the final v2.0.0 release but explicitly excluded from Beta 1 (the user's “beta v1”). PACE is for AAX digital signing only; no customer iLok/PACE DRM. This supersedes the provider choice in older custom-licensing plans, including the July company-context roadmap. Do not block Beta 1 on Moonbase integration or infer a binary version change from the beta label. Activation policies remain unspecified; do not describe the current candidate as Moonbase-integrated or infer device limits, offline behavior, or account requirements.
+
 As of 2026-04-25 this folder is the **authoritative project**. It was originally a UI-redesign sandbox forked from `../round-robin-lite`, but has been promoted to be the main codebase. The sibling folder `../round-robin-lite` is retired — kept on disk as read-only legacy reference, not built or installed.
 
 For the full development plan (formats, signing, distribution, CI, testing, license decisions), see `spec.md` at the repo root. **`spec.md` is the source of truth** for anything not covered here. Sibling docs at the repo root:

@@ -13,16 +13,26 @@ and is excluded from this release build. Plugin identity and parameter IDs stay
 compatible with existing Lite sessions.
 
 Alex explicitly confirmed **no customer iLok DRM** on 2026-09-20. AAX uses
-developer code signing only, with no Lite license activation, customer iLok
+developer code signing only, with no Lite iLok license activation, customer iLok
 account, USB key, or Cloud requirement. Pro Tools' own licensing is separate.
+
+Alex subsequently specified **Moonbase DRM for free Lite and all future
+products**. This is the chosen customer licensing provider; PACE remains limited
+to AAX signing. Alex clarified that Moonbase is required for **final v2.0.0**
+but excluded from **Beta 1** (called “beta v1” in conversation). Do not block
+Beta 1 on Moonbase or infer a binary version change from that label. Beta 1
+still requires AAX signing for retail Pro Tools. No Moonbase integration was
+performed in this release preparation work, and the existing build/test evidence
+does not cover it. Activation policies remain unspecified.
 
 ## Checkpoints
 
+- [ ] Final release only: integrate and validate Moonbase DRM; excluded from Beta 1.
 - [x] Version set to 2.0.0 in authoritative CMake and Projucer metadata.
 - [x] Plugin/test version macros derive from the CMake project version.
 - [x] AAX SDK, validator, and PACE tool installation located.
 - [x] User-supplied PACE welcome email confirms signing-only SDK access;
-      application specifies no Cloud AAX Signing. No customer DRM authorized.
+      application specifies no Cloud AAX Signing. No customer PACE DRM authorized.
 - [x] Apple Developer ID Application identity checked outside sandbox.
 - [x] Build universal Release VST3, AU, and AAX.
 - [x] Verify all three bundle versions: 2.0.0; architectures: x86_64 + arm64;
@@ -33,7 +43,10 @@ account, USB key, or Cloud requirement. Pro Tools' own licensing is separate.
 - [ ] Pre-sign AAX full validation — unresolved failures below.
 - [x] ASan/UBSan and TSan release checks — both clean.
 - [x] Installer rejects stale 1.0.1 artifacts when source version is 2.0.0.
-- [ ] Confirm Avid/PACE account setup, publisher/configuration, and signing iLok.
+- [x] Confirm signing iLok certificate-seal indicator in post-sync screenshot.
+- [x] Obtain active product and SDK 6 Signing Only Wrap GUID from PACE Central.
+- [x] Confirm PACE account/publisher configuration through successful signing and verification.
+- [x] Sign a separate AAX candidate; PACE and strict Apple signature verification pass.
 - [ ] Sign final staged VST3/AU and AAX; verify both Apple and PACE signatures.
 - [ ] Validate signed AAX and complete retail Pro Tools host smoke test.
 - [ ] Extend installer and uninstaller for the signed AAX.
@@ -113,12 +126,30 @@ helper error. The other reported stages passed. Investigate these two checks
 before claiming AAX release readiness. The last result in the log is PASS but
 does not summarize the whole run.
 
-AAX signing setup is still unverified. PACE 6.0.1 is installed, and Alex reports
-“Pace Tools”, “Pace Central Access”, and “Edan Tools” entitlements on the physical
-iLok. The supplied welcome email confirms digital-signing-only SDK access;
-the application receipt specifies no Cloud AAX Signing. Neither supplies a
-publisher/configuration identifier or confirms a working signing certificate.
-Next, open PACE Central through iLok License Manager and consult the authenticated
-signing setup documentation, as described in `AAX_BUILD_AND_SIGNING.md`.
-Confirm the active distribution entitlement before publishing. No PACE signing
-has been attempted.
+PACE 6.0.1 is installed. The welcome email confirms digital-signing-only SDK
+access, and the application receipt specifies no Cloud AAX Signing. Subsequent
+screenshots and portal details establish the developer licenses, certificate
+indicator, and product configuration. End-to-end AAX signing now succeeds.
+
+**Latest signing checkpoint:** Alex supplied the active product and Signing Only
+configuration with Wrap GUID `8F95C7F0-B538-11F1-8437-00505692AD3E`.
+The first trial stopped with a missing-password error. After Alex completed local
+authentication, the retry succeeded. PACE and strict Apple verification both
+passed outside the sandbox. PACE confirms **signed, not wrapped**; Apple confirms
+the Conduit DSP Developer ID, timestamp, and hardened runtime. The signed copy
+retains version 2.0.0 and both architectures; the original input is unchanged.
+
+Signed AAX: `Releases/Testing/2.0.0/signing-trial/AAX/Robin Control Lite.aaxplugin`.
+Evidence: `Releases/Testing/2.0.0/aax-signing-evidence.json`.
+This is a test candidate, not a finished release: validator issues, retail Pro
+Tools tests, remaining format signing, packaging, and notarization remain open.
+See the AAX handoff for signing diagnostics and symlink-preserving copy guidance.
+
+Further research found a working PACE documentation sign-in route behind the
+email URL; automated web-tool failure was not evidence of a missing document.
+The user has now synchronized the physical iLok and supplied a close-up clearly
+showing the certificate seal. Developer tool license names and their displayed
+2027-10-01 expiration are also confirmed from the screenshots. The product and
+signing-only configuration have now been created; no need to wait for a GUID
+by email or repeat those setup steps. See the AAX handoff for sources and
+remaining authentication/verification work.
