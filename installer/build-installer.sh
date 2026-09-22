@@ -14,7 +14,7 @@
 # Output:
 #   Releases/Installers/Robin Control Lite <VERSION>.pkg
 #
-# Signing (runs unsigned unless INSTALLER_SIGN is supplied):
+# Signing (required for final; optional for explicitly labelled beta packages):
 #   When the Apple Developer ID Installer cert is in your keychain, set
 #     INSTALLER_SIGN="Developer ID Installer: CONDUIT DSP LLC (TEAMID)"
 #   in the environment and re-run. The flag drops into productbuild as
@@ -73,7 +73,22 @@ for fmt_dir in "${FORMATS[@]}"; do
         echo "ERROR: $fmt_dir is version $bundle_version; expected $VERSION. Refusing to package stale artifacts." >&2
         exit 1
     fi
+    if [[ -z "$BETA_LABEL" ]]; then
+        profile="$ARTEFACTS/$fmt_dir/Contents/Resources/RCLBuildConfig.txt"
+        if [[ ! -f "$profile" ]] || ! grep -Fxq 'moonbase=ON' "$profile" \
+            || ! grep -Fxq 'final=ON' "$profile" || ! grep -Fxq "version=$VERSION" "$profile"; then
+            echo "ERROR: final installer requires final-release Moonbase artifacts: $fmt_dir" >&2
+            exit 1
+        fi
+        test -f "$ARTEFACTS/$fmt_dir/Contents/Resources/MoonbaseNotices.txt"
+        codesign --verify --strict "$ARTEFACTS/$fmt_dir"
+    fi
 done
+
+if [[ -z "$BETA_LABEL" && -z "${INSTALLER_SIGN:-}" ]]; then
+    echo "ERROR: final installer requires INSTALLER_SIGN" >&2
+    exit 1
+fi
 
 if [[ "$INCLUDE_AAX" == 1 ]]; then
     # AAX for retail Pro Tools must be PACE-signed, not a raw JUCE build.

@@ -20,7 +20,8 @@ int main()
     };
     const juce::File fixtures(RCL_LICENSE_FIXTURES);
     const auto directory = juce::File::getSpecialLocation(juce::File::tempDirectory)
-        .getNonexistentChildFile("rcl-license-tests", {}, false);
+        .getNonexistentChildFile("rcl-license-tests-" + juce::String::charToString(0x00e9)
+                                + juce::String::charToString(0x65e5), {}, false);
     directory.createDirectory();
     auto config = rcl::makeMoonbaseConfig();
     check(config.onlineGracePeriod == std::chrono::hours(24 * 90), "Production online grace is 90 days");
@@ -78,6 +79,11 @@ int main()
     {
         rcl::MoonbaseLicense license(config);
         check(! license.isLicensed(), "Corrupt cache fails closed without a crash");
+    }
+    config.licenseFile.replaceWithText(juce::String::repeatedString("x", 1024 * 1024 + 1));
+    {
+        rcl::MoonbaseLicense license(config);
+        check(! license.isLicensed(), "Oversized cache fails closed before JSON parsing");
     }
 
     moonbase::juce_integration::LicenseGate gate;

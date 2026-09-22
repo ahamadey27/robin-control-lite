@@ -11,7 +11,7 @@ This file is a short repo-side note about the plugin itself.
 
 The existing public builds and DRM-free Beta 1 do not connect to the internet.
 
-The **unreleased Moonbase-enabled 2.0.0 build** connects to Conduit DSP's
+**Moonbase-enabled 2.0.0** connects to Conduit DSP's
 Moonbase tenant for license activation, validation, and deactivation. The SDK
 uses a device fingerprint and device label to bind the license to a machine.
 Activation happens in a browser; the plugin stores a signed license locally,
@@ -20,16 +20,18 @@ requests also identify the SDK/JUCE/OS software versions through a User-Agent.
 Optional SDK analytics, host/locale metadata collection, and update prompts
 are disabled. There is no sample, preset, project, or crash-report upload.
 
-This describes the development implementation. Before distributing it, the
-canonical website policy and the EULA's existing offline-only wording must
-be reconciled with Moonbase licensing; see `MOONBASE_INTEGRATION.md`.
+The repository EULA now describes this v2.0.0 behavior. The canonical website
+privacy policy still needs reconciliation before public launch; updating this
+file does not publish a website policy. See `FINAL_RELEASE_2.0.0.md`.
 
 ## What the download flow does with your data
 
-To download Robin Control Lite from conduitdsp.com you provide an email
-address. That email is processed by MailerLite on Conduit DSP's behalf, used
-to send you the download link and occasional product updates, and is handled
-per the privacy policy linked above. You can unsubscribe at any time.
+Moonbase handles the private v2.0.0 license/delivery flow, account portal and
+transactional license emails. The test delivery email/download flow has been
+verified. Public self-service free-license acquisition and migration from the
+older website flow still need launch configuration. The older website uses
+MailerLite for email subscriptions; receiving a license is not permission to
+subscribe the customer to marketing. See the canonical policy above.
 
 ## Contact
 

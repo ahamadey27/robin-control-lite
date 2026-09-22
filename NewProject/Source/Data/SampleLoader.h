@@ -42,5 +42,6 @@ private:
     double currentSampleRate = 44100.0;
 
     /** Resamples a buffer from sourceSampleRate to currentSampleRate in-place. */
-    void resampleBuffer(juce::AudioBuffer<float>& buffer, double sourceSampleRate);
+    static bool resampleBuffer(juce::AudioBuffer<float>& buffer, double sourceSampleRate,
+                               double targetSampleRate);
 };

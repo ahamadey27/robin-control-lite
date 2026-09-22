@@ -467,16 +467,19 @@ void NewProjectAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
     
     // ADD: save sample file paths
     juce::ValueTree sampleData("SampleData");
-    for (int i = 0; i < NUM_SAMPLE_SLOTS; ++i)
     {
-        if (sampleSlots[i].isLoaded)
+        const juce::ScopedLock sl(getCallbackLock());
+        for (int i = 0; i < NUM_SAMPLE_SLOTS; ++i)
         {
-            DBG("  Saving slot " + juce::String(i) + ": " + sampleSlots[i].sourceFile.getFullPathName());
-            juce::ValueTree slot("Slot");
-            slot.setProperty("index", i, nullptr);
-            slot.setProperty("path", sampleSlots[i].sourceFile.getFullPathName(), nullptr);
-            slot.setProperty("displayName", sampleSlots[i].displayName, nullptr);
-            sampleData.appendChild(slot, nullptr);
+            if (sampleSlots[i].isLoaded)
+            {
+                DBG("  Saving slot " + juce::String(i) + ": " + sampleSlots[i].sourceFile.getFullPathName());
+                juce::ValueTree slot("Slot");
+                slot.setProperty("index", i, nullptr);
+                slot.setProperty("path", sampleSlots[i].sourceFile.getFullPathName(), nullptr);
+                slot.setProperty("displayName", sampleSlots[i].displayName, nullptr);
+                sampleData.appendChild(slot, nullptr);
+            }
         }
     }
     customData.appendChild(sampleData, nullptr);
@@ -500,6 +503,10 @@ void NewProjectAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 
 void NewProjectAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
+    // Presets store paths and parameters, not audio. Refuse oversized input
+    // before XML parsing or signed-to-unsigned size conversions.
+    if (data == nullptr || sizeInBytes <= 0 || sizeInBytes > 8 * 1024 * 1024)
+        return;
     DBG("=== LOADING PLUGIN STATE ===");
 
     std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
@@ -552,6 +559,7 @@ void NewProjectAudioProcessor::setStateInformation(const void* data, int sizeInB
 
         juce::StringArray missingSamples;
 
+        std::array<bool, NUM_SAMPLE_SLOTS> restored {};
         for (auto slot : sampleDataCopy)
         {
             int index        = slot.getProperty("index",       -1);
@@ -560,8 +568,10 @@ void NewProjectAudioProcessor::setStateInformation(const void* data, int sizeInB
 
             DBG("  Restoring slot " + juce::String(index) + ": " + path);
 
-            if (index < 0 || index >= NUM_SAMPLE_SLOTS)
+            if (! slot.hasType("Slot") || index < 0 || index >= NUM_SAMPLE_SLOTS
+                || restored[static_cast<size_t>(index)] || ! juce::File::isAbsolutePath(path))
                 continue;
+            restored[static_cast<size_t>(index)] = true;
 
             juce::File file(path);
             if (file.existsAsFile())
@@ -1156,7 +1166,7 @@ void NewProjectAudioProcessor::savePreset(const juce::File& file)
 
 void NewProjectAudioProcessor::loadPreset(const juce::File& file)
 {
-    if (!file.existsAsFile())
+    if (!file.existsAsFile() || file.getSize() > 8 * 1024 * 1024)
     {
         DBG("ERROR: Preset file not found: " + file.getFullPathName());
         return;

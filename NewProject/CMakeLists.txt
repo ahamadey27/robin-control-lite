@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
 set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
 project(RobinControlLite VERSION 2.0.0)
 
@@ -20,9 +23,8 @@ else()
     message(STATUS "Local JUCE not found at ${JUCE_PATH} — fetching via FetchContent")
     include(FetchContent)
     FetchContent_Declare(JUCE
-        GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-        GIT_TAG        8.0.4
-        GIT_SHALLOW    TRUE
+        URL https://github.com/juce-framework/JUCE/archive/91ad83ae34a81e0833b1a2b0866f54846370ae53.tar.gz
+        URL_HASH SHA256=04f8d5055382582c757be9da069ea98338005f98248facd9c2804435ac853e70
     )
     FetchContent_MakeAvailable(JUCE)
 endif()
@@ -90,7 +92,7 @@ juce_add_plugin(RobinControlLite
 # Generate JuceHeader.h (required because source files use #include <JuceHeader.h>)
 juce_generate_juce_header(RobinControlLite)
 
-# Beta 1 deliberately ships without customer DRM. Final 2.0.0 must enable this.
+# Unlicensed builds are for engine development / historical beta reproduction.
 option(RCL_ENABLE_MOONBASE "Enable Moonbase customer licensing (required for final release)" OFF)
 option(RCL_FINAL_RELEASE "Enforce final-release customer licensing requirements" OFF)
 if(RCL_FINAL_RELEASE AND NOT RCL_ENABLE_MOONBASE)
@@ -109,7 +111,8 @@ if(RCL_ENABLE_MOONBASE)
     if(APPLE)
         enable_language(OBJC OBJCXX)
     endif()
-    juce_add_module("${moonbase_cpp_SOURCE_DIR}/modules/moonbase_licensing")
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/MoonbaseHardening.cmake")
+    juce_add_module("${RCL_MOONBASE_MODULE}")
     target_link_libraries(RobinControlLite PRIVATE moonbase_licensing)
     target_sources(RobinControlLite PRIVATE Source/Licensing/MoonbaseLicense.cpp)
     foreach(format IN LISTS PLUGIN_FORMATS)
@@ -133,6 +136,27 @@ else()
     message(STATUS "RCL customer licensing: OFF (Beta 1 / development only)")
 endif()
 target_compile_definitions(RobinControlLite PUBLIC RCL_ENABLE_MOONBASE=$<BOOL:${RCL_ENABLE_MOONBASE}>)
+
+# Carry the exact licensing profile into signed bundles and installer checks.
+set(RCL_BUILD_CONFIG "${CMAKE_CURRENT_BINARY_DIR}/RCLBuildConfig.txt")
+file(WRITE "${RCL_BUILD_CONFIG}"
+    "version=${PROJECT_VERSION}\nmoonbase=${RCL_ENABLE_MOONBASE}\nfinal=${RCL_FINAL_RELEASE}\nmoonbase_sdk=4.4.0-rcl-hardening-1\n")
+foreach(format IN LISTS PLUGIN_FORMATS)
+    if(NOT TARGET RobinControlLite_${format})
+        continue()
+    endif()
+    if(APPLE)
+        target_sources(RobinControlLite_${format} PRIVATE "${RCL_BUILD_CONFIG}")
+        set_source_files_properties("${RCL_BUILD_CONFIG}" PROPERTIES
+            HEADER_FILE_ONLY TRUE MACOSX_PACKAGE_LOCATION Resources)
+    elseif(WIN32 AND NOT format STREQUAL "Standalone")
+        add_custom_command(TARGET RobinControlLite_${format} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RobinControlLite_${format}>/../Resources"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${RCL_BUILD_CONFIG}"
+                "$<TARGET_FILE_DIR:RobinControlLite_${format}>/../Resources/RCLBuildConfig.txt"
+            VERBATIM)
+    endif()
+endforeach()
 
 # AAX's automation page table is a bundle resource, not embedded BinaryData.
 if(TARGET RobinControlLite_AAX)

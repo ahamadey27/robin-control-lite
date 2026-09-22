@@ -1,5 +1,7 @@
 # AAX build and signing handoff
 
+> **Current final v2.0.0 handoff (2026-09-22):** Read [FINAL_RELEASE_2.0.0.md](FINAL_RELEASE_2.0.0.md) first. It supersedes earlier candidate/beta build status below. Final binaries require Moonbase ON and FINAL_RELEASE ON, use 90-day online offline grace, and retain version 2.0.0. The older DRM-free beta and unsigned/package-pending notes below are historical. Windows compilation follows [WINDOWS_BUILD_AND_AAX.md](WINDOWS_BUILD_AND_AAX.md); premium reuse follows [ROBIN_CONTROL_AGENT_HANDOFF.md](ROBIN_CONTROL_AGENT_HANDOFF.md).
+
 Last checked: 2026-09-22. Product: **Robin Control Lite**. Release candidate: **2.0.0**.
 
 This is the AAX implementation handoff for future agents. Read `AGENTS.md`,

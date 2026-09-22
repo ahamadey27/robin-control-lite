@@ -104,9 +104,10 @@ namespace rcltest
     // Used to exercise SampleSlot::loadFromFile's decoded-length guard without
     // allocating (or OOM-ing on) the claimed size.
     inline juce::File writeWavWithClaimedFrames (juce::int64 claimedFrames,
-                                                 int actualDataBytes, double sr = 44100.0)
+                                                 int actualDataBytes, double sr = 44100.0,
+                                                 int channels = 1, int bits = 16, int format = 1)
     {
-        const int blockAlign = 2;   // 1 channel * 16-bit
+        const int blockAlign = channels * (bits / 8);
         const juce::int64 claimedData = claimedFrames * blockAlign;
 
         juce::MemoryOutputStream mo;
@@ -115,12 +116,12 @@ namespace rcltest
         mo.write ("WAVE", 4);
         mo.write ("fmt ", 4);
         mo.writeInt (16);
-        mo.writeShort (1);                            // PCM
-        mo.writeShort (1);                            // mono
+        mo.writeShort ((short) format);
+        mo.writeShort ((short) channels);
         mo.writeInt ((int) sr);
         mo.writeInt ((int) sr * blockAlign);          // byte rate
         mo.writeShort ((short) blockAlign);
-        mo.writeShort (16);                           // bits
+        mo.writeShort ((short) bits);
         mo.write ("data", 4);
         mo.writeInt ((int) claimedData);              // the lie: claimed data size
         if (actualDataBytes > 0)
@@ -800,6 +801,53 @@ public:
             expect (! ok, "over-claiming header was accepted (guard not engaged)");
             renderABit();
             f.deleteFile();
+        }
+
+        beginTest ("multichannel decoded allocation is bounded before reading");
+        {
+            auto f = rcltest::writeWavWithClaimedFrames (10000000, 32, 44100.0, 8);
+            expect (! proc->sampleLoader.loadSample (0, f), "80M decoded floats must be rejected");
+            f.deleteFile();
+            f = rcltest::writeWavWithClaimedFrames (1, 256, 44100.0, 128);
+            expect (! proc->sampleLoader.loadSample (0, f), "excessive channel count must be rejected");
+            f.deleteFile();
+        }
+
+        beginTest ("non-finite floating-point audio is rejected before DSP");
+        {
+            auto f = rcltest::writeWavWithClaimedFrames (1, 4, 44100.0, 1, 32, 3);
+            juce::MemoryBlock bytes;
+            f.loadFileAsData(bytes);
+            juce::MemoryOutputStream nan;
+            nan.writeInt(0x7fc00000);
+            std::memcpy(static_cast<char*>(bytes.getData()) + 44, nan.getData(), 4);
+            f.replaceWithData(bytes.getData(), bytes.getSize());
+            expect (! proc->sampleLoader.loadSample (0, f), "NaN audio must be rejected");
+            f.deleteFile();
+        }
+
+        beginTest ("tiny files resample safely at fractional boundary ratios");
+        {
+            for (int length = 1; length < 32; ++length)
+            {
+                auto f = rcltest::writeTempWav(rng, length, 44100.0);
+                proc->prepareToPlay(192000.0, 256);
+                expect(proc->sampleLoader.loadSample(0, f));
+                expect(proc->sampleSlots[0].audioBuffer.getNumSamples() > 0);
+                proc->prepareToPlay(22050.0, 256);
+                renderABit();
+                f.deleteFile();
+            }
+            proc->prepareToPlay(48000.0, 256);
+        }
+
+        beginTest ("oversized state is rejected before parsing its memory");
+        {
+            const char dummy = 0;
+            proc->setStateInformation(&dummy, 8 * 1024 * 1024 + 1);
+            proc->setStateInformation(nullptr, 100);
+            proc->setStateInformation(&dummy, -1);
+            renderABit();
         }
 
         beginTest ("odd-but-valid formats fold to mono, resample, and play");

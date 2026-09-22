@@ -34,10 +34,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: NewProject/build/_deps
-          key: juce-macos-8.0.4
+          key: juce-macos-8.0.15
 
       - name: Configure (Release)
-        run: cmake -S NewProject -B NewProject/build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DRCL_ENABLE_MOONBASE=${{ matrix.moonbase }}
+        run: cmake -S NewProject -B NewProject/build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DRCL_ENABLE_MOONBASE=${{ matrix.moonbase }} -DRCL_FINAL_RELEASE=${{ matrix.moonbase }}
 
       - name: Build
         run: cmake --build NewProject/build -j3
@@ -86,10 +86,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: NewProject/build/_deps
-          key: juce-windows-8.0.4
+          key: juce-windows-8.0.15
 
       - name: Configure (Release)
-        run: cmake -S NewProject -B NewProject/build -A x64 -DCMAKE_BUILD_TYPE=Release -DRCL_ENABLE_MOONBASE=${{ matrix.moonbase }} -DRCL_BUILD_TESTS=ON
+        run: cmake -S NewProject -B NewProject/build -A x64 -DCMAKE_BUILD_TYPE=Release -DRCL_ENABLE_MOONBASE=${{ matrix.moonbase }} -DRCL_FINAL_RELEASE=${{ matrix.moonbase }} -DRCL_BUILD_TESTS=ON
 
       - name: Build
         run: cmake --build NewProject/build --config Release -j3
@@ -101,6 +101,9 @@ jobs:
           $vst3 = Get-ChildItem -Path NewProject/build/RobinControlLite_artefacts -Recurse -Directory -Filter *.vst3 | Select-Object -First 1
           echo "vst3=$($vst3.FullName)" >> $env:GITHUB_OUTPUT
           echo "Found VST3: $($vst3.FullName)"
+
+      - name: Engine and processor regression tests
+        run: ./NewProject/build/tests/RobinControlLiteTests_artefacts/Release/RobinControlLiteTests.exe
 
       - name: Licensing regression tests
         if: matrix.moonbase == 'ON'
@@ -134,7 +137,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build-tests/_deps
-          key: juce-tests-8.0.4
+          key: juce-tests-8.0.15
 
       - name: Configure (tests)
         run: cmake -S NewProject -B build-tests -DRCL_BUILD_TESTS=ON -DRCL_ENABLE_MOONBASE=ON -DCMAKE_BUILD_TYPE=Debug -DJUCE_AAX_SDK_PATH=/nonexistent

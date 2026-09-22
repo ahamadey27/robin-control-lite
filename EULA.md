@@ -1,8 +1,10 @@
 # End User License Agreement
 
-**Robin Control Lite** — Version 1.0
+**Robin Control Lite** — Version 2.0.0
 Conduit DSP LLC
-Effective date: April 26, 2026
+Effective date: September 22, 2026
+
+These terms accompany version 2.0.0. Earlier distributions retain their accompanying terms.
 
 This Agreement is between you ("You") and **Conduit DSP LLC** ("Conduit DSP," "we," "us"), a New York limited liability company. By installing or using Robin Control Lite (the "Software") you agree to these terms. If you don't agree, don't install the Software.
 
@@ -10,7 +12,7 @@ This Agreement is between you ("You") and **Conduit DSP LLC** ("Conduit DSP," "w
 
 ## 1. License Grant
 
-The Software is provided **free of charge**. We grant you a non-exclusive, worldwide, royalty-free license to install and use Robin Control Lite on any number of computers you own or control, for personal or commercial music production. You may make backup copies for your own use.
+The Software is provided **free of charge**. We grant you a non-exclusive, worldwide, royalty-free license to install and use Robin Control Lite on any number of computers you own or control, for personal or commercial music production. You may make backup copies for your own use. Version 2.0.0 requires a free Moonbase product license and activation; the current limit is 10 activated devices per license. Installation on additional computers does not itself activate them. Online-activated licenses allow up to 90 days without successful online validation, subject to the signed license expiry or revocation. A separate permanent offline activation flow is available.
 
 You **may** redistribute the original, unmodified installer to others provided it is distributed free of charge and includes this Agreement.
 
@@ -45,7 +47,7 @@ TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL CONDUIT DSP
 
 ## 7. Privacy
 
-Robin Control Lite does not collect, transmit, or store any user data. The Software runs entirely offline and does not phone home. If you provided an email address to download the Software, that data is handled per our Privacy Policy at https://conduitdsp.com/privacy-policy/.
+Version 2.0.0 uses Moonbase for license activation, validation and deactivation. This flow processes license/account information, a device identifier and label, and network/software-version information. The Software stores a signed license locally, including the name and email supplied by Moonbase. Optional SDK analytics are disabled; the plugin does not upload audio samples, presets or DAW projects. Permanent offline activation exchanges request/response files using another connected device. See https://conduitdsp.com/privacy-policy/ for the company privacy policy and contact hello@conduitdsp.com with data questions.
 
 ## 8. Termination
 

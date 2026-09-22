@@ -6,24 +6,26 @@ For company-level brand, business, marketing, commerce, privacy, product-portfol
 
 ## Project
 
-**Robin Control Lite** is a free monophonic sampler plugin by `conduit.dsp`, built with JUCE 8+ and C++17. Current code version: **2.0.0 (release preparation; not yet published)**. Existing public formats are macOS VST3/AU and Windows VST3. The macOS AAX candidate is PACE-signed, passed all 13 applicable validator checks, and was reported working in regular Pro Tools / Intro by Alex on 2026-09-22. This is basic host acceptance, not evidence that every manual release test passed. Windows AAX, distribution packaging, and notarization remain pending. Standalone is for local testing only.
+**Robin Control Lite** is a free monophonic sampler plugin by `conduit.dsp`, built with JUCE 8+ and C++17. Current code version: **2.0.0 (release preparation; not yet published)**. Existing public formats are macOS VST3/AU and Windows VST3. The macOS AAX candidate is PACE-signed, passed all 13 applicable validator checks, and was reported working in regular Pro Tools / Intro by Alex on 2026-09-22. This is basic host acceptance, not evidence that every manual release test passed. For the latest final macOS build, packaging and notarization evidence, read `FINAL_RELEASE_2.0.0.md`. Windows final builds/AAX signing and the full manual host matrix remain pending. Standalone is for local testing only.
 
-For current release work, read **`RELEASE_2.0.0.md`** (build commands, artifact paths, evidence, and open checkpoints) and **`AAX_BUILD_AND_SIGNING.md`** (AAX/PACE handoff for future agents). These take precedence over historical v1.0 signing instructions in `release-spec.md` for the 2.0.0 release. Do not infer AAX authorization from an installed SDK or WrapTool.
+For current final-release work, read **`FINAL_RELEASE_2.0.0.md`** first, then **`RELEASE_2.0.0.md`** (build commands, artifact paths, evidence, and open checkpoints) and **`AAX_BUILD_AND_SIGNING.md`** (AAX/PACE handoff for future agents). These take precedence over historical v1.0 signing instructions in `release-spec.md` for the 2.0.0 release. Do not infer AAX authorization from an installed SDK or WrapTool.
 
 **When cloning onto Windows:** read **`WINDOWS_BUILD_AND_AAX.md`** before configuring. Clone the private `ahamadey27/robin-control-lite` repo, use a fresh Windows build directory and explicit JUCE/AAX SDK paths, and build x64 with MSVC. Mac binaries, CMake caches, signing credentials, and ignored `Releases/Testing` evidence do not transfer through Git. The current AAX validator/setup scripts are macOS-only; Windows AAX validation and signing must be established separately. Do not treat existing Windows VST3 CI as AAX validation.
 
 **Licensing direction, user-confirmed 2026-09-20:** Moonbase DRM is the chosen customer licensing system for this free product and all future products. It is required for the final v2.0.0 release but explicitly excluded from Beta 1 (the user's “beta v1”). PACE is for AAX digital signing only; no customer iLok/PACE DRM. This supersedes the provider choice in older custom-licensing plans, including the July company-context roadmap. Do not block Beta 1 on Moonbase integration or infer a binary version change from the beta label. That provider decision alone did not integrate licensing into any existing candidate. See the dated integration update below for current settings and build status.
 
-The opt-in Moonbase integration and separate macOS/Windows compile instructions now live in `MOONBASE_INTEGRATION.md` (2026-09-22). `RCL_ENABLE_MOONBASE=ON` enables DRM; Beta 1 still builds with it OFF. Alex selected a 90-day online-validation grace period. Dashboard inspection shows 10 activations, offline activation enabled, trials disabled. These are development settings; live activation and final release validation remain pending. Earlier candidate binaries remain DRM-free.
+**Final-release direction, 2026-09-22:** Moonbase is integrated. Every final build must use `RCL_ENABLE_MOONBASE=ON` **and** `RCL_FINAL_RELEASE=ON`. Development defaults and Projucer remain DRM-free and must not be packaged as final. Alex chose **90 days** of offline grace for online licenses; permanent offline activation is separate. Dashboard: **10 activations**, offline activation ON, trials/auto-upgrade trials OFF. The private **Moonbase Beta 1** was signed/notarized and its Moonbase delivery email/download flow was user-confirmed; do not confuse it with the earlier DRM-free beta. `MOONBASE_INTEGRATION.md` records details. PACE supplies AAX signing only. Do not upload/publish or change commerce settings merely because final binaries are built.
+
+**Robin Control handoff:** `ROBIN_CONTROL_AGENT_HANDOFF.md` records reusable licensing/build/security work for the premium sibling. Its agent must use that product's own identities, Moonbase product, and PACE configuration; Lite's settings are not blanket authorization for premium activation policy.
 
 As of 2026-04-25 this folder is the **authoritative project**. It was originally a UI-redesign sandbox forked from `../round-robin-lite`, but has been promoted to be the main codebase. The sibling folder `../round-robin-lite` is retired — kept on disk as read-only legacy reference, not built or installed.
 
 For the full development plan (formats, signing, distribution, CI, testing, license decisions), see `spec.md` at the repo root. **`spec.md` is the source of truth** for anything not covered here. Sibling docs at the repo root:
 - `release-spec.md` — **the active v1.0 ship execution playbook**. Sequential, command-level checklist with [x]/[ ] checkboxes covering build config, Apple signing, AAX validation, Pro Tools test, Windows build, distribution. When `spec.md` and `release-spec.md` disagree on something v1.0-specific, `release-spec.md` wins. Update it as you complete items.
 - `spec-paperwork.md` — admin/legal checklist (Apple Developer enrollment, trademark, etc.)
-- `EULA.md` — end-user license for the binary; establishes **Conduit DSP LLC** (Kingston, NY; Ulster County jurisdiction) as the legal entity. Effective date: April 26, 2026 (v1.0). Will be published at `https://conduitdsp.com/eula/robin-control-lite/`.
+- `EULA.md` — end-user license for the binary; establishes **Conduit DSP LLC** (Kingston, NY; Ulster County jurisdiction) as the legal entity. Version 2.0.0 text updated September 22, 2026 for Moonbase; historical v1 terms remain in Git. Will be published at `https://conduitdsp.com/eula/robin-control-lite/`.
 - `LICENSE` — source code license: **All Rights Reserved (proprietary)**. The source is not open-source; a Pro version is planned, so the codebase must remain shareable between Lite and Pro without a third-party fork ever shipping.
-- `Privacy.md` — short pointer to the canonical privacy policy at `https://conduitdsp.com/privacy-policy/`. The plugin itself collects nothing; the website handles email-capture (MailerLite) for downloads.
+- `Privacy.md` — short pointer to the canonical privacy policy at `https://conduitdsp.com/privacy-policy/`. Moonbase activation sends device/license information and stores a signed license locally; optional analytics are disabled. Public website policy reconciliation is a launch checkpoint.
 - `README.md` — end-user-facing install/use docs
 
 GitHub remote: `https://github.com/ahamadey27/robin-control-lite.git` (private). Local folder name (`robin-control-redesign`) intentionally not changed — VSCode workspace paths still point at the old folder name.
@@ -32,19 +34,19 @@ GitHub remote: `https://github.com/ahamadey27/robin-control-lite.git` (private).
 
 The shipped product is **monophonic** and triggers from **any MIDI key**. There is **no** paired-key MIDI mapping, **no** white-keys-only restriction, and **no** chromatic per-key pitching. Pitch is global only (semitone + fine-tune knobs). The codebase still contains paired-key infrastructure (`MidiMapper::NUM_KEY_PAIRS = 10`, `RRSound::keyPairIndex`) inherited from the parent project — that's internal plumbing, not user-facing behavior. **When the inherited code description disagrees with the shipped product, the product wins.** See `memory/project_free_version_scope.md` for full reasoning.
 
-**Private Moonbase beta — 2026-09-22:** Alex explicitly requested a DRM-enabled beta for Moonbase upload and a fresh install. `MOONBASE_BETA_1.md` records the universal, signed/notarized VST3/AU/AAX installer, validation and removal of installed RCL copies. This named Moonbase Beta 1 is separate from the earlier DRM-free Beta 1 scope; do not disable licensing when reproducing this package. Binary version remains 2.0.0. Live activation/retail-host beta tests remain pending.
+**Private Moonbase beta — 2026-09-22:** Alex explicitly requested a DRM-enabled beta for Moonbase upload and a fresh install. `MOONBASE_BETA_1.md` records the universal, signed/notarized VST3/AU/AAX installer, validation and removal of installed RCL copies. This named Moonbase Beta 1 is separate from the earlier DRM-free Beta 1 scope; do not disable licensing when reproducing this package. Binary version remains 2.0.0. The Moonbase delivery email/download flow was subsequently user-confirmed. Full licensed retail-host and offline activation coverage remains a manual checkpoint; see the final release record.
 
 ## Build
 
 ```bash
 cd NewProject
-cmake -B build
-cmake --build build
+cmake -B build-final -DCMAKE_BUILD_TYPE=Release -DRCL_ENABLE_MOONBASE=ON -DRCL_FINAL_RELEASE=ON -DRCL_COPY_PLUGIN_AFTER_BUILD=OFF
+cmake --build build-final --config Release
 ```
 
-JUCE resolution: defaults to `~/Documents/JUCE` if present, else `FetchContent` pulls JUCE 8.0.4. Override the local path with `cmake -DJUCE_PATH=/path/to/JUCE -B build`.
+JUCE resolution: defaults to `~/Documents/JUCE` if present, else `FetchContent` downloads checksum-pinned JUCE 8.0.15 (commit `91ad83ae34a81e0833b1a2b0866f54846370ae53`). Override the local path with `cmake -DJUCE_PATH=/path/to/JUCE -B build`.
 
-Outputs copy automatically after every build:
+Development builds copy automatically when `RCL_COPY_PLUGIN_AFTER_BUILD=ON`; release commands turn this OFF:
 - VST3 → `~/Library/Audio/Plug-Ins/VST3/Robin Control Lite.vst3`
 - AU → `~/Library/Audio/Plug-Ins/Components/Robin Control Lite.component`
 
@@ -52,9 +54,9 @@ AAX is built when the SDK is found at `~/SDKs/aax-sdk-2-9-0` (override with `cma
 
 Standalone is excluded from public releases but available for local testing with `-DRCL_BUILD_STANDALONE=ON` (defaults to OFF). In VS Code, select **Launch Robin Control Lite (Standalone)** and press **F5**; its tasks configure and build the Debug standalone app before launching it with CodeLLDB. The optional **Attach lldb to host** configuration remains available for debugging the AU/VST3 inside a DAW.
 
-The build is configured `CMAKE_BUILD_TYPE=Debug` (single-config Unix Makefiles). JUCE writes per-format artefacts under `build/RobinControlLite_artefacts/Debug/<Format>/`.
+The historical development `build` directory uses Debug. Final commands above use Release; exact universal toolchain commands are in `FINAL_RELEASE_2.0.0.md`. JUCE writes artefacts under `<build-directory>/RobinControlLite_artefacts/<Config>/<Format>/`.
 
-Xcode project lands at `NewProject/build/RobinControlLite.xcodeproj`.
+Only the Xcode generator produces a `.xcodeproj`; the final Mac build uses Unix Makefiles.
 
 A Projucer file (`NewProject/RobinControlLite.jucer`) is kept in sync with CMake, but **CMake is the authoritative build**. The old `NewProject/Builds/` tree is stale Projucer output — do not rely on it; safe to delete.
 
@@ -67,7 +69,7 @@ A layered automated testing platform exists — **`TESTING.md` is the source of 
 - `scripts/test-sanitizers.sh` — ASan/UBSan + TSan over the test target (Clang/macOS only).
 - `.github/workflows/validate.yml` — CI on every push: builds + validates on **macOS and Windows**, plus unit-test and sanitizer jobs. **Green as of 2026-06-01.**
 
-Still useful for manual checks: JUCE AudioPluginHost or any DAW (the real-host smoke matrix in `TESTING.md §5`). **Next testing increment:** grow `tests/` to instantiate `NewProjectAudioProcessor` and fuzz `processBlock`/`setStateInformation` so sanitizers cover the crash-class paths. The whole platform is plugin-agnostic and designed to be lifted into the Pro version (`TESTING.md §7`).
+Still useful for manual checks: JUCE AudioPluginHost or any DAW (the real-host smoke matrix in `TESTING.md §5`). `tests/` now exercises the real processor, malformed state/audio files and resampling, plus a separate DRM-enabled suite using synthetic signed licenses. `scripts/test-sanitizers.sh` runs both under ASan/UBSan and TSan. Keep these protections when changing decoding or activation. Bounds: 50 million decoded floats, 64 channels, finite 8–192 kHz source rate; 8 MiB state/preset limit; 1 MiB license-cache limit. The whole platform is plugin-agnostic and designed to be lifted into the Pro version (`TESTING.md §7`).
 
 ### Audio formats supported
 

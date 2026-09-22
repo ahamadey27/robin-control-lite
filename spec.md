@@ -1,5 +1,7 @@
 # spec.md — Robin Control Lite (rebrand pending)
 
+> **Current final v2.0.0 handoff (2026-09-22):** Read [FINAL_RELEASE_2.0.0.md](FINAL_RELEASE_2.0.0.md) first. It supersedes earlier candidate/beta build status below. Final binaries require Moonbase ON and FINAL_RELEASE ON, use 90-day online offline grace, and retain version 2.0.0. The older DRM-free beta and unsigned/package-pending notes below are historical. Windows compilation follows [WINDOWS_BUILD_AND_AAX.md](WINDOWS_BUILD_AND_AAX.md); premium reuse follows [ROBIN_CONTROL_AGENT_HANDOFF.md](ROBIN_CONTROL_AGENT_HANDOFF.md).
+
 > **Status:** Pivot in progress. As of 2026-04-25, this folder is being promoted from "design sandbox" to the **authoritative project** for the free Round Robin sampler plugin. The sibling folder `../round-robin-lite` becomes legacy/reference once this spec is signed off.
 
 This document is the single source of truth for: identity, build, formats, signing, distribution, licensing, testing, and the migration plan. Everything in `CLAUDE.md` that contradicts this file is now stale and needs updating once decisions below are made.
@@ -25,7 +27,7 @@ The product name is **Robin Control Lite**. The sibling project `../round-robin-
 | Plugin code | `rcll` |
 | Manufacturer code | `Cdsp` |
 | Bundle ID | `dsp.conduit.RobinControlLite` |
-| Version | `1.0.0` |
+| Version | `2.0.0` (not yet publicly released) |
 
 The sibling stays on disk as legacy reference and must not be built side-by-side with this project, since both would otherwise want to install plugins under their respective names but share runtime state via `~/Library/Audio/Plug-Ins/`. Tag the sibling's last commit (`git -C ../round-robin-lite tag legacy-final`) and stop running its CMake.
 

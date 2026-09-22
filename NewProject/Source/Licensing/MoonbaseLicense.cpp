@@ -14,6 +14,7 @@ bool MoonbaseLicense::validateCachedLicense(const moonbase::juce_integration::Ac
         if (! file.existsAsFile())
             return false;
         moonbase::file_license_store store(std::filesystem::u8path(file.getFullPathName().toStdString()));
+        const auto readGuard = store.lock_for_update();
         const auto saved = store.load_local_license();
         if (! saved)
             return false;

@@ -1,16 +1,12 @@
 # Robin Control Lite — Moonbase licensing
 
-Started 2026-09-22. **Implemented for opt-in builds; not a published release.**
-**Private beta update:** Alex subsequently requested a Moonbase-enabled beta
-for upload/fresh-install testing. The signed, notarized universal macOS
-VST3/AU/AAX installer and validation evidence are recorded in
-`MOONBASE_BETA_1.md`. This named **Moonbase Beta 1** is separate from the earlier
-DRM-free Beta 1 plan. It has not been uploaded or publicly released by the agent.
-
-This is the macOS / Windows JUCE integration and validation handoff. Beta 1
-remains DRM-free; final 2.0.0 requires Moonbase. PACE remains AAX digital
-signing only, with no customer iLok DRM. Binary version and frozen APVTS
-parameter IDs remain unchanged.
+Updated 2026-09-22 for **final v2.0.0**. Read `FINAL_RELEASE_2.0.0.md` for the
+exact final Mac artifacts and evidence; this release has not been publicly
+published. Both `RCL_ENABLE_MOONBASE=ON` and `RCL_FINAL_RELEASE=ON` are mandatory.
+The earlier DRM-free Beta 1 and later private **Moonbase Beta 1** are distinct.
+The latter's Moonbase delivery email/download flow was user-confirmed. PACE is
+AAX digital signing only, with no customer iLok DRM. Frozen parameter IDs and
+binary version 2.0.0 are preserved.
 
 ## Account and product configuration
 
@@ -26,12 +22,20 @@ and its **Licensing → Implementation guide → C++ / JUCE** on 2026-09-22:
 | Offline activations | Enabled |
 | Trials | Disabled |
 | Product purchasable | Disabled |
-| Release uploads | None at inspection |
+| Release uploads | Dashboard 1.0.0 ACTIVE and 1.0.1 PRERELEASE; both are beta-era records, not the new final package |
+| Trial auto-upgrade | Disabled |
+| Autoprovisioning / purchasable | Disabled for private testing |
+| Download security | Require ownership for all releases |
+| Customer portal | Enabled |
 | Online activation grace | **90 days**, Alex's latest instruction on 2026-09-22 |
 
-These are observed settings, not changes made to the seller dashboard. The free
-license acquisition/download flow still needs to be established before launch;
-an activation integration alone does not grant every visitor a product license.
+These settings were checked during private beta preparation. The user disabled
+trials; the agent also disabled automatic trial upgrades and saved the change.
+Moonbase transactional email and the 1.0.1 beta download were tested successfully.
+Public free-license acquisition and migration still need launch configuration.
+The fulfillment message currently links to **the beta**, and must be changed
+before final release delivery. Do not publish a release simply to delete an
+accidentally published version; coordinate that cleanup with Moonbase support.
 
 `NewProject/Source/Licensing/MoonbaseConfig.h` embeds the tenant's **public RSA
 verification key** from the implementation guide. No seller API key, private
@@ -48,7 +52,7 @@ client compatibility plan; do not silently regenerate it in Moonbase.
   Only the JUCE module is added; the standalone core SDK's dependency build is skipped.
 - Native crypto: Security.framework / IOKit on macOS, CNG/bcrypt on Windows.
   JUCE performs HTTP; no extra OpenSSL or CURL installation is required.
-- `RCL_ENABLE_MOONBASE=OFF` is the Beta 1/development default. ON compiles the
+- `RCL_ENABLE_MOONBASE=OFF` is the historical beta/development default. ON compiles the
   controller, UI, network support, and audio gate. `RCL_FINAL_RELEASE=ON`
   refuses configuration unless Moonbase is enabled; it is a configuration
   guard, not a replacement for checking the exact binaries being packaged.
@@ -58,7 +62,13 @@ client compatibility plan; do not silently regenerate it in Moonbase.
 `MoonbaseLicense` is retained by processors through a shared JUCE resource,
 so editors can close without losing entitlement. Instances loaded from the same
 plugin binary share state. Different formats/processes share the license file;
-the SDK provides locking for online validation/update operations.
+the SDK provides locking for online validation/update operations. Our bootstrap
+and patched controller also lock cache reads to avoid seeing partial writes.
+`NewProject/cmake/MoonbaseHardening.cmake` copies the pinned module into the build
+and applies checked patches for UTF-8 Windows paths, cache read locks, a 1 MiB
+JSON cache limit, and negative validation-age rejection. Keep the upstream SDK
+untouched; re-review patches on upgrades. The generated `RCLBuildConfig.txt`
+records `moonbase_sdk=4.4.0-rcl-hardening-1`.
 
 On construction, the cached token is verified locally for signature, product,
 device, and expiry. Online tokens must also be within the configured grace
@@ -184,7 +194,7 @@ offline file exchange, standard-user permissions, non-ASCII usernames/paths,
 antivirus/firewall behavior, and Windows host reload. Do not infer a Windows
 runtime pass from a successful macOS build.
 
-## Automated coverage and current evidence
+## Initial integration evidence (historical; final evidence is in FINAL_RELEASE_2.0.0.md)
 
 2026-09-22 local integration uses installed JUCE 8.0.15, native arm64 Debug.
 These are development results, not final universal Release approval:
@@ -215,8 +225,10 @@ not replaced by this work.
 
 The existing `RobinControlLiteTests` intentionally compiles with DRM OFF so
 audio assertions still exercise DSP. `RobinControlLiteLicensingTests` links
-the actual DRM-enabled plugin code. Sanitizer scripts still cover the engine
-test target; do not claim licensing-specific sanitizer coverage yet.
+the actual DRM-enabled plugin code. As of the final-release audit, sanitizer scripts run **both** engine and licensing
+targets. ASan/UBSan and TSan passed on September 22, including malformed sample
+bounds, short resampling, state-size limits, oversized license-cache rejection
+and Unicode license paths. See the final record for exact scope.
 
 ## Release checkpoints
 
@@ -229,11 +241,9 @@ test target; do not claim licensing-specific sanitizer coverage yet.
 - [ ] Test browser cancellation/timeouts, corrupt cache recovery, offline response
   for the wrong device, network outage, and license file permission failures.
 - [ ] Test UI open/close during activation and host unload with requests running.
-- [ ] Review the EULA: its current §1 allows any number of computers, whereas the
-  dashboard has 10 seats, and §7 says the plugin is entirely offline. Reconcile
-  these before distributing DRM builds; the existing published EULA was not rewritten here.
-- [ ] Update the canonical website privacy/download documentation for Moonbase.
-  The repository Privacy.md now distinguishes public/Beta 1 from DRM development.
+- [x] Update repository EULA v2.0.0 and Privacy.md to describe Moonbase activation,
+  the current device limit and license storage/network behavior.
+- [ ] Reconcile canonical website privacy/EULA/download pages before public launch.
 - [ ] Ensure `MoonbaseNotices.txt` accompanies all distributed plugin bundles.
 - [ ] Record `RCL_ENABLE_MOONBASE=ON`, `RCL_FINAL_RELEASE=ON` and hashes of the
   exact artifacts used for final signing, validation and installer assembly.

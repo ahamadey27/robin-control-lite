@@ -29,10 +29,11 @@ Before moving machines, commit and push the intended source/docs on the Mac or
 explicitly transfer the intended branch. A clone receives only pushed commits,
 not uncommitted files. Match the source revision being tested and record it.
 Do not assume an existing remote-tracking ref proves the newest local edits are
-on GitHub. `957654d` contains the tested macOS AAX implementation; use the later
-commit containing this handoff as well, or its appropriate successor.
+on GitHub. The final Mac build was based on `68bc4ba` plus the local audit changes; use
+the later commit containing the entire final handoff and code fixes. The older
+`957654d` AAX implementation alone is not a final Moonbase release.
 
-Read `AGENTS.md`, `AAX_BUILD_AND_SIGNING.md`, `RELEASE_2.0.0.md`, and `TESTING.md`.
+Read `AGENTS.md`, `FINAL_RELEASE_2.0.0.md`, `AAX_BUILD_AND_SIGNING.md`, and `TESTING.md`.
 Mac `/Users/alex/...` paths are provenance, not Windows paths to create. If the
 company website repository is also cloned, its sibling `CONDUIT_DSP_CONTEXT.md`
 provides business context; its absence does not block this build.
@@ -57,9 +58,10 @@ new evidence. Do not copy a Mac build directory or `.aaxplugin` to Windows.
 - Python 3 if adapting the validator runner; Windows pluginval for VST3 checks.
 
 For parity with the successful Mac build, use JUCE **8.0.15**, exact commit
-`91ad83ae34a81e0833b1a2b0866f54846370ae53`. The repository's FetchContent fallback
-is still **8.0.4**; taking that fallback silently changes the dependency from the
-tested Mac build. Do not update the fallback as an incidental machine-setup step.
+`91ad83ae34a81e0833b1a2b0866f54846370ae53`. The FetchContent fallback now downloads this exact **8.0.15** revision with a
+SHA-256 check. An explicitly supplied JUCE checkout must match it. Moonbase
+4.4.0 is also checksum-pinned; CMake applies the reviewed build-local corrections
+in `NewProject/cmake/MoonbaseHardening.cmake`. Do not bypass those corrections.
 
 Example local paths (adjust to where you actually installed the SDK):
 
@@ -92,15 +94,18 @@ Use a fresh build directory; do not reuse a cache from macOS or another generato
 ```powershell
 cmake -S NewProject -B NewProject/build-windows-aax -G "Visual Studio 17 2022" -A x64 `
   "-DJUCE_PATH=$rclJucePath" "-DJUCE_AAX_SDK_PATH=$rclAaxSdk" `
+  -DRCL_ENABLE_MOONBASE=ON -DRCL_FINAL_RELEASE=ON `
   -DRCL_BUILD_STANDALONE=OFF -DRCL_COPY_PLUGIN_AFTER_BUILD=OFF -DRCL_BUILD_TESTS=ON
 if ($LASTEXITCODE -ne 0) { throw "CMake configure failed" }
 
 cmake --build NewProject/build-windows-aax --config Release `
-  --target RobinControlLite_VST3 RobinControlLite_AAX RobinControlLiteTests --parallel 4
+  --target RobinControlLite_VST3 RobinControlLite_AAX RobinControlLiteTests RobinControlLiteLicensingTests --parallel 4
 if ($LASTEXITCODE -ne 0) { throw "Build failed" }
 
 & ./NewProject/build-windows-aax/tests/RobinControlLiteTests_artefacts/Release/RobinControlLiteTests.exe
 if ($LASTEXITCODE -ne 0) { throw "Unit/processor tests failed" }
+& ./NewProject/build-windows-aax/tests/RobinControlLiteLicensingTests_artefacts/Release/RobinControlLiteLicensingTests.exe
+if ($LASTEXITCODE -ne 0) { throw "Licensing tests failed" }
 ```
 
 The configure output must report **AAX SDK found ... enabling AAX format**.
@@ -213,11 +218,22 @@ Mac notarization and a Mac `.pkg` do not produce a Windows release.
 
 ## Licensing and scope
 
-**Moonbase is deferred in this candidate and excluded from Beta 1.** It remains
-required for final 2.0.0, with activation policies unspecified. After integration,
-rebuild, PACE-sign, and validate new binaries on both operating systems. Do not
-reuse old signing/test evidence for modified binaries. PACE is developer AAX
-code signing only; no customer iLok/PACE DRM is authorized.
+**Final 2.0.0 requires Moonbase ON and FINAL_RELEASE ON**, as in the commands
+above. The earlier DRM-free beta is historical. Online licenses allow 90 days
+since successful validation, subject to signed expiry/revocation; permanent
+offline activation is a separate flow. Current dashboard: 10 activations, trials
+OFF. Read `MOONBASE_INTEGRATION.md` and `FINAL_RELEASE_2.0.0.md`.
+
+Verify both bundles contain `Contents/Resources/RCLBuildConfig.txt` with
+`version=2.0.0`, `moonbase=ON`, `final=ON`, plus `MoonbaseNotices.txt`. Test browser
+activation, restart, multiple instances/hosts, offline-file activation and a
+non-ASCII Windows profile. Missing licenses must silence MIDI, Trigger and
+audition while allowing sample/preset editing. Never log customer tokens.
+
+PACE is developer AAX signing only; no customer iLok/PACE DRM. Re-sign and
+revalidate Windows binaries; Mac validation is not Windows evidence. The Windows
+installer still needs review for these final DRM artifacts and optional AAX;
+the macOS installer guard does not protect Windows packaging.
 
 For another plugin, follow the reuse section in `AAX_BUILD_AND_SIGNING.md` and
 substitute that product's identities, page table, targets, and PACE configuration.

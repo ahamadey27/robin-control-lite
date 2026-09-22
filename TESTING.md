@@ -1,5 +1,7 @@
 # TESTING.md — Formal plugin testing for Robin Control Lite
 
+> **v2.0.0 final audit — 2026-09-22:** `FINAL_RELEASE_2.0.0.md` records current final artifacts and validation. `scripts/test-sanitizers.sh` now enables Moonbase and runs both the engine/processor suite and synthetic signed-license suite under ASan/UBSan and TSan. Windows CI runs both test executables; AAX remains outside CI. Preserve the sample-allocation/interpolation, state-input, cache-size and Unicode-path regressions. Older coverage notes below describe their date, not the current ceiling.
+
 This is the testing playbook for Robin Control Lite (and, by design, any future
 `conduit.dsp` JUCE plugin — see [§7 Reusing this for another plugin](#7-reusing-this-for-another-plugin)).
 
