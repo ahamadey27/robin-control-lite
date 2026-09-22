@@ -1,0 +1,24 @@
+Robin Control Lite — Moonbase Beta
+
+Private installation and activation test build, version 2.0.0.
+For macOS 11 or later on Apple silicon and Intel Macs.
+
+Choose VST3, Audio Unit (AU), and/or AAX Native for Pro Tools.
+Close your audio applications before installing, then reopen your host and
+load Robin Control Lite. Follow Activate online to activate your free RCL
+license through conduit.dsp's Moonbase account. Offline file activation is
+also available.
+
+Online activations have a 90-day offline grace period since their last
+successful online validation, subject to signed license expiry/revocation.
+Permanent offline activations are separate. The current product configuration
+allows 10 activations per license. An RCL entitlement must exist in the account
+used for activation; installing this beta does not issue a license.
+
+This build connects to Moonbase for licensing and stores a signed license
+locally. Optional analytics are disabled. Samples and presets stay local.
+
+This is a private test build, not the public 2.0.0 release.
+Report installation, activation, and playback results to hello@conduitdsp.com.
+
+Conduit DSP LLC · conduit.dsp

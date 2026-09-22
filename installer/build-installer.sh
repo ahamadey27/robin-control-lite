@@ -5,11 +5,16 @@
 #   NewProject/build-release/RobinControlLite_artefacts/Release/
 #     ├── VST3/Robin Control Lite.vst3
 #     └── AU/Robin Control Lite.component
+#     └── AAX/Robin Control Lite.aaxplugin (PACE-signed; RCL_INCLUDE_AAX=1)
+#
+# RCL_ARTEFACTS selects signed staging. RCL_BETA_LABEL and RCL_OUTPUT_DIR
+# select a private test package name/location; beta packages show the included
+# activation instructions. Existing output files are never overwritten.
 #
 # Output:
 #   Releases/Installers/Robin Control Lite <VERSION>.pkg
 #
-# Signing (deferred — runs unsigned by default):
+# Signing (runs unsigned unless INSTALLER_SIGN is supplied):
 #   When the Apple Developer ID Installer cert is in your keychain, set
 #     INSTALLER_SIGN="Developer ID Installer: CONDUIT DSP LLC (TEAMID)"
 #   in the environment and re-run. The flag drops into productbuild as
@@ -20,7 +25,17 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 ARTEFACTS="${RCL_ARTEFACTS:-$REPO_ROOT/NewProject/build-release/RobinControlLite_artefacts/Release}"
-OUTPUT_DIR="$REPO_ROOT/Releases/Installers"
+OUTPUT_DIR="${RCL_OUTPUT_DIR:-$REPO_ROOT/Releases/Installers}"
+INCLUDE_AAX="${RCL_INCLUDE_AAX:-0}"
+BETA_LABEL="${RCL_BETA_LABEL:-}"
+if [[ "$INCLUDE_AAX" != 0 && "$INCLUDE_AAX" != 1 ]]; then
+    echo "ERROR: RCL_INCLUDE_AAX must be 0 or 1" >&2
+    exit 1
+fi
+if [[ "$BETA_LABEL" == *'/'* || "$BETA_LABEL" == *$'\n'* ]]; then
+    echo "ERROR: beta label must be a single filename-safe line" >&2
+    exit 1
+fi
 STAGE_DIR="$(mktemp -d -t rcl-installer)"
 trap 'rm -rf "$STAGE_DIR"' EXIT
 
@@ -41,8 +56,11 @@ echo "    staging:   $STAGE_DIR"
 echo "    output:    $OUTPUT_DIR"
 
 # Verify the Release artefacts exist
-for fmt_dir in "VST3/Robin Control Lite.vst3" \
-               "AU/Robin Control Lite.component"; do
+FORMATS=("VST3/Robin Control Lite.vst3" "AU/Robin Control Lite.component")
+if [[ "$INCLUDE_AAX" == 1 ]]; then
+    FORMATS+=("AAX/Robin Control Lite.aaxplugin")
+fi
+for fmt_dir in "${FORMATS[@]}"; do
     if [[ ! -d "$ARTEFACTS/$fmt_dir" ]]; then
         echo "ERROR: missing artefact $ARTEFACTS/$fmt_dir" >&2
         echo "       Run a Release build first:" >&2
@@ -57,6 +75,14 @@ for fmt_dir in "VST3/Robin Control Lite.vst3" \
     fi
 done
 
+if [[ "$INCLUDE_AAX" == 1 ]]; then
+    # AAX for retail Pro Tools must be PACE-signed, not a raw JUCE build.
+    test -f "$ARTEFACTS/AAX/Robin Control Lite.aaxplugin/Contents/Resources/RobinControlLitePages.xml"
+    codesign --verify --strict "$ARTEFACTS/AAX/Robin Control Lite.aaxplugin"
+    /Applications/PACEAntiPiracy/Eden/Fusion/Current/bin/wraptool verify \
+        --in "$ARTEFACTS/AAX/Robin Control Lite.aaxplugin"
+fi
+
 mkdir -p "$OUTPUT_DIR" "$STAGE_DIR/pkgs" "$STAGE_DIR/resources"
 
 # Optional --sign flag (set INSTALLER_SIGN env var to enable)
@@ -68,33 +94,75 @@ else
     echo "==> Building UNSIGNED (set INSTALLER_SIGN env var to sign)"
 fi
 
-# 1. Per-format component pkgs
-echo "==> pkgbuild VST3"
-pkgbuild \
-    --component "$ARTEFACTS/VST3/Robin Control Lite.vst3" \
-    --identifier "dsp.conduit.RobinControlLite.vst3" \
-    --version "$VERSION" \
-    --install-location "/Library/Audio/Plug-Ins/VST3" \
-    "$STAGE_DIR/pkgs/RobinControlLite-VST3.pkg"
-
-echo "==> pkgbuild AU"
-pkgbuild \
-    --component "$ARTEFACTS/AU/Robin Control Lite.component" \
-    --identifier "dsp.conduit.RobinControlLite.au" \
-    --version "$VERSION" \
-    --install-location "/Library/Audio/Plug-Ins/Components" \
-    "$STAGE_DIR/pkgs/RobinControlLite-AU.pkg"
+# 1. Fixed-destination payloads. Never relocate an install to a development or
+# backup bundle discovered elsewhere on the disk.
+build_component() {
+    local format="$1" extension="$2" destination="$3" suffix="$4"
+    local payload="$STAGE_DIR/payload-$format"
+    local components="$STAGE_DIR/components-$format.plist"
+    mkdir -p "$payload"
+    ditto "$ARTEFACTS/$format/Robin Control Lite.$extension" "$payload/Robin Control Lite.$extension"
+    pkgbuild --analyze --root "$payload" "$components"
+    python3 - "$components" <<'PY'
+import plistlib, sys
+from pathlib import Path
+path = Path(sys.argv[1])
+entries = plistlib.loads(path.read_bytes())
+for entry in entries:
+    entry['BundleIsRelocatable'] = False
+    entry['BundleHasStrictIdentifier'] = True
+    entry['BundleOverwriteAction'] = 'upgrade'
+path.write_bytes(plistlib.dumps(entries))
+PY
+    pkgbuild --root "$payload" --component-plist "$components" \
+        --identifier "dsp.conduit.RobinControlLite.$suffix" --version "$VERSION" \
+        --install-location "$destination" "$STAGE_DIR/pkgs/RobinControlLite-$format.pkg"
+}
+build_component VST3 vst3 /Library/Audio/Plug-Ins/VST3 vst3
+build_component AU component /Library/Audio/Plug-Ins/Components au
+if [[ "$INCLUDE_AAX" == 1 ]]; then
+    build_component AAX aaxplugin "/Library/Application Support/Avid/Audio/Plug-Ins" aax
+fi
 
 # 2. Installer GUI resources (license shown during install)
 cp "$REPO_ROOT/EULA.md" "$STAGE_DIR/resources/license.txt"
 
 # 3. Substitute @VERSION@ placeholder in distribution.xml
-sed "s/@VERSION@/${VERSION}/g" \
-    "$SCRIPT_DIR/distribution.xml" \
-    > "$STAGE_DIR/distribution.xml"
+python3 - "$SCRIPT_DIR/distribution.xml" "$STAGE_DIR/distribution.xml" "$VERSION" "$INCLUDE_AAX" "$BETA_LABEL" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+source, destination, version, include_aax, beta = sys.argv[1:]
+tree = ET.parse(source)
+root = tree.getroot()
+if include_aax != '1':
+    outline = root.find('choices-outline')
+    for node in list(outline):
+        if node.get('choice') == 'aax': outline.remove(node)
+    for node in list(root):
+        if node.get('id') in ('aax', 'dsp.conduit.RobinControlLite.aax'): root.remove(node)
+if beta:
+    root.find('title').text = 'Robin Control Lite ' + beta
+    # This private test installer presents activation instructions. Published
+    # release terms still need the review recorded in MOONBASE_INTEGRATION.md.
+    root.remove(root.find('license'))
+    ET.SubElement(root, 'welcome', {'file': 'beta-welcome.txt'})
+for node in root.findall('pkg-ref'):
+    if node.get('version') == '@VERSION@': node.set('version', version)
+tree.write(destination, encoding='utf-8', xml_declaration=True)
+PY
+if [[ -n "$BETA_LABEL" ]]; then
+    cp "$SCRIPT_DIR/beta-welcome.txt" "$STAGE_DIR/resources/beta-welcome.txt"
+fi
 
 # 4. Build the distribution pkg
 OUTPUT_PKG="$OUTPUT_DIR/Robin Control Lite ${VERSION}.pkg"
+if [[ -n "$BETA_LABEL" ]]; then
+    OUTPUT_PKG="$OUTPUT_DIR/Robin Control Lite ${VERSION} ${BETA_LABEL}.pkg"
+fi
+if [[ -e "$OUTPUT_PKG" ]]; then
+    echo "ERROR: output already exists; choose a new beta label or output directory: $OUTPUT_PKG" >&2
+    exit 1
+fi
 echo "==> productbuild → $OUTPUT_PKG"
 productbuild \
     --distribution "$STAGE_DIR/distribution.xml" \

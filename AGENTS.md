@@ -32,6 +32,8 @@ GitHub remote: `https://github.com/ahamadey27/robin-control-lite.git` (private).
 
 The shipped product is **monophonic** and triggers from **any MIDI key**. There is **no** paired-key MIDI mapping, **no** white-keys-only restriction, and **no** chromatic per-key pitching. Pitch is global only (semitone + fine-tune knobs). The codebase still contains paired-key infrastructure (`MidiMapper::NUM_KEY_PAIRS = 10`, `RRSound::keyPairIndex`) inherited from the parent project — that's internal plumbing, not user-facing behavior. **When the inherited code description disagrees with the shipped product, the product wins.** See `memory/project_free_version_scope.md` for full reasoning.
 
+**Private Moonbase beta — 2026-09-22:** Alex explicitly requested a DRM-enabled beta for Moonbase upload and a fresh install. `MOONBASE_BETA_1.md` records the universal, signed/notarized VST3/AU/AAX installer, validation and removal of installed RCL copies. This named Moonbase Beta 1 is separate from the earlier DRM-free Beta 1 scope; do not disable licensing when reproducing this package. Binary version remains 2.0.0. Live activation/retail-host beta tests remain pending.
+
 ## Build
 
 ```bash

@@ -1,6 +1,12 @@
 # Robin Control Lite — Moonbase licensing
 
 Started 2026-09-22. **Implemented for opt-in builds; not a published release.**
+**Private beta update:** Alex subsequently requested a Moonbase-enabled beta
+for upload/fresh-install testing. The signed, notarized universal macOS
+VST3/AU/AAX installer and validation evidence are recorded in
+`MOONBASE_BETA_1.md`. This named **Moonbase Beta 1** is separate from the earlier
+DRM-free Beta 1 plan. It has not been uploaded or publicly released by the agent.
+
 This is the macOS / Windows JUCE integration and validation handoff. Beta 1
 remains DRM-free; final 2.0.0 requires Moonbase. PACE remains AAX digital
 signing only, with no customer iLok DRM. Binary version and frozen APVTS

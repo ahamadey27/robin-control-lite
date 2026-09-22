@@ -2,6 +2,11 @@
 
 Started 2026-09-20. **Release candidate; not published.** This file is the current
 2.0.0 execution record; `release-spec.md` retains historical v1.0 evidence.
+**September 22 private beta:** see `MOONBASE_BETA_1.md` for the user-requested
+Moonbase-enabled universal VST3/AU/AAX package, successful signed validation,
+conclusive AU 2.0.0 native/Intel results, Apple notarization and fresh-install
+cleanup. Earlier candidate notes below remain historical evidence; the private
+beta has not been uploaded or publicly released by the agent.
 See `AAX_BUILD_AND_SIGNING.md` for the reusable AAX handoff and
 `WINDOWS_BUILD_AND_AAX.md` for a fresh Windows clone/build.
 
@@ -62,7 +67,7 @@ does not cover it. Activation policies remain unspecified.
       AAX working in regular Pro Tools / Intro on September 22.
 - [ ] Complete the detailed Pro Tools release matrix; the user's basic success
       report does not establish every individual test below.
-- [ ] Extend installer and uninstaller for the signed AAX.
+- [x] Extend installer and uninstaller for signed AAX; exercised by Moonbase Beta 1.
 - [ ] Sign, notarize, staple, and inspect the final three-format installer.
 - [ ] Complete clean-install and real-host smoke checks from `TESTING.md`.
 - [ ] Windows builds, signing decisions, validation, and packaging.
