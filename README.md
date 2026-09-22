@@ -6,7 +6,8 @@ A free monophonic sampler plugin by [conduit.dsp](https://conduitdsp.com). Drop 
 [![Formats](https://img.shields.io/badge/Formats-VST3%20%7C%20AU-green.svg)]()
 [![Platforms](https://img.shields.io/badge/Platforms-macOS%20%7C%20Windows-lightgrey.svg)]()
 
-> Status: pre-release. v1.0 ships when everything in [`spec.md`](spec.md) §7.11 is green.
+> This checkout is preparing **2.0.0**, which is not yet published. See
+> [`RELEASE_2.0.0.md`](RELEASE_2.0.0.md) for current release status.
 
 ---
 
@@ -48,7 +49,8 @@ Windows SmartScreen may show a warning on first run. Click "More info" → "Run 
 
 Tier 1 (verified before every release): Logic Pro, Ableton Live 12, Reaper 7, FL Studio 21.
 Tier 2 (best-effort): Cubase 13, Studio One 6, Bitwig Studio, GarageBand, MainStage.
-Pro Tools (AAX) support is planned for v1.1.
+The macOS 2.0.0 AAX candidate is signed and user-confirmed working in regular
+Pro Tools / Intro. Public AAX packaging and Windows AAX validation remain pending.
 
 Full host matrix in [`spec.md`](spec.md) §7.3.
 
@@ -82,19 +84,31 @@ Once samples are in the pool, click the speaker icon on any slot to audition it 
 
 ## For developers
 
-This repo is the authoritative codebase for Robin Control Lite. The full development plan (build, formats, signing, CI, testing strategy, license decisions) lives in [`spec.md`](spec.md). Architecture and conventions for working in the source tree live in [`CLAUDE.md`](CLAUDE.md).
+This repo is the authoritative codebase for Robin Control Lite. Architecture and
+working conventions live in [`AGENTS.md`](AGENTS.md); the broader plan is in
+[`spec.md`](spec.md). Current build and release handoffs:
+
+- [macOS 2.0.0 release build](RELEASE_2.0.0.md#reproducible-macos-candidate-build)
+- [AAX compilation, PACE signing, validation, and installation](AAX_BUILD_AND_SIGNING.md)
+- [Clone and build on Windows, including AAX](WINDOWS_BUILD_AND_AAX.md)
 
 ### Build from source
 
 ```bash
 cd NewProject
-cmake -B build
+cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release
 ```
 
 JUCE resolves to `~/Documents/JUCE` if present, else `FetchContent` pulls JUCE 8.0.4. Override with `cmake -DJUCE_PATH=/path/to/JUCE -B build`.
 
-Built artifacts land in `NewProject/build/RobinControlLite_artefacts/Release/{VST3,AU}/` and are auto-copied to the system plugin folders for testing. AAX (when the SDK is present at `~/SDKs/aax-sdk-2-9-0`) lands in the same tree but isn't auto-copied — see [`CLAUDE.md`](CLAUDE.md) for the manual copy path. See [`spec.md`](spec.md) §3 for the full build details and §5 for signing/notarization.
+Built artifacts land under `NewProject/build/RobinControlLite_artefacts/Release/`.
+Local macOS builds copy VST3/AU to user plug-in folders unless
+`RCL_COPY_PLUGIN_AFTER_BUILD=OFF`; Windows builds do not auto-install.
+For the reproducible macOS 2.0.0 candidate, use the release command linked above.
+AAX is SDK-gated: explicitly build `RobinControlLite_AAX`, then follow the AAX
+handoff to sign and validate before retail Pro Tools installation. The Windows
+guide uses explicit SDK paths and a fresh x64 build directory.
 
 ### License
 

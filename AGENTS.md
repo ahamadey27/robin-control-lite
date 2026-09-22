@@ -2,13 +2,15 @@
 
 This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
-For company-level brand, business, marketing, commerce, privacy, product-portfolio, and cross-repository context, read `/Users/alex/Documents/Github/conduit-dsp-website/CONDUIT_DSP_CONTEXT.md`. This repository's `AGENTS.md`, current code, release checklists, and test evidence remain authoritative for Robin Control Lite implementation details.
+For company-level brand, business, marketing, commerce, privacy, product-portfolio, and cross-repository context, read `/Users/alex/Documents/Github/conduit-dsp-website/CONDUIT_DSP_CONTEXT.md` on this Mac, or `../conduit-dsp-website/CONDUIT_DSP_CONTEXT.md` when that sibling is available on another machine. Its absence on a fresh Windows clone does not block building this repository. This repository's `AGENTS.md`, current code, release checklists, and test evidence remain authoritative for Robin Control Lite implementation details.
 
 ## Project
 
-**Robin Control Lite** is a free monophonic sampler plugin by `conduit.dsp`, built with JUCE 8+ and C++17. Current code version: **2.0.0 (release preparation; not yet published)**. Existing public formats are macOS VST3/AU and Windows VST3. The 2.0.0 candidate adds AAX to the intended release, pending verified PACE signing and retail Pro Tools testing. Standalone is for local testing only.
+**Robin Control Lite** is a free monophonic sampler plugin by `conduit.dsp`, built with JUCE 8+ and C++17. Current code version: **2.0.0 (release preparation; not yet published)**. Existing public formats are macOS VST3/AU and Windows VST3. The macOS AAX candidate is PACE-signed, passed all 13 applicable validator checks, and was reported working in regular Pro Tools / Intro by Alex on 2026-09-22. This is basic host acceptance, not evidence that every manual release test passed. Windows AAX, distribution packaging, and notarization remain pending. Standalone is for local testing only.
 
 For current release work, read **`RELEASE_2.0.0.md`** (build commands, artifact paths, evidence, and open checkpoints) and **`AAX_BUILD_AND_SIGNING.md`** (AAX/PACE handoff for future agents). These take precedence over historical v1.0 signing instructions in `release-spec.md` for the 2.0.0 release. Do not infer AAX authorization from an installed SDK or WrapTool.
+
+**When cloning onto Windows:** read **`WINDOWS_BUILD_AND_AAX.md`** before configuring. Clone the private `ahamadey27/robin-control-lite` repo, use a fresh Windows build directory and explicit JUCE/AAX SDK paths, and build x64 with MSVC. Mac binaries, CMake caches, signing credentials, and ignored `Releases/Testing` evidence do not transfer through Git. The current AAX validator/setup scripts are macOS-only; Windows AAX validation and signing must be established separately. Do not treat existing Windows VST3 CI as AAX validation.
 
 **Licensing direction, user-confirmed 2026-09-20:** Moonbase DRM is the chosen customer licensing system for this free product and all future products. It is required for the final v2.0.0 release but explicitly excluded from Beta 1 (the user's “beta v1”). PACE is for AAX digital signing only; no customer iLok/PACE DRM. This supersedes the provider choice in older custom-licensing plans, including the July company-context roadmap. Do not block Beta 1 on Moonbase integration or infer a binary version change from the beta label. Activation policies remain unspecified; do not describe the current candidate as Moonbase-integrated or infer device limits, offline behavior, or account requirements.
 
@@ -42,7 +44,7 @@ Outputs copy automatically after every build:
 - VST3 → `~/Library/Audio/Plug-Ins/VST3/Robin Control Lite.vst3`
 - AU → `~/Library/Audio/Plug-Ins/Components/Robin Control Lite.component`
 
-AAX is built when the SDK is found at `~/SDKs/aax-sdk-2-9-0` (override with `cmake -DJUCE_AAX_SDK_PATH=...`). AAX has no auto-copy — the eval `.aaxplugin` lives in `build/RobinControlLite_artefacts/<Config>/AAX/` and you copy it manually to `/Library/Application Support/Avid/Audio/Plug-Ins/` for Pro Tools Developer testing.
+AAX is built when the SDK is found at `~/SDKs/aax-sdk-2-9-0` (override with `cmake -DJUCE_AAX_SDK_PATH=...`). Explicitly build `RobinControlLite_AAX` so a missing SDK cannot silently omit the format. The unsigned `.aaxplugin` lives in `build/RobinControlLite_artefacts/<Config>/AAX/`; retail Pro Tools requires the separately PACE-signed copy. Follow `AAX_BUILD_AND_SIGNING.md` for signing, validation, and installation. Preserve `Contents/Resources/RobinControlLitePages.xml` and PACE symlinks, and never rebuild over signed staging. Use PACE `sign`, not `wrap`; customer Moonbase licensing is separate.
 
 Standalone is excluded from public releases but available for local testing with `-DRCL_BUILD_STANDALONE=ON` (defaults to OFF). In VS Code, select **Launch Robin Control Lite (Standalone)** and press **F5**; its tasks configure and build the Debug standalone app before launching it with CodeLLDB. The optional **Attach lldb to host** configuration remains available for debugging the AU/VST3 inside a DAW.
 
@@ -56,6 +58,7 @@ A Projucer file (`NewProject/RobinControlLite.jucer`) is kept in sync with CMake
 
 A layered automated testing platform exists — **`TESTING.md` is the source of truth**. Quick reference:
 - `scripts/test-plugin.sh` — local pluginval (strictness 10) + auval. Run before every release.
+- `python3 scripts/test-aax-native.py <bundle> --output <new-directory>` — macOS AAX validation, before and after PACE signing. Confirms Lite's Native-only descriptor, checks all installed applicable results, and records the DSP/HDX-only cycle-count test as N/A. This runner is scoped to Lite and macOS; adapt it deliberately for another product or Windows.
 - `tests/` — JUCE `UnitTest` console app for pure-logic units (RandomizationEngine, MidiMapper). Build with `cmake -DRCL_BUILD_TESTS=ON` (off by default; does not affect the plugin build).
 - `scripts/test-sanitizers.sh` — ASan/UBSan + TSan over the test target (Clang/macOS only).
 - `.github/workflows/validate.yml` — CI on every push: builds + validates on **macOS and Windows**, plus unit-test and sanitizer jobs. **Green as of 2026-06-01.**

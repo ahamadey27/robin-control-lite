@@ -114,6 +114,17 @@ tests verify this resource in the actual bundle. Rerun this suite on the final
 PACE-signed AAX and after later Moonbase integration; these checks do not replace
 retail Pro Tools host testing.
 
+**September 22, 2026 evidence:** all 13 applicable checks passed on both unsigned
+and corrected PACE-signed macOS 2.0.0 AAX. Installed signatures/file hashes were
+verified, and Alex reported the candidate working in regular Pro Tools / Intro
+(app metadata `26.4.1.179`). This establishes basic user-confirmed host acceptance;
+it does not mark every manual host-matrix item complete. See `RELEASE_2.0.0.md`.
+
+**Windows:** follow `WINDOWS_BUILD_AND_AAX.md` for a fresh clone and native build.
+The AAX runner and PACE setup script currently contain macOS paths/process
+handling and must be adapted before Windows use. Windows VST3 CI does not test
+AAX; retain separate Windows signed-bundle and retail-host evidence.
+
 ## 1b. Unit / correctness tests (set up, passing)
 
 `tests/test_main.cpp` is a console app built on **JUCE's built-in `UnitTest`

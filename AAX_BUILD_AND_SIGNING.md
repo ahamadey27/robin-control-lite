@@ -8,6 +8,100 @@ This is the AAX implementation handoff for future agents. Read `AGENTS.md`,
 copy its password-on-command-line example or assume Apple signing is irrelevant
 to AAX: the installed WrapTool supports the Apple signature as part of signing.
 
+For a fresh Windows machine, start with [WINDOWS_BUILD_AND_AAX.md](WINDOWS_BUILD_AND_AAX.md).
+For another product, read **Reusing this workflow for another plugin** below;
+the Lite IDs, Wrap GUID, XML, and validator assertions are product-specific.
+
+## Repeatable macOS workflow — start here
+
+This route was verified on September 22 with AAX SDK 2.9.0, local JUCE 8.0.15
+at `91ad83ae34a81e0833b1a2b0866f54846370ae53`, PACE 6.0.1, and
+DigiShell v24.9.0x14. Alex confirmed the resulting candidate works in regular
+Pro Tools / Intro. No Moonbase code was included. Packaging/notarization and the
+full manual release matrix are separate remaining steps.
+
+1. From the repository root, run the **exact configure command in
+   [RELEASE_2.0.0.md](RELEASE_2.0.0.md#reproducible-macos-candidate-build)**. It
+   preserves macOS 11 support and avoids the observed Xcode 27 SDK mismatch.
+   Keep `RCL_COPY_PLUGIN_AFTER_BUILD=OFF` and Standalone OFF. For AAX alone:
+
+   ```sh
+   DEVELOPER_DIR=/Library/Developer/CommandLineTools cmake \
+     --build NewProject/build-release-2.0.0 --config Release \
+     --target RobinControlLite_AAX -j 6
+   ```
+
+2. Create fresh evidence/staging paths. Use the following blocks in the same
+   shell, and stop on a failed command. Never overwrite a previously signed run:
+
+   ```sh
+   RCL_UNSIGNED="$PWD/NewProject/build-release-2.0.0/RobinControlLite_artefacts/Release/AAX/Robin Control Lite.aaxplugin"
+   RCL_RUN="$PWD/Releases/Testing/2.0.0/aax-$(date -u +%Y%m%dT%H%M%SZ)"
+   mkdir -p "$PWD/Releases/Testing/2.0.0"
+   mkdir "$RCL_RUN"
+   mkdir -p "$RCL_RUN/signed/AAX"
+   RCL_SIGNED="$RCL_RUN/signed/AAX/Robin Control Lite.aaxplugin"
+   RCL_WRAPTOOL="/Applications/PACEAntiPiracy/Eden/Fusion/Current/bin/wraptool"
+
+   test -f "$RCL_UNSIGNED/Contents/Resources/RobinControlLitePages.xml"
+   lipo -archs "$RCL_UNSIGNED/Contents/MacOS/Robin Control Lite"
+   /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$RCL_UNSIGNED/Contents/Info.plist"
+   python3 scripts/test-aax-native.py "$RCL_UNSIGNED" --output "$RCL_RUN/unsigned-validation"
+   ```
+
+   Expect version 2.0.0 and both `x86_64` and `arm64`. Use `otool -l` to check
+   each slice's `LC_BUILD_VERSION` minimum OS (11.0 for this release).
+   The validator needs local sockets; if a sandbox blocks them, rerun with the
+   appropriate tool approval. Its `summary.json` must report `passed: true`.
+
+3. Connect the developer signing iLok. Read `"$RCL_WRAPTOOL" help` if the tool
+   changed. Existing cached authentication worked without account/password
+   arguments; no portal recreation or new onboarding email is needed:
+
+   ```sh
+   "$RCL_WRAPTOOL" sign \
+     --wcguid 8F95C7F0-B538-11F1-8437-00505692AD3E \
+     --signid 'Developer ID Application: CONDUIT DSP LLC (QS378YGT2W)' \
+     --dsigharden --in "$RCL_UNSIGNED" --out "$RCL_SIGNED" \
+     > "$RCL_RUN/sign.log" 2>&1
+   ```
+
+   If credentials are missing, Alex runs `python3 scripts/setup-pace-signing.py`
+   in a private interactive macOS Terminal, then the agent retries. Do not ask
+   for a password in chat or read it from Keychain yourself. Signing requires
+   access to PACE's local service and the Apple identity outside the sandbox.
+
+4. Verify the **output**, regardless of the signing command's exit code or
+   diagnostics. Both independent verifiers must pass:
+
+   ```sh
+   "$RCL_WRAPTOOL" verify --in "$RCL_SIGNED" > "$RCL_RUN/pace-verify.log" 2>&1
+   codesign --verify --strict --verbose=2 "$RCL_SIGNED" > "$RCL_RUN/apple-verify.log" 2>&1
+   codesign -dv --verbose=4 "$RCL_SIGNED" > "$RCL_RUN/apple-details.log" 2>&1
+   python3 scripts/test-aax-native.py "$RCL_SIGNED" --output "$RCL_RUN/signed-validation"
+   ```
+
+   Confirm PACE says **signed, but not wrapped**, identifies Conduit DSP LLC /
+   Robin Control Lite, and Apple reports the expected identity, timestamp, and
+   hardened runtime. Confirm version/architectures and page-table XML survived.
+   Capture file hashes and symlink targets so the tested and installed bundles
+   can be matched. Do not run another signer, strip, merge architectures, or
+   rebuild over this output; source changes require a new complete signing run.
+
+5. Close Pro Tools. Preserve any installed Lite AAX outside the scanned plug-in
+   directory, then use `ditto` to install the **whole signed bundle** to
+   `/Library/Application Support/Avid/Audio/Plug-Ins/Robin Control Lite.aaxplugin`.
+   Preserve symlinks, compare installed files with signed staging, and rerun
+   PACE + strict Apple verification on the installed copy. Administrative/tool
+   permission may be needed for the destination. Never replace a bundle while
+   Pro Tools is running. Then run the retail host matrix in `TESTING.md` and
+   record precisely which manual checks the user confirms.
+
+The dated artifacts below are local evidence, not reusable build inputs.
+`Releases/Testing/` is ignored by Git. A new agent on a clone must recreate its
+own evidence from source. Never treat an absent local log as grounds to repeat
+completed account onboarding; distinguish machine setup from product setup.
+
 ## Current evidence
 
 | Item | Observed state |
@@ -26,7 +120,8 @@ to AAX: the installed WrapTool supports the Apple signature as part of signing.
 | Signing-capable iLok | Certificate seal confirmed; subsequent local signing succeeded on 2026-09-20 |
 | Publisher configuration | SDK 6 / Signing Only configuration successfully used; PACE verification identifies Conduit DSP LLC and Robin Control Lite |
 | Signed AAX | Corrected September 22 candidate: PACE and strict Apple verification passed outside sandbox; timestamp 2026-09-22T13:30:21Z; signed, not wrapped |
-| Retail Pro Tools acceptance / notarization | Still pending |
+| Retail Pro Tools acceptance | Alex confirmed the installed candidate works in regular Pro Tools / Intro on September 22; app metadata 26.4.1.179; detailed release matrix remains open |
+| Notarization / distribution | Pending for the corrected AAX and three-format installer |
 
 The original 2026-09-20 full validator run was **not clean**. Investigation on
 2026-09-22 established two separate causes:
@@ -70,7 +165,10 @@ preserved the signed symlinks; every installed file and symlink matches the
 validated candidate. Installed PACE and strict Apple signature verification
 also passed. See `signing-validated-20260922/installation.json` and adjacent logs.
 Alex confirmed regular Pro Tools / Intro for the manual test (installed metadata:
-`26.4.1.179`); retail-host acceptance remains pending user testing.
+`26.4.1.179`), then reported **“this is working in pro tools.”** Basic host
+acceptance is confirmed by the user. Do not expand that into an itemized pass for
+session restore, automation, all UI sizes, both track formats, or testing without
+developer signing entitlements; those still need their own evidence.
 Moonbase remains deferred; none of this work integrates or exercises customer DRM.
 Rerun signing and validation after its later integration.
 
@@ -171,7 +269,11 @@ Keep unsigned build artifacts separate from signed release staging.
 Compile success is not signing success. Developer tools may load an unsigned
 AAX that retail Pro Tools refuses. Do not label an unsigned bundle distributable.
 
-## Authorization checkpoint — next user-assisted step
+## Historical onboarding and new-machine troubleshooting
+
+The account/configuration/certificate setup below is **already completed** for
+Lite. Normally start with the repeatable workflow above. Use this history only
+for a new signing machine, a new product, or a specific authentication error.
 
 Alex supplied the PACE welcome email and application receipt on 2026-09-20.
 The welcome email establishes signing-only SDK access; the application receipt
@@ -235,12 +337,15 @@ device serial or copy the screenshots into the repository.
 
 The portal product/signing configuration and iLok certificate-seal checks are
 now done, as are local authentication and the first verified signing operation.
-Next: test the installed corrected signed candidate in retail Pro Tools.
+Basic retail Pro Tools acceptance is now user-confirmed. Next: finish the detailed
+host matrix and release packaging; see `RELEASE_2.0.0.md`.
 No evidence currently establishes that another onboarding email is required.
 Only if these steps fail should support be asked about documentation access or
 certificate/configuration provisioning. Do not repeat completed installation
 steps or assume a publisher number appears in a particular menu. No support
 message has been sent by the agent.
+
+For genuinely new provisioning or a diagnosed certificate problem:
 
 1. Plug in the developer's iLok USB and sign into iLok License Manager.
 2. Inspect the connected iLok's details and icon. Official iLok help says an iLok
@@ -284,12 +389,11 @@ The 6.0.1 help establishes:
 - `--out` permits preserving the original input; otherwise signing can be in place.
 - `verify --in` verifies the PACE signature.
 
-The following invocation successfully signed the separate candidate after local
-authentication. Use the GUID above as `PACE_WCGUID` and preserve unsigned input:
+The following invocation uses the default cached account, verified on September
+22. Use the GUID above as `PACE_WCGUID` and preserve unsigned input:
 
 ```sh
 "/Applications/PACEAntiPiracy/Eden/Fusion/Current/bin/wraptool" sign \
-  --account "$PACE_ACCOUNT" \
   --wcguid "$PACE_WCGUID" \
   --signid "Developer ID Application: CONDUIT DSP LLC (QS378YGT2W)" \
   --dsigharden \
@@ -327,7 +431,7 @@ codesign -dv --verbose=4 "$AAX_SIGNED_BUNDLE"
    exit code 0 for the partial-failure run observed here.
    The older `-e validator-batch=...` command in `release-spec.md` fails with
    `command line parsing failed` in this installed 2024.6 validator. Quoting
-   the path differently does not fix it. Use the stdin interface above.
+   the path differently does not fix it. The runner uses the supported stdin interface.
 2. Install the signed bundle to `/Library/Application Support/Avid/Audio/Plug-Ins/`
    for a controlled retail Pro Tools test. Close Pro Tools before replacing a
    plugin. Preserve any existing installed build before replacement.
@@ -342,7 +446,33 @@ codesign -dv --verbose=4 "$AAX_SIGNED_BUNDLE"
    staple/validate, inspect installer payloads, and test on a clean machine.
    Including an AAX after notarization requires a new package and submission.
 6. Windows VST3/AAX require a separate Windows build, PACE setup, validation,
-   and packaging. A universal macOS binary is not a Windows binary.
+   and packaging. A universal macOS binary is not a Windows binary. Follow
+   [WINDOWS_BUILD_AND_AAX.md](WINDOWS_BUILD_AND_AAX.md).
+
+## Reusing this workflow for another plugin
+
+- Reuse the build → validate → `sign` → verify → validate signed output → retail
+  host test sequence. Keep customer Moonbase licensing separate from PACE signing.
+- Use that product's authoritative CMake target, name, bundle/AAX identifier,
+  manufacturer/product/type IDs, version, and output paths. Preserve released
+  parameter identities. Do not copy Lite's `rcll` or `dsp.conduit.RobinControlLite`
+  into Robin Control or a new product.
+- The Wrap GUID and Product GUID in this file belong to **Robin Control Lite**.
+  Verify/create the other product's SDK 6 **Signing Only** configuration in the
+  authorized PACE account. Do not sign another product under Lite's configuration.
+  The existing company signing identity/iLok can be used where authorized; it
+  does not remove the need for correct product metadata.
+- Register a product-specific page-table XML through `AAXClientExtensions`,
+  package it as a bundle resource, and cover every active parameter plus master
+  bypass. Its type IDs must match the actual descriptor. Do not embed Lite's XML
+  unchanged or infer IDs for different bus layouts.
+- `scripts/test-aax-native.py` explicitly checks Lite's single effect, two Native
+  types, macOS executable path, and resources. Adapt and verify those assertions
+  for another product/platform. Exclude DSP cycle counts only after proving that
+  product is Native-only; retain all applicable tests and failure detection.
+- Windows needs a native Windows build and its own PACE/platform signing setup.
+  macOS Developer ID certificates, tool paths, and successful macOS validation
+  are not Windows signing or host evidence.
 
 ## References
 

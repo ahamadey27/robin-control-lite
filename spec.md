@@ -6,6 +6,8 @@ This document is the single source of truth for: identity, build, formats, signi
 
 > **Customer licensing update — 2026-09-20:** Alex selected **Moonbase DRM** for free Robin Control Lite and all future products. Moonbase is required for final v2.0.0 but excluded from Beta 1 (the user's “beta v1”); that beta label does not itself change the binary version. PACE remains for AAX digital signing only, with no customer iLok/PACE DRM. This provider decision supersedes older custom-licensing proposals. Activation policies remain unspecified; existing release candidates must not be represented as Moonbase-integrated based on this decision. See `RELEASE_2.0.0.md` for current release scope and evidence.
 
+> **AAX update — 2026-09-22:** Local macOS PACE signing and basic retail Pro Tools acceptance are confirmed for 2.0.0. Use the current handoffs in §1.3; later v1.0/v1.1 planning tables are historical, not current AAX readiness. Windows starts with `WINDOWS_BUILD_AND_AAX.md`.
+
 ---
 
 ## 1. Open decisions
@@ -34,53 +36,41 @@ For a free plugin, three legal paths (JUCE 8, current as of Jan 2026):
 
 **Recommendation: Personal.** Confirm the current revenue threshold on JUCE's site at decision time — terms change.
 
-### 1.3 AAX strategy (`{{AAX_PLAN}}`)
-AAX is **opt-in extra work**. It is not free even though the plugin is free.
+### 1.3 AAX strategy — current handoff, 2026-09-22
 
-- Avid Developer registration (free): https://developer.avid.com/
-- AAX SDK download (free, NDA-style click-through)
-- **PACE / iLok signing is mandatory** for Pro Tools to load AAX plugins outside dev mode. Avid offers a free signing program for free plugins, but you submit each release for signing. Build → submit → wait → distribute the signed binary.
-- Mac and Windows AAX both require this signing.
+AAX Native is implemented for the 2.0.0 candidate. The universal macOS build
+passed all 13 applicable Avid validator checks both before and after local PACE
+signing. Alex confirmed the installed signed candidate works in regular
+Pro Tools / Intro on September 22. Windows AAX remains unbuilt/unverified in this
+release record; macOS success does not establish Windows readiness.
 
-**Recommendation: ship VST3 + AU + Standalone in v1.0; add AAX in v1.1 once the rest is stable.** AAX adds ~1–2 weeks of plumbing and a recurring signing step per release.
+Operational sources of truth for this release:
 
-#### 1.3.1 Avid developer portal — navigation gotchas
-The portal is genuinely clunky. Documenting what works so the next setup goes faster:
+- [`AAX_BUILD_AND_SIGNING.md`](AAX_BUILD_AND_SIGNING.md): verified local PACE
+  workflow, page-table requirements, troubleshooting, and reuse for other products.
+- [`RELEASE_2.0.0.md`](RELEASE_2.0.0.md): exact macOS compiler/SDK/build commands,
+  signed artifact paths, test evidence, and open release gates.
+- [`WINDOWS_BUILD_AND_AAX.md`](WINDOWS_BUILD_AND_AAX.md): fresh Windows clone,
+  explicit SDK paths, x64 build, and separate Windows signing/validation setup.
+- [`TESTING.md`](TESTING.md): automated checks and detailed real-host matrix.
 
-- The public `developer.avid.com/audio` "Download Evaluation Toolkit" page **shows only a Back button** unless you're signed in as an enrolled developer. The click-through EULA only renders when authenticated.
-- After registering, **"My Toolkits and Downloads" starts empty** ("You do not own any products under this account yet"). The AAX toolkit must first be claimed via the **SDK Toolkits** catalog link in the dashboard. Once claimed (free), the SDK + tools list appears in My Toolkits.
-- The public AAX page never serves the actual files — every download happens inside the authenticated dashboard.
+Use the authorized AAX SDK and PACE AAX Code Signing Tools. Developer iLok
+certificate provisioning and Lite's SDK 6 Signing Only configuration are already
+complete. The verified route is **local `wraptool sign` using the developer USB
+key**, with cached credentials; it does not require sending each build to Avid
+for signing. Never use the default wrapping operation or `wrap`. Customer
+Moonbase licensing is separate and deferred from this candidate / Beta 1.
 
-**Status (2026-04-26):** Avid Developer account active under hamadey@gmail.com; AAX evaluation toolkit claimed; downloads pending. See `memory/project_aax_dev_setup.md`.
+Page-table XML is required for our validated AAX build. Register
+`RobinControlLitePages.xml` through JUCE's `AAXClientExtensions`, package it in
+`Contents/Resources`, and keep its automation parameter IDs/type IDs compatible.
+The earlier recommendation to skip page-table work is superseded.
 
-#### 1.3.2 Minimal AAX SDK download set (Apple Silicon Mac)
-The dashboard lists 50+ items. For getting Robin Control Lite building as AAX, only these are required:
-
-| Item | Size | Why |
-|---|---|---|
-| **AAX SDK 2.9.0** | 41.28 MB | Headers/libs JUCE links against |
-| **AAX Developer Tools Beta 22.R4.0.1 arm64 (Mac)** | 191.79 MB | DigiShell, validator, signing utilities. Use `22.9.0.1 x86_64` on Intel Macs |
-| **DigiShell and AAX Validator 24.6 Arm (Mac)** | 298.31 MB | Validates the built `.aaxplugin`. Arch-matched |
-| **Pro Tools Developer 2025.12.0 Arm (Mac)** | 2.29 GB | The **Dev** build loads unsigned/eval AAX. Regular Pro Tools 2025.12 rejects unsigned plugins |
-| **Evaluation License.pdf** (AAX SDK section) | — | Read before building |
-
-Optional but useful: **AAX Plugin Test Plan (January 2024)** (664 KB) — Avid's official validation checklist for commercial submission.
-
-**Skip:**
-- *JUCE to AAX DSP Example* and *Page Table Editor* — AAX DSP is for SHARC chips on HDX hardware; we ship AAX Native only.
-- *kTrace / WPR Capture Tools* — only if Avid asks for traces during a support case.
-- *HD Driver, Avid Cloud Client Services, Legacy, Sibelius, Pro Tools Demo Session* — unrelated to plugin dev.
-- *Pro Tools 2025.12 (non-Dev) and Pro Tools Beta builds* — non-Dev rejects unsigned plugins; Beta is only for forward-compat testing against unreleased PT versions.
-
-#### 1.3.3 v1.1 AAX onboarding order of operations
-- [x] Avid Developer account created and AAX evaluation toolkit claimed (2026-04-26)
-- [ ] Download the §1.3.2 set; unpack AAX SDK to a stable path (e.g. `~/SDKs/AAX_SDK_2.9.0/`)
-- [x] Install Pro Tools Dev (long install)
-- [ ] Install AAX Developer Tools (gives DigiShell, validator, signing utilities)
-- [ ] Wire `JUCE_AAX_SDK_PATH` into `NewProject/CMakeLists.txt`; add `AAX` to `juce_add_plugin(... FORMATS ...)`
-- [ ] Build → load the produced `.aaxplugin` in Pro Tools Dev → smoke test
-- [ ] **Order an iLok USB key** (2nd or 3rd gen) from ilok.com — required for commercial signing, not for eval builds. Order early; shipping takes days
-- [ ] When ready to ship: email `audiosdk@avid.com` to provision the commercial license + signing tools, then submit `.aaxplugin` for PACE signing per release (see §5.3)
+`test.cycle_counts` is a DSP/HDX hardware check and is N/A for Lite's verified
+Native-only descriptor. All other applicable tests must pass. The detailed
+manual matrix, notarization, AAX installer/uninstaller integration, and Windows
+release work remain open; the basic Pro Tools success report does not complete
+every manual test. Standalone is only for local debugging, not distribution.
 
 ### 1.4 Repository / GitHub identity
 - [x] Rename repo from `robin-control-redesign` to `robin-control-lite` (done 2026-04-26; local folder name unchanged)
@@ -121,17 +111,16 @@ Outputs:
 `COPY_PLUGIN_AFTER_BUILD TRUE` already copies VST3 to `~/Library/Audio/Plug-Ins/VST3` for testing. AU goes to `~/Library/Audio/Plug-Ins/Components`.
 
 ### 3.3 Windows local build
-On a Windows 10/11 machine with Visual Studio 2022 (Desktop C++ workload):
-```powershell
-cd NewProject
-cmake -B build -G "Visual Studio 17 2022" -A x64
-cmake --build build --config Release
-```
-Outputs:
-- `build\RobinControlLite_artefacts\Release\VST3\Robin Control Lite.vst3`
-- `build\RobinControlLite_artefacts\Release\Standalone\Robin Control Lite.exe`
 
-Default install location for VST3 on Windows: `C:\Program Files\Common Files\VST3\`.
+Follow [`WINDOWS_BUILD_AND_AAX.md`](WINDOWS_BUILD_AND_AAX.md) from a fresh clone.
+Use MSVC x64, explicit `JUCE_PATH` and `JUCE_AAX_SDK_PATH`, a new build directory,
+and `--config Release`. Request `RobinControlLite_AAX` explicitly when AAX is
+required. AU is macOS-only; Standalone is OFF by default and is not shipped.
+The guide includes the exact configure/build/unit-test commands and bundle paths.
+
+Install tested Windows VST3 bundles to `C:\Program Files\Common Files\VST3\`.
+Install verified signed Windows AAX bundles to
+`C:\Program Files\Common Files\Avid\Audio\Plug-Ins\` with Pro Tools closed.
 
 ### 3.4 Building Windows from a Mac — don't try
 JUCE does not cleanly cross-compile Mac→Windows. Realistic options, ranked:
@@ -209,8 +198,17 @@ FORMATS  VST3 AU Standalone   # v1.0
 - **Installer:** Inno Setup (free) or NSIS. Sign the installer `.exe` too.
 - **Cheaper alternative for v1.0:** ship unsigned and document the SmartScreen workaround in README. Not great UX but acceptable for a free product's first release.
 
-### 5.3 AAX (when added)
-PACE signing replaces standard signing for AAX. Submit unsigned `.aaxplugin` to Avid; they return a signed copy. Process documented in the AAX SDK.
+### 5.3 AAX signing
+
+Follow [`AAX_BUILD_AND_SIGNING.md`](AAX_BUILD_AND_SIGNING.md). PACE `sign` signs
+without applying customer protection, using the authorized product configuration
+and developer signing iLok. On macOS the verified command includes Apple
+Developer ID signing and hardened runtime; both PACE and strict Apple signature
+verification must pass. Sign into separate staging after building, validate the
+signed output, then test it in retail Pro Tools. Windows requires its own native
+build and verified PACE/platform-signing setup; see `WINDOWS_BUILD_AND_AAX.md`.
+The historical submit-to-Avid and “PACE replaces platform signing” instructions
+are superseded.
 
 ### 5.4 Distribution channels
 - Project website (conduit.dsp domain) with direct download

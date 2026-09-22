@@ -2,7 +2,8 @@
 
 Started 2026-09-20. **Release candidate; not published.** This file is the current
 2.0.0 execution record; `release-spec.md` retains historical v1.0 evidence.
-See `AAX_BUILD_AND_SIGNING.md` for the reusable AAX handoff.
+See `AAX_BUILD_AND_SIGNING.md` for the reusable AAX handoff and
+`WINDOWS_BUILD_AND_AAX.md` for a fresh Windows clone/build.
 
 ## Scope
 
@@ -52,7 +53,10 @@ does not cover it. Activation policies remain unspecified.
 - [x] Validate corrected, signed AAX — all 13 applicable checks passed September 22.
 - [x] Install corrected signed AAX for Pro Tools testing; installed PACE/Apple
       signatures and every file hash/symlink match the validated candidate.
-- [ ] Complete retail Pro Tools host smoke test.
+- [x] Basic retail Pro Tools acceptance — Alex reports the installed corrected
+      AAX working in regular Pro Tools / Intro on September 22.
+- [ ] Complete the detailed Pro Tools release matrix; the user's basic success
+      report does not establish every individual test below.
 - [ ] Extend installer and uninstaller for the signed AAX.
 - [ ] Sign, notarize, staple, and inspect the final three-format installer.
 - [ ] Complete clean-install and real-host smoke checks from `TESTING.md`.
@@ -110,8 +114,9 @@ separate pending installer change.
 
 Evidence is retained in `Releases/Testing/2.0.0/` (local, ignored by Git),
 including `artifact-manifest.json` with executable SHA-256 hashes and exact
-build metadata. No 2.0.0 release installer has been built or published. The
-candidate bundles have not been distribution-signed or notarized.
+build metadata. No 2.0.0 release installer has been built or published.
+The corrected AAX has verified PACE/Apple signatures as recorded below;
+final staged VST3/AU signing and release notarization remain open.
 
 **AU registry caveat:** pluginval and auval returned success, including native
 and Rosetta auval runs, but macOS continued to report **1.0.1** in its component
@@ -173,10 +178,12 @@ installed PACE and strict Apple signature verification passed. Installation
 evidence is `signing-validated-20260922/installation.json` and adjacent logs.
 
 Alex confirmed the test host is regular Pro Tools / Intro; installed application
-metadata reports version `26.4.1.179`. Retail host acceptance is **not yet tested**.
-Next user check: launch Pro Tools, insert Lite on mono/stereo Instrument tracks,
-load samples and play MIDI, check Trigger/Panic and UI resizing/reopening, automate
-a parameter, and save/reopen the session. Check for any Lite activation prompt.
+metadata reports version `26.4.1.179`. On September 22 Alex reported: **“this is
+working in pro tools.”** Record basic retail-host acceptance for the exact
+installed signed candidate. No host logs or itemized test results were supplied.
+Do not infer that both mono/stereo tracks, Trigger/Panic, all UI sizes, automation,
+preset/session restore, or absence of Lite activation prompts were separately
+verified. Those remain in the detailed release matrix.
 Customer testing without developer signing entitlements remains part of the host
 matrix; Pro Tools' own licensing is separate. Notarization remains pending.
 This candidate does not include Moonbase.
@@ -208,4 +215,4 @@ showing the certificate seal. Developer tool license names and their displayed
 2027-10-01 expiration are also confirmed from the screenshots. The product and
 signing-only configuration have now been created; no need to wait for a GUID
 by email or repeat those setup steps. See the AAX handoff for sources and
-remaining authentication/verification work.
+the completed authentication/signing setup and remaining release work.
