@@ -9,6 +9,12 @@
     <FILE id="RclAaxPT" name="RobinControlLitePages.xml" compile="0" resource="0"
           xcodeResource="1" file="Resources/AAX/RobinControlLitePages.xml"/>
     <GROUP id="{16DB8BBD-FC25-C9E3-2064-70988F6ACE3E}" name="Source">
+      <!-- Moonbase is selected by CMake; this Projucer mirror defaults to DRM-free Beta 1. -->
+      <GROUP id="RclLicensing" name="Licensing">
+        <FILE id="RclMoonConfig" name="MoonbaseConfig.h" compile="0" resource="0" file="Source/Licensing/MoonbaseConfig.h"/>
+        <FILE id="RclMoonHeader" name="MoonbaseLicense.h" compile="0" resource="0" file="Source/Licensing/MoonbaseLicense.h"/>
+        <FILE id="RclMoonSource" name="MoonbaseLicense.cpp" compile="1" resource="0" file="Source/Licensing/MoonbaseLicense.cpp"/>
+      </GROUP>
       <GROUP id="{5BB2D9F1-BAFB-C54D-87A0-C718464F3EB2}" name="DSP">
         <FILE id="JvhuqK" name="RandomizationEngine.cpp" compile="1" resource="0"
               file="Source/DSP/RandomizationEngine.cpp"/>

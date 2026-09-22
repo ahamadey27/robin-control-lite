@@ -30,6 +30,11 @@ public:
 private:
     NewProjectAudioProcessor& audioProcessor;
 
+#if RCL_ENABLE_MOONBASE
+    juce::TextButton licenseButton { "License" };
+    std::unique_ptr<moonbase::juce_integration::ActivationComponent> activationOverlay;
+#endif
+
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
 

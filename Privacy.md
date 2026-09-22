@@ -9,12 +9,20 @@ This file is a short repo-side note about the plugin itself.
 
 ## What Robin Control Lite (the plugin) does with your data
 
-Nothing.
+The existing public builds and DRM-free Beta 1 do not connect to the internet.
 
-The plugin and standalone application run entirely on your computer. They do
-not connect to the internet, do not contain analytics, and do not send
-crash reports. Your sample files, presets, and project settings stay on your
-machine — Conduit DSP has no way to see them.
+The **unreleased Moonbase-enabled 2.0.0 build** connects to Conduit DSP's
+Moonbase tenant for license activation, validation, and deactivation. The SDK
+uses a device fingerprint and device label to bind the license to a machine.
+Activation happens in a browser; the plugin stores a signed license locally,
+including the license holder's name and email returned by Moonbase. Network
+requests also identify the SDK/JUCE/OS software versions through a User-Agent.
+Optional SDK analytics, host/locale metadata collection, and update prompts
+are disabled. There is no sample, preset, project, or crash-report upload.
+
+This describes the development implementation. Before distributing it, the
+canonical website policy and the EULA's existing offline-only wording must
+be reconciled with Moonbase licensing; see `MOONBASE_INTEGRATION.md`.
 
 ## What the download flow does with your data
 
@@ -27,4 +35,4 @@ per the privacy policy linked above. You can unsubscribe at any time.
 
 Questions: hello@conduitdsp.com
 
-Conduit DSP LLC — last updated 2026-04-26
+Conduit DSP LLC — last updated 2026-09-22

@@ -57,6 +57,7 @@ target_compile_definitions(RobinControlLiteTests
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_USE_MP3AUDIOFORMAT=1
+        RCL_ENABLE_MOONBASE=0 # Engine/fuzz tests deliberately exercise unrestricted DSP.
         # JucePlugin_* macros normally emitted by juce_add_plugin(). The processor
         # and editor source reference these directly; mirror the plugin identity.
         JucePlugin_Name="Robin Control Lite"
@@ -83,3 +84,18 @@ target_link_libraries(RobinControlLiteTests
         juce::juce_gui_extra
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags)
+
+if(RCL_ENABLE_MOONBASE)
+    # Reuse the actual DRM-enabled plugin implementation, including its gate.
+    juce_add_console_app(RobinControlLiteLicensingTests PRODUCT_NAME "RCL Licensing Tests")
+    target_sources(RobinControlLiteLicensingTests PRIVATE licensing_tests.cpp)
+    if(APPLE)
+        target_sources(RobinControlLiteLicensingTests PRIVATE licensing_test_app.mm)
+    endif()
+    target_include_directories(RobinControlLiteLicensingTests PRIVATE
+        $<TARGET_PROPERTY:RobinControlLite,INCLUDE_DIRECTORIES>)
+    target_compile_definitions(RobinControlLiteLicensingTests PRIVATE
+        $<TARGET_PROPERTY:RobinControlLite,COMPILE_DEFINITIONS>
+        RCL_LICENSE_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/licensing-fixtures")
+    target_link_libraries(RobinControlLiteLicensingTests PRIVATE RobinControlLite)
+endif()

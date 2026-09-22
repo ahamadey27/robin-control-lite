@@ -28,7 +28,12 @@ does not cover it. Activation policies remain unspecified.
 
 ## Checkpoints
 
-- [ ] Final release only: integrate and validate Moonbase DRM; excluded from Beta 1.
+- [x] Implement opt-in Moonbase JUCE licensing, processor audio gate, and activation UI.
+- [ ] Final release only: complete live Moonbase activation/host/platform validation;
+      build with `RCL_ENABLE_MOONBASE=ON` and `RCL_FINAL_RELEASE=ON`.
+      Beta 1 remains DRM-free. See `MOONBASE_INTEGRATION.md` for separate macOS
+      and Windows commands and new evidence; earlier candidate evidence below
+      does not validate the licensing-enabled binary.
 - [x] Version set to 2.0.0 in authoritative CMake and Projucer metadata.
 - [x] Plugin/test version macros derive from the CMake project version.
 - [x] AAX SDK, validator, and PACE tool installation located.

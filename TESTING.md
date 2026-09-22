@@ -385,3 +385,16 @@ above are the same regardless of which plugin you point them at.
 - Clang Function Effect Analysis — https://clang.llvm.org/docs/FunctionEffectAnalysis.html
 - Sentry Crashpad backend — https://docs.sentry.io/platforms/native/configuration/backends/crashpad/
 - Sentry minidumps — https://docs.sentry.io/platforms/native/guides/minidumps/
+
+## Moonbase licensing regression coverage (2026-09-22)
+
+See `MOONBASE_INTEGRATION.md` for separate macOS/Windows commands and evidence.
+With `RCL_ENABLE_MOONBASE=ON` and `RCL_BUILD_TESTS=ON`, build/run
+`RobinControlLiteLicensingTests` as well as `RobinControlLiteTests`. The former
+links the actual protected plugin and uses synthetic signed fixtures to check
+startup validation, grace, invalid-token rejection, audio gating, editor closure,
+offline import and local deactivation. The latter deliberately compiles DRM OFF
+so existing DSP/fuzz assertions retain audio coverage. No production token or
+private key is needed. Existing sanitizer scripts still target the DRM-free
+engine harness; licensing-specific sanitizer and real-tenant host tests remain
+separate work. CI now builds DRM ON/OFF on both desktop operating systems.

@@ -4,7 +4,9 @@
 
 This document is the single source of truth for: identity, build, formats, signing, distribution, licensing, testing, and the migration plan. Everything in `CLAUDE.md` that contradicts this file is now stale and needs updating once decisions below are made.
 
-> **Customer licensing update — 2026-09-20:** Alex selected **Moonbase DRM** for free Robin Control Lite and all future products. Moonbase is required for final v2.0.0 but excluded from Beta 1 (the user's “beta v1”); that beta label does not itself change the binary version. PACE remains for AAX digital signing only, with no customer iLok/PACE DRM. This provider decision supersedes older custom-licensing proposals. Activation policies remain unspecified; existing release candidates must not be represented as Moonbase-integrated based on this decision. See `RELEASE_2.0.0.md` for current release scope and evidence.
+> **Customer licensing update — 2026-09-20:** Alex selected **Moonbase DRM** for free Robin Control Lite and all future products. Moonbase is required for final v2.0.0 but excluded from Beta 1 (the user's “beta v1”); that beta label does not itself change the binary version. PACE remains for AAX digital signing only, with no customer iLok/PACE DRM. This provider decision supersedes older custom-licensing proposals. That provider decision alone did not integrate licensing into existing candidates; see the dated implementation update below for current settings. See `RELEASE_2.0.0.md` for current release scope and evidence.
+
+Implementation update 2026-09-22: see `MOONBASE_INTEGRATION.md` for the opt-in JUCE module, macOS/Windows build commands, and validation status. Alex selected 90 days of online-license offline grace. Beta 1 remains DRM-free; final builds enable both `RCL_ENABLE_MOONBASE` and `RCL_FINAL_RELEASE`. Earlier release artifacts are not retroactively licensed.
 
 > **AAX update — 2026-09-22:** Local macOS PACE signing and basic retail Pro Tools acceptance are confirmed for 2.0.0. Use the current handoffs in §1.3; later v1.0/v1.1 planning tables are historical, not current AAX readiness. Windows starts with `WINDOWS_BUILD_AND_AAX.md`.
 

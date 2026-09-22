@@ -340,6 +340,25 @@ NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioPr
                      &toneLowSlider, &toneHighSlider, &sampleStartSlider, &sampleEndSlider })
         s->onValueChange = [this] { repaint(); };
 
+#if RCL_ENABLE_MOONBASE
+    licenseButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff2d7a7a));
+    licenseButton.setLookAndFeel(&buttonLAF);
+    activationOverlay = std::make_unique<moonbase::juce_integration::ActivationComponent>(
+        audioProcessor.getLicense().controller());
+    activationOverlay->onClose = [this] { activationOverlay->dismiss(); repaint(); };
+    licenseButton.onClick = [this]
+    {
+        aboutWindow.setVisible(false);
+        activationOverlay->toFront(true);
+        activationOverlay->appear();
+        repaint();
+    };
+    addAndMakeVisible(licenseButton);
+    addChildComponent(*activationOverlay);
+    if (! audioProcessor.getLicense().isLicensed())
+        activationOverlay->setVisible(true);
+#endif
+
     setSize(1400, 400);
     resized();
 
@@ -359,6 +378,11 @@ NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioPr
 NewProjectAudioProcessorEditor::~NewProjectAudioProcessorEditor()
 {
     stopTimer();
+
+#if RCL_ENABLE_MOONBASE
+    activationOverlay.reset();
+    licenseButton.setLookAndFeel(nullptr);
+#endif
 
     for (auto* s : { &semitoneSlider, &fineTuneSlider, &volumeSlider, &panSlider,
                      &toneLowSlider, &toneHighSlider,
@@ -397,6 +421,16 @@ void NewProjectAudioProcessorEditor::applyCombinedScale()
 
 void NewProjectAudioProcessorEditor::timerCallback()
 {
+#if RCL_ENABLE_MOONBASE
+    const bool licensed = audioProcessor.getLicense().isLicensed();
+    licenseButton.setButtonText(licensed ? "License" : "Activate");
+    if (! licensed && ! activationOverlay->isVisible())
+    {
+        activationOverlay->toFront(true);
+        activationOverlay->appear();
+        repaint();
+    }
+#endif
     const auto event = audioProcessor.getPlaybackEvent();
     if (event != lastPlaybackEvent)
     {
@@ -1026,6 +1060,10 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
 
 void NewProjectAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
 {
+#if RCL_ENABLE_MOONBASE
+    if (activationOverlay != nullptr && activationOverlay->isVisible())
+        return;
+#endif
     if (aboutWindow.isVisible())
     {
         juce::RectangleList<int> clip(getLocalBounds());
@@ -1180,6 +1218,11 @@ void NewProjectAudioProcessorEditor::resized()
 
     // ── Header buttons ──────────────────────────────────────────────────────
     sizeButton.setBounds(getWidth() - 402, 11, 60, 26);
+#if RCL_ENABLE_MOONBASE
+    licenseButton.setBounds(getWidth() - 486, 11, 76, 26);
+    if (activationOverlay != nullptr)
+        activationOverlay->setBounds(getLocalBounds());
+#endif
     loadPresetButton.setBounds(getWidth() - 334, 11, 60, 26);
     savePresetButton.setBounds(getWidth() - 266, 11, 60, 26);
     triggerButton.setBounds   (getWidth() - 198, 11, 70, 26);

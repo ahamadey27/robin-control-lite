@@ -9,6 +9,7 @@
 #include "DSP/TransientShaper.h"
 #include "DSP/ToneControl.h"
 #include "DSP/RandomizationEngine.h"
+#include "Licensing/MoonbaseLicense.h"
 
 //==============================================================================
 class NewProjectAudioProcessor : public juce::AudioProcessor,
@@ -28,6 +29,10 @@ public:
 #endif
 
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+
+#if RCL_ENABLE_MOONBASE
+    rcl::MoonbaseLicense& getLicense() noexcept { return *moonbaseLicense; }
+#endif
 
     //==============================================================================
     juce::AudioProcessorEditor* createEditor() override;
@@ -98,6 +103,11 @@ public:
     }
 
 private:
+    #if RCL_ENABLE_MOONBASE
+    juce::SharedResourcePointer<rcl::MoonbaseLicense> moonbaseLicense;
+    moonbase::juce_integration::LicenseGate licenseGate;
+    #endif
+
     struct AAXExtensions final : juce::AAXClientExtensions
     {
         juce::String getPageFileName() const override { return "RobinControlLitePages.xml"; }

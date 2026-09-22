@@ -158,6 +158,10 @@ void NewProjectAudioProcessor::changeProgramName(int index, const juce::String& 
 //==============================================================================
 void NewProjectAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
+#if RCL_ENABLE_MOONBASE
+    licenseGate.prepare(sampleRate);
+    licenseGate.reset(moonbaseLicense->isLicensed());
+#endif
     DBG("prepareToPlay called - Sample Rate: " + juce::String(sampleRate) +
         " Hz, Buffer Size: " + juce::String(samplesPerBlock) + " samples");
 
@@ -417,6 +421,13 @@ void NewProjectAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, ju
 
     toneControl.updateFilters(toneLowGain, toneHighGain);
     toneControl.processBlock(buffer);
+
+#if RCL_ENABLE_MOONBASE
+    // Covers MIDI, Trigger, audition and offline bounce, with the editor closed.
+    // No disk I/O, cryptography, locks or networking on the audio thread.
+    licenseGate.process(buffer.getArrayOfWritePointers(), buffer.getNumChannels(),
+                        buffer.getNumSamples(), moonbaseLicense->isLicensed());
+#endif
 
     //==============================================================================
     // CAPTURE OUTPUT PEAK FOR LEVEL METER
