@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.22)
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
 set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
-project(RobinControlLite VERSION 1.0.1)
+project(RobinControlLite VERSION 2.0.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,9 +23,8 @@ else()
     message(STATUS "Local JUCE not found at ${JUCE_PATH} — fetching via FetchContent")
     include(FetchContent)
     FetchContent_Declare(JUCE
-        GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-        GIT_TAG        8.0.4
-        GIT_SHALLOW    TRUE
+        URL https://github.com/juce-framework/JUCE/archive/91ad83ae34a81e0833b1a2b0866f54846370ae53.tar.gz
+        URL_HASH SHA256=04f8d5055382582c757be9da069ea98338005f98248facd9c2804435ac853e70
     )
     FetchContent_MakeAvailable(JUCE)
 endif()
@@ -47,6 +49,11 @@ endif()
 # ============================================================
 # Plugin target
 # ============================================================
+option(RCL_BUILD_STANDALONE "Build the standalone app for local testing (not distributed)" OFF)
+if(RCL_BUILD_STANDALONE)
+    list(APPEND PLUGIN_FORMATS Standalone)
+endif()
+
 # Auto-copy install dirs are macOS-only — the paths below ($HOME/Library/...)
 # don't exist on Windows/Linux. On those platforms we skip the copy and let
 # tooling (CI validators, the installer) pick the artefact straight out of the
@@ -60,9 +67,10 @@ if(APPLE)
     set(_VST3_COPY_DIR "$ENV{HOME}/Library/Audio/Plug-Ins/VST3")
     set(_AU_COPY_DIR   "$ENV{HOME}/Library/Audio/Plug-Ins/Components")
 endif()
+option(RCL_COPY_PLUGIN_AFTER_BUILD "Install local plugin builds into user plugin folders" ${_COPY_AFTER_BUILD})
 
 juce_add_plugin(RobinControlLite
-    VERSION                         1.0.1
+    VERSION                         ${PROJECT_VERSION}
     COMPANY_NAME                    "conduit.dsp"
     BUNDLE_ID                       "dsp.conduit.RobinControlLite"
     PLUGIN_CODE                     "rcll"
@@ -74,7 +82,7 @@ juce_add_plugin(RobinControlLite
     NEEDS_MIDI_OUTPUT               FALSE
     IS_MIDI_EFFECT                  FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS     FALSE
-    COPY_PLUGIN_AFTER_BUILD         ${_COPY_AFTER_BUILD}
+    COPY_PLUGIN_AFTER_BUILD         ${RCL_COPY_PLUGIN_AFTER_BUILD}
     VST3_COPY_DIR                   "${_VST3_COPY_DIR}"
     AU_COPY_DIR                     "${_AU_COPY_DIR}"
 
@@ -83,6 +91,89 @@ juce_add_plugin(RobinControlLite
 
 # Generate JuceHeader.h (required because source files use #include <JuceHeader.h>)
 juce_generate_juce_header(RobinControlLite)
+
+# Unlicensed builds are for engine development / historical beta reproduction.
+option(RCL_ENABLE_MOONBASE "Enable Moonbase customer licensing (required for final release)" OFF)
+option(RCL_FINAL_RELEASE "Enforce final-release customer licensing requirements" OFF)
+if(RCL_FINAL_RELEASE AND NOT RCL_ENABLE_MOONBASE)
+    message(FATAL_ERROR "Final releases require RCL_ENABLE_MOONBASE=ON. Beta 1 uses RCL_FINAL_RELEASE=OFF.")
+endif()
+if(RCL_ENABLE_MOONBASE)
+    include(FetchContent)
+    if(POLICY CMP0135)
+        cmake_policy(SET CMP0135 NEW)
+    endif()
+    FetchContent_Declare(moonbase_cpp
+        URL https://github.com/Moonbase-sh/moonbase-cpp/archive/refs/tags/v4.4.0.tar.gz
+        URL_HASH SHA256=c3f2ea70dabb40a71cc0502fa07d82e18e2e6fdbd548165d2ec78272c327dede
+        SOURCE_SUBDIR modules)
+    FetchContent_MakeAvailable(moonbase_cpp)
+    if(APPLE)
+        enable_language(OBJC OBJCXX)
+    endif()
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/MoonbaseHardening.cmake")
+    juce_add_module("${RCL_MOONBASE_MODULE}")
+    target_link_libraries(RobinControlLite PRIVATE moonbase_licensing)
+    target_sources(RobinControlLite PRIVATE Source/Licensing/MoonbaseLicense.cpp)
+    foreach(format IN LISTS PLUGIN_FORMATS)
+        if(NOT TARGET RobinControlLite_${format})
+            continue() # JUCE omits AU on Windows.
+        endif()
+        if(APPLE)
+            target_sources(RobinControlLite_${format} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Resources/MoonbaseNotices.txt")
+            set_source_files_properties(Resources/MoonbaseNotices.txt PROPERTIES
+                HEADER_FILE_ONLY TRUE MACOSX_PACKAGE_LOCATION Resources)
+        elseif(WIN32 AND NOT format STREQUAL "Standalone")
+            add_custom_command(TARGET RobinControlLite_${format} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RobinControlLite_${format}>/../Resources"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Resources/MoonbaseNotices.txt"
+                    "$<TARGET_FILE_DIR:RobinControlLite_${format}>/../Resources/MoonbaseNotices.txt"
+                VERBATIM)
+        endif()
+    endforeach()
+    message(STATUS "RCL customer licensing: Moonbase ON")
+else()
+    message(STATUS "RCL customer licensing: OFF (Beta 1 / development only)")
+endif()
+target_compile_definitions(RobinControlLite PUBLIC RCL_ENABLE_MOONBASE=$<BOOL:${RCL_ENABLE_MOONBASE}>)
+
+# Carry the exact licensing profile into signed bundles and installer checks.
+set(RCL_BUILD_CONFIG "${CMAKE_CURRENT_BINARY_DIR}/RCLBuildConfig.txt")
+file(WRITE "${RCL_BUILD_CONFIG}"
+    "version=${PROJECT_VERSION}\nmoonbase=${RCL_ENABLE_MOONBASE}\nfinal=${RCL_FINAL_RELEASE}\nmoonbase_sdk=4.4.0-rcl-hardening-1\n")
+foreach(format IN LISTS PLUGIN_FORMATS)
+    if(NOT TARGET RobinControlLite_${format})
+        continue()
+    endif()
+    if(APPLE)
+        target_sources(RobinControlLite_${format} PRIVATE "${RCL_BUILD_CONFIG}")
+        set_source_files_properties("${RCL_BUILD_CONFIG}" PROPERTIES
+            HEADER_FILE_ONLY TRUE MACOSX_PACKAGE_LOCATION Resources)
+    elseif(WIN32 AND NOT format STREQUAL "Standalone")
+        add_custom_command(TARGET RobinControlLite_${format} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RobinControlLite_${format}>/../Resources"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${RCL_BUILD_CONFIG}"
+                "$<TARGET_FILE_DIR:RobinControlLite_${format}>/../Resources/RCLBuildConfig.txt"
+            VERBATIM)
+    endif()
+endforeach()
+
+# AAX's automation page table is a bundle resource, not embedded BinaryData.
+if(TARGET RobinControlLite_AAX)
+    set(RCL_AAX_PAGE_TABLE "${CMAKE_CURRENT_SOURCE_DIR}/Resources/AAX/RobinControlLitePages.xml")
+    if(APPLE)
+        target_sources(RobinControlLite_AAX PRIVATE "${RCL_AAX_PAGE_TABLE}")
+        set_source_files_properties("${RCL_AAX_PAGE_TABLE}" PROPERTIES
+            HEADER_FILE_ONLY TRUE MACOSX_PACKAGE_LOCATION Resources)
+    elseif(WIN32)
+        set_property(TARGET RobinControlLite_AAX APPEND PROPERTY LINK_DEPENDS "${RCL_AAX_PAGE_TABLE}")
+        add_custom_command(TARGET RobinControlLite_AAX POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RobinControlLite_AAX>/../Resources"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${RCL_AAX_PAGE_TABLE}"
+                "$<TARGET_FILE_DIR:RobinControlLite_AAX>/../Resources/RobinControlLitePages.xml"
+            VERBATIM)
+    endif()
+endif()
 
 # ============================================================
 # Binary resources (logos, images)

@@ -9,6 +9,7 @@
 #include "DSP/TransientShaper.h"
 #include "DSP/ToneControl.h"
 #include "DSP/RandomizationEngine.h"
+#include "Licensing/MoonbaseLicense.h"
 
 //==============================================================================
 class NewProjectAudioProcessor : public juce::AudioProcessor,
@@ -29,9 +30,15 @@ public:
 
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
+#if RCL_ENABLE_MOONBASE
+    rcl::MoonbaseLicense& getLicense() noexcept { return *moonbaseLicense; }
+#endif
+
     //==============================================================================
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override;
+
+    juce::AAXClientExtensions& getAAXClientExtensions() override { return aaxExtensions; }
 
     //==============================================================================
     const juce::String getName() const override;
@@ -84,7 +91,28 @@ public:
     // read by the editor's level-meter timer. Linear gain, not dB.
     std::atomic<float> outputPeakLevel { 0.0f };
 
+    // Sequence and slot travel together so repeated hits on one row still flash.
+    juce::uint64 getPlaybackEvent() const noexcept
+    {
+        return playbackEvent.load(std::memory_order_acquire);
+    }
+
+    static int getPlaybackEventSlot(juce::uint64 event) noexcept
+    {
+        return static_cast<int>(event & 0xff) - 1;
+    }
+
 private:
+    #if RCL_ENABLE_MOONBASE
+    juce::SharedResourcePointer<rcl::MoonbaseLicense> moonbaseLicense;
+    moonbase::juce_integration::LicenseGate licenseGate;
+    #endif
+
+    struct AAXExtensions final : juce::AAXClientExtensions
+    {
+        juce::String getPageFileName() const override { return "RobinControlLitePages.xml"; }
+    } aaxExtensions;
+
     //==============================================================================
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
@@ -107,6 +135,8 @@ private:
     // Trigger flag (set by UI, consumed by processBlock)
     std::atomic<bool> triggerPending{ false };
     std::atomic<bool> panicPending{ false };
+    std::atomic<juce::uint64> playbackEvent { 0 };
+    void publishPlaybackEvent(int slotIndex) noexcept;
 
     // Current global pitch values
     std::atomic<float> globalSemitones{ 0.0f };

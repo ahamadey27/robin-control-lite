@@ -60,16 +60,16 @@ bool SampleLoader::loadSample(int slotIndex, const juce::File& file)
     // --- Error Check 5: Unsupported sample rate ---
     const double minSampleRate = 8000.0;
     const double maxSampleRate = 192000.0;
-    if (reader->sampleRate < minSampleRate || reader->sampleRate > maxSampleRate)
+    if (! std::isfinite(reader->sampleRate)
+        || reader->sampleRate < minSampleRate || reader->sampleRate > maxSampleRate)
     {
         DBG("SampleLoader: Unsupported sample rate (" + juce::String(reader->sampleRate) + "Hz): " + file.getFileName());
-        lastErrorMessage = "Unsupported sample rate (" + juce::String((int)reader->sampleRate) + "Hz): " + file.getFileName();
+        lastErrorMessage = "Unsupported sample rate: " + file.getFileName();
         return false;
     }
 
     // --- Attempt load into slot ---
-    // Reader ownership passes back to loadFromFile, so release here
-    // Note: loadFromFile will create its own reader internally
+    // loadFromFile creates and validates its own reader before allocating.
     reader.reset();
 
     // Decode + resample on the calling thread without holding the audio lock —
@@ -87,17 +87,31 @@ bool SampleLoader::loadSample(int slotIndex, const juce::File& file)
             return false;
         }
 
-        resampleBuffer(pending.audioBuffer, pending.sampleRate);
-        pending.sampleRate = currentSampleRate;
+        double targetSampleRate;
+        {
+            const juce::ScopedLock sl(callbackLock);
+            targetSampleRate = currentSampleRate;
+        }
+        if (! resampleBuffer(pending.audioBuffer, pending.sampleRate, targetSampleRate))
+        {
+            lastErrorMessage = "Sample is too large at the current playback rate: " + file.getFileName();
+            return false;
+        }
+        pending.sampleRate = targetSampleRate;
 
         // Hand the prepared slot to the audio side under the callback lock.
         {
             const juce::ScopedLock sl(callbackLock);
+            if (! juce::exactlyEqual(targetSampleRate, currentSampleRate))
+            {
+                lastErrorMessage = "Playback rate changed while loading; please load the sample again.";
+                return false;
+            }
             slots[slotIndex] = std::move(pending);
         }
 
         lastErrorMessage.clear();
-        DBG("Slot " + juce::String(slotIndex) + " loaded: " + slots[slotIndex].displayName);
+        DBG("Slot " + juce::String(slotIndex) + " loaded: " + file.getFileName());
     }
     else
     {
@@ -128,14 +142,18 @@ void SampleLoader::clearSlot(int slotIndex)
 
 void SampleLoader::setSampleRate(double newSampleRate)
 {
+    if (! std::isfinite(newSampleRate) || newSampleRate <= 0.0)
+        return;
+
+    // Called during prepareToPlay, while the host has stopped processing.
+    // Serialize this lifecycle mutation with sample loading/state restoration.
+    const juce::ScopedLock sl(callbackLock);
     if (juce::exactlyEqual(newSampleRate, currentSampleRate))
         return;
 
     currentSampleRate = newSampleRate;
     DBG("SampleLoader: Sample rate set to " + juce::String(newSampleRate));
 
-    // Resample each slot off-lock, then swap in under the lock — keeps
-    // processBlock un-stalled across the (potentially long) resample loop.
     for (int i = 0; i < numSlots; ++i)
     {
         if (!slots[i].isLoaded)
@@ -143,25 +161,35 @@ void SampleLoader::setSampleRate(double newSampleRate)
 
         juce::AudioBuffer<float> resampled;
         resampled.makeCopyOf(slots[i].audioBuffer);
-        resampleBuffer(resampled, slots[i].sampleRate);
+        if (! resampleBuffer(resampled, slots[i].sampleRate, currentSampleRate))
+        {
+            slots[i].clear();
+            lastErrorMessage = "A sample exceeded the decoded size limit at the new playback rate.";
+            continue;
+        }
 
-        const juce::ScopedLock sl(callbackLock);
         slots[i].audioBuffer = std::move(resampled);
         slots[i].sampleRate = currentSampleRate;
     }
 
-    //updateSynthesiserSounds();
 }
 
-void SampleLoader::resampleBuffer(juce::AudioBuffer<float>& buffer, double sourceSampleRate)
+bool SampleLoader::resampleBuffer(juce::AudioBuffer<float>& buffer, double sourceSampleRate,
+                                  double targetSampleRate)
 {
-    if (juce::exactlyEqual(sourceSampleRate, currentSampleRate))
-        return;  // No resampling needed
+    if (! std::isfinite(sourceSampleRate) || sourceSampleRate <= 0.0
+        || ! std::isfinite(targetSampleRate) || targetSampleRate <= 0.0)
+        return false;
+    if (juce::exactlyEqual(sourceSampleRate, targetSampleRate))
+        return true;
 
-    const double ratio = sourceSampleRate / currentSampleRate;
+    const double ratio = sourceSampleRate / targetSampleRate;
     const int numChannels = buffer.getNumChannels();
     const int originalNumSamples = buffer.getNumSamples();
-    const int resampledNumSamples = juce::roundToInt((double)originalNumSamples / ratio);
+    const double length = (double) originalNumSamples / ratio;
+    if (! std::isfinite(length) || length <= 0.0 || length > SampleSlot::maxDecodedSamples)
+        return false;
+    const int resampledNumSamples = juce::jmax(1, juce::roundToInt(length));
 
     juce::AudioBuffer<float> resampledBuffer(numChannels, resampledNumSamples);
 
@@ -173,7 +201,7 @@ void SampleLoader::resampleBuffer(juce::AudioBuffer<float>& buffer, double sourc
         const float* source = buffer.getReadPointer(ch);
         float* dest = resampledBuffer.getWritePointer(ch);
 
-        interpolator.process(ratio, source, dest, resampledNumSamples);
+        interpolator.process(ratio, source, dest, resampledNumSamples, originalNumSamples, 0);
     }
 
     buffer = std::move(resampledBuffer);
@@ -181,7 +209,8 @@ void SampleLoader::resampleBuffer(juce::AudioBuffer<float>& buffer, double sourc
     DBG("SampleLoader: Resampled " + juce::String(originalNumSamples) + " -> "
         + juce::String(resampledNumSamples) + " samples ("
         + juce::String(sourceSampleRate) + "Hz -> "
-        + juce::String(currentSampleRate) + "Hz)");
+        + juce::String(targetSampleRate) + "Hz)");
+    return true;
 }
 
 

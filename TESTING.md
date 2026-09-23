@@ -1,5 +1,7 @@
 # TESTING.md — Formal plugin testing for Robin Control Lite
 
+> **v2.0.0 final audit — 2026-09-22:** `FINAL_RELEASE_2.0.0.md` records current final artifacts and validation. `scripts/test-sanitizers.sh` now enables Moonbase and runs both the engine/processor suite and synthetic signed-license suite under ASan/UBSan and TSan. Windows CI runs both test executables; AAX remains outside CI. Preserve the sample-allocation/interpolation, state-input, cache-size and Unicode-path regressions. Older coverage notes below describe their date, not the current ceiling.
+
 This is the testing playbook for Robin Control Lite (and, by design, any future
 `conduit.dsp` JUCE plugin — see [§7 Reusing this for another plugin](#7-reusing-this-for-another-plugin)).
 
@@ -18,6 +20,13 @@ Windows. The whole point of what follows is to make that class of bug
 ---
 
 ## 0. TL;DR — the layered pipeline
+
+For local standalone testing in VS Code, select **Launch Robin Control Lite
+(Standalone)** in Run and Debug and press **F5**. The task enables
+`RCL_BUILD_STANDALONE=ON`, builds the Debug app, and launches it with CodeLLDB.
+Load samples and use Trigger or the row audition buttons; MIDI devices can be
+selected through the standalone app's audio/MIDI settings. The CMake option
+defaults to OFF for release builds, and the standalone app is not distributed.
 
 | Layer | Tool | Status | Catches |
 |---|---|---|---|
@@ -81,6 +90,42 @@ pluginval already covers most of what it checks, so treat it as a belt-and-brace
 extra rather than a requirement.
 
 ---
+
+### AAX Native validation (macOS)
+
+Build the universal AAX using `RELEASE_2.0.0.md`, then run:
+
+```bash
+python3 scripts/test-aax-native.py \
+  'NewProject/build-release-2.0.0/RobinControlLite_artefacts/Release/AAX/Robin Control Lite.aaxplugin' \
+  --output Releases/Testing/2.0.0/aax-native-new-run
+```
+
+Use a new output directory each time. The validator needs unrestricted local
+sockets and writes helper logs in its SDK installation. The runner checks each
+result and returns nonzero on failure; DigiShell itself can exit 0 on failures.
+It confirms Lite's Native-only descriptor and runs every installed test except
+`test.cycle_counts`, which Avid defines as an AAX DSP/HDX hardware test. That
+exclusion is recorded as N/A, not a pass. See `AAX_BUILD_AND_SIGNING.md` for the
+independent DAE helper failure reproduced without loading a plugin.
+
+`NewProject/Resources/AAX/RobinControlLitePages.xml` must include every active
+parameter ID in its `PgTL` automation list, plus JUCE's `MasterBypassID`, and
+match the existing mono/stereo AAX type IDs. Avid's loading and automation-list
+tests verify this resource in the actual bundle. Rerun this suite on the final
+PACE-signed AAX and after later Moonbase integration; these checks do not replace
+retail Pro Tools host testing.
+
+**September 22, 2026 evidence:** all 13 applicable checks passed on both unsigned
+and corrected PACE-signed macOS 2.0.0 AAX. Installed signatures/file hashes were
+verified, and Alex reported the candidate working in regular Pro Tools / Intro
+(app metadata `26.4.1.179`). This establishes basic user-confirmed host acceptance;
+it does not mark every manual host-matrix item complete. See `RELEASE_2.0.0.md`.
+
+**Windows:** follow `WINDOWS_BUILD_AND_AAX.md` for a fresh clone and native build.
+The AAX runner and PACE setup script currently contain macOS paths/process
+handling and must be adapted before Windows use. Windows VST3 CI does not test
+AAX; retain separate Windows signed-bundle and retail-host evidence.
 
 ## 1b. Unit / correctness tests (set up, passing)
 
@@ -235,6 +280,10 @@ Keep a short manual checklist per release. You don't need to *own* every DAW:
 ### Per-host smoke checklist
 - [ ] Plugin scans/loads without crashing
 - [ ] GUI opens; **click every button** (Load, Save, Trigger, Panic, About)
+- [ ] Size menu starts at 100% with no saved preference; all six sizes (25–150%)
+      resize the host window, keep controls clickable, and survive editor reopen.
+- [ ] MIDI, Trigger, and row audition flash the correct sample row in white;
+      repeated hits restart the fade, and the flash disappears after 180 ms.
 - [ ] Load a sample via the file chooser
 - [ ] **Drag a file in from Explorer/Finder** (works), and from the DAW browser (host-dependent)
 - [ ] Play notes; automate a parameter
@@ -338,3 +387,16 @@ above are the same regardless of which plugin you point them at.
 - Clang Function Effect Analysis — https://clang.llvm.org/docs/FunctionEffectAnalysis.html
 - Sentry Crashpad backend — https://docs.sentry.io/platforms/native/configuration/backends/crashpad/
 - Sentry minidumps — https://docs.sentry.io/platforms/native/guides/minidumps/
+
+## Moonbase licensing regression coverage (2026-09-22)
+
+See `MOONBASE_INTEGRATION.md` for separate macOS/Windows commands and evidence.
+With `RCL_ENABLE_MOONBASE=ON` and `RCL_BUILD_TESTS=ON`, build/run
+`RobinControlLiteLicensingTests` as well as `RobinControlLiteTests`. The former
+links the actual protected plugin and uses synthetic signed fixtures to check
+startup validation, grace, invalid-token rejection, audio gating, editor closure,
+offline import and local deactivation. The latter deliberately compiles DRM OFF
+so existing DSP/fuzz assertions retain audio coverage. No production token or
+private key is needed. Existing sanitizer scripts still target the DRM-free
+engine harness; licensing-specific sanitizer and real-tenant host tests remain
+separate work. CI now builds DRM ON/OFF on both desktop operating systems.

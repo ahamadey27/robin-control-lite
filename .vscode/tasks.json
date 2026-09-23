@@ -2,6 +2,31 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "cmake configure standalone",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "-S", "${workspaceFolder}/NewProject",
+                "-B", "${workspaceFolder}/NewProject/build",
+                "-DCMAKE_BUILD_TYPE=Debug",
+                "-DRCL_BUILD_STANDALONE=ON"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "cmake build standalone",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "--build", "${workspaceFolder}/NewProject/build",
+                "--config", "Debug",
+                "--target", "RobinControlLite_Standalone",
+                "--parallel"
+            ],
+            "dependsOn": "cmake configure standalone",
+            "problemMatcher": ["$gcc"]
+        },
+        {
             "label": "cmake build",
             "type": "shell",
             "command": "cmake",

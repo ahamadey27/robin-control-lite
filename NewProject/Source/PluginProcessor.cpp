@@ -158,6 +158,10 @@ void NewProjectAudioProcessor::changeProgramName(int index, const juce::String& 
 //==============================================================================
 void NewProjectAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
+#if RCL_ENABLE_MOONBASE
+    licenseGate.prepare(sampleRate);
+    licenseGate.reset(moonbaseLicense->isLicensed());
+#endif
     DBG("prepareToPlay called - Sample Rate: " + juce::String(sampleRate) +
         " Hz, Buffer Size: " + juce::String(samplesPerBlock) + " samples");
 
@@ -328,6 +332,15 @@ void NewProjectAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, ju
         synthesiser.allNotesOff(0, false);
     }
 
+    // Publish only a note that survives Panic, and only when the pool is loaded.
+    if (!loadedSlotIndices.empty())
+        for (const auto metadata : midiMessages)
+            if (metadata.getMessage().isNoteOn())
+            {
+                publishPlaybackEvent(lastPlayedSlot);
+                break;
+            }
+
     //==============================================================================
     // RENDER AUDIO FROM SYNTHESISER
 
@@ -409,6 +422,13 @@ void NewProjectAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, ju
     toneControl.updateFilters(toneLowGain, toneHighGain);
     toneControl.processBlock(buffer);
 
+#if RCL_ENABLE_MOONBASE
+    // Covers MIDI, Trigger, audition and offline bounce, with the editor closed.
+    // No disk I/O, cryptography, locks or networking on the audio thread.
+    licenseGate.process(buffer.getArrayOfWritePointers(), buffer.getNumChannels(),
+                        buffer.getNumSamples(), moonbaseLicense->isLicensed());
+#endif
+
     //==============================================================================
     // CAPTURE OUTPUT PEAK FOR LEVEL METER
 
@@ -447,16 +467,19 @@ void NewProjectAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
     
     // ADD: save sample file paths
     juce::ValueTree sampleData("SampleData");
-    for (int i = 0; i < NUM_SAMPLE_SLOTS; ++i)
     {
-        if (sampleSlots[i].isLoaded)
+        const juce::ScopedLock sl(getCallbackLock());
+        for (int i = 0; i < NUM_SAMPLE_SLOTS; ++i)
         {
-            DBG("  Saving slot " + juce::String(i) + ": " + sampleSlots[i].sourceFile.getFullPathName());
-            juce::ValueTree slot("Slot");
-            slot.setProperty("index", i, nullptr);
-            slot.setProperty("path", sampleSlots[i].sourceFile.getFullPathName(), nullptr);
-            slot.setProperty("displayName", sampleSlots[i].displayName, nullptr);
-            sampleData.appendChild(slot, nullptr);
+            if (sampleSlots[i].isLoaded)
+            {
+                DBG("  Saving slot " + juce::String(i) + ": " + sampleSlots[i].sourceFile.getFullPathName());
+                juce::ValueTree slot("Slot");
+                slot.setProperty("index", i, nullptr);
+                slot.setProperty("path", sampleSlots[i].sourceFile.getFullPathName(), nullptr);
+                slot.setProperty("displayName", sampleSlots[i].displayName, nullptr);
+                sampleData.appendChild(slot, nullptr);
+            }
         }
     }
     customData.appendChild(sampleData, nullptr);
@@ -480,6 +503,10 @@ void NewProjectAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 
 void NewProjectAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
+    // Presets store paths and parameters, not audio. Refuse oversized input
+    // before XML parsing or signed-to-unsigned size conversions.
+    if (data == nullptr || sizeInBytes <= 0 || sizeInBytes > 8 * 1024 * 1024)
+        return;
     DBG("=== LOADING PLUGIN STATE ===");
 
     std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
@@ -532,6 +559,7 @@ void NewProjectAudioProcessor::setStateInformation(const void* data, int sizeInB
 
         juce::StringArray missingSamples;
 
+        std::array<bool, NUM_SAMPLE_SLOTS> restored {};
         for (auto slot : sampleDataCopy)
         {
             int index        = slot.getProperty("index",       -1);
@@ -540,8 +568,10 @@ void NewProjectAudioProcessor::setStateInformation(const void* data, int sizeInB
 
             DBG("  Restoring slot " + juce::String(index) + ": " + path);
 
-            if (index < 0 || index >= NUM_SAMPLE_SLOTS)
+            if (! slot.hasType("Slot") || index < 0 || index >= NUM_SAMPLE_SLOTS
+                || restored[static_cast<size_t>(index)] || ! juce::File::isAbsolutePath(path))
                 continue;
+            restored[static_cast<size_t>(index)] = true;
 
             juce::File file(path);
             if (file.existsAsFile())
@@ -1041,12 +1071,11 @@ void NewProjectAudioProcessor::advanceRoundRobin()
 //==============================================================================
 void NewProjectAudioProcessor::auditionSample(int slotIndex)
 {
+    const juce::ScopedLock sl(getCallbackLock());
     if (slotIndex < 0 || slotIndex >= NUM_SAMPLE_SLOTS || !sampleSlots[slotIndex].isLoaded)
         return;
 
     {
-        const juce::ScopedLock sl(getCallbackLock());
-
         // Force the synth to play this specific slot without advancing round-robin
         if (synthesiser.getNumSounds() == 0)
         {
@@ -1062,6 +1091,18 @@ void NewProjectAudioProcessor::auditionSample(int slotIndex)
     }
 
     synthesiser.noteOn(1, 60, 1.0f);
+    publishPlaybackEvent(slotIndex);
+}
+
+void NewProjectAudioProcessor::publishPlaybackEvent(int slotIndex) noexcept
+{
+    if (slotIndex < 0 || slotIndex >= NUM_SAMPLE_SLOTS)
+        return;
+
+    // Both writers (processBlock and auditionSample) hold the callback lock.
+    const auto nextSequence = (playbackEvent.load(std::memory_order_relaxed) >> 8) + 1;
+    playbackEvent.store((nextSequence << 8) | static_cast<juce::uint64>(slotIndex + 1),
+                        std::memory_order_release);
 }
 
 void NewProjectAudioProcessor::swapSamples(int indexA, int indexB)
@@ -1125,7 +1166,7 @@ void NewProjectAudioProcessor::savePreset(const juce::File& file)
 
 void NewProjectAudioProcessor::loadPreset(const juce::File& file)
 {
-    if (!file.existsAsFile())
+    if (!file.existsAsFile() || file.getSize() > 8 * 1024 * 1024)
     {
         DBG("ERROR: Preset file not found: " + file.getFullPathName());
         return;

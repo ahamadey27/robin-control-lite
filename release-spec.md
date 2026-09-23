@@ -1,5 +1,9 @@
 # release-spec.md — Robin Control Lite v1.0 Ship Playbook
 
+> **2.0.0 work:** use [RELEASE_2.0.0.md](RELEASE_2.0.0.md) and
+> [AAX_BUILD_AND_SIGNING.md](AAX_BUILD_AND_SIGNING.md). The v1.0 evidence below is
+> historical; its PACE command examples have not been verified with PACE 6.
+
 > **Purpose.** Sequential, command-level checklist to take the current build to a signed, notarized, distributable v1.0 across **AU + VST3 + AAX** on **Mac + Windows** (no Standalone). The broader `spec.md` covers identity decisions, format rationale, host matrix, and migration history; this file is execution-only.
 >
 > **Companion docs.** `spec.md` (decisions/reference), `release-prep-checklist.md` (pre-ship technical state), `spec-paperwork.md` (admin/legal). When this file disagrees with anything older, this file wins for v1.0 ship.
@@ -75,6 +79,7 @@ Pick a path on the day Mac + Win VST3/AU builds are validated and stapled:
 - [x] AAX SDK gate detects `~/SDKs/aax-sdk-2-9-0/Interfaces/AAX.h` → enables AAX format; absent → builds VST3/AU only — **done 2026-05-02**
 - [x] Standalone `/Applications` post-build copy hook removed from CMakeLists — **done 2026-05-02**
 - [x] `.vscode/launch.json` switched to attach-to-process pattern (Standalone gone) — **done 2026-05-02**
+- [x] Local standalone debugging restored behind `RCL_BUILD_STANDALONE=ON`, default OFF; F5 builds and launches the app. Public installers still exclude Standalone — **done 2026-09-20**
 - [x] CLAUDE.md "Build" section updated (drop Standalone bullet, document attach-debug pattern) — **done 2026-05-02**
 - [x] **Edit `installer/build-installer.sh`** to drop the Standalone component pkg — **done 2026-05-05**
 - [x] **Edit `installer/distribution.xml`** to remove the Standalone choice line — **done 2026-05-05**

@@ -24,6 +24,9 @@ jobs:
   # ==========================================================================
   macos:
     runs-on: macos-14
+    strategy:
+      matrix:
+        moonbase: ["OFF", "ON"]
     steps:
       - uses: actions/checkout@v4
 
@@ -31,10 +34,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: NewProject/build/_deps
-          key: juce-macos-8.0.4
+          key: juce-macos-8.0.15
 
       - name: Configure (Release)
-        run: cmake -S NewProject -B NewProject/build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S NewProject -B NewProject/build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DRCL_ENABLE_MOONBASE=${{ matrix.moonbase }} -DRCL_FINAL_RELEASE=${{ matrix.moonbase }}
 
       - name: Build
         run: cmake --build NewProject/build -j3
@@ -65,7 +68,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: macos-plugins
+          name: macos-plugins-moonbase-${{ matrix.moonbase }}
           path: |
             NewProject/build/RobinControlLite_artefacts/**/*.vst3
             NewProject/build/RobinControlLite_artefacts/**/*.component
@@ -73,6 +76,9 @@ jobs:
   # ==========================================================================
   windows:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        moonbase: ["OFF", "ON"]
     steps:
       - uses: actions/checkout@v4
 
@@ -80,10 +86,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: NewProject/build/_deps
-          key: juce-windows-8.0.4
+          key: juce-windows-8.0.15
 
       - name: Configure (Release)
-        run: cmake -S NewProject -B NewProject/build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S NewProject -B NewProject/build -A x64 -DCMAKE_BUILD_TYPE=Release -DRCL_ENABLE_MOONBASE=${{ matrix.moonbase }} -DRCL_FINAL_RELEASE=${{ matrix.moonbase }} -DRCL_BUILD_TESTS=ON
 
       - name: Build
         run: cmake --build NewProject/build --config Release -j3
@@ -95,6 +101,13 @@ jobs:
           $vst3 = Get-ChildItem -Path NewProject/build/RobinControlLite_artefacts -Recurse -Directory -Filter *.vst3 | Select-Object -First 1
           echo "vst3=$($vst3.FullName)" >> $env:GITHUB_OUTPUT
           echo "Found VST3: $($vst3.FullName)"
+
+      - name: Engine and processor regression tests
+        run: ./NewProject/build/tests/RobinControlLiteTests_artefacts/Release/RobinControlLiteTests.exe
+
+      - name: Licensing regression tests
+        if: matrix.moonbase == 'ON'
+        run: ./NewProject/build/tests/RobinControlLiteLicensingTests_artefacts/Release/RobinControlLiteLicensingTests.exe
 
       - name: Download pluginval
         shell: pwsh
@@ -110,7 +123,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: windows-plugins
+          name: windows-plugins-moonbase-${{ matrix.moonbase }}
           path: NewProject/build/RobinControlLite_artefacts/**/*.vst3
 
   # ==========================================================================
@@ -124,16 +137,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build-tests/_deps
-          key: juce-tests-8.0.4
+          key: juce-tests-8.0.15
 
       - name: Configure (tests)
-        run: cmake -S NewProject -B build-tests -DRCL_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DJUCE_AAX_SDK_PATH=/nonexistent
+        run: cmake -S NewProject -B build-tests -DRCL_BUILD_TESTS=ON -DRCL_ENABLE_MOONBASE=ON -DCMAKE_BUILD_TYPE=Debug -DJUCE_AAX_SDK_PATH=/nonexistent
 
       - name: Build tests
-        run: cmake --build build-tests --target RobinControlLiteTests -j3
+        run: cmake --build build-tests --target RobinControlLiteTests RobinControlLiteLicensingTests -j3
 
       - name: Run unit tests
         run: ./build-tests/tests/RobinControlLiteTests_artefacts/Debug/RobinControlLiteTests
+
+      - name: Run licensing tests
+        run: ./build-tests/tests/RobinControlLiteLicensingTests_artefacts/Debug/RobinControlLiteLicensingTests
 
   # ==========================================================================
   # Bug-class layer — ASan/UBSan + TSan over the test target (Clang only).

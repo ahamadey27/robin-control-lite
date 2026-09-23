@@ -5,6 +5,26 @@ This project follows [semantic versioning](https://semver.org/).
 
 ---
 
+## v2.0.0 — release candidate (not yet published)
+
+### Added
+- Optional local standalone app and direct VS Code F5 launch for development testing.
+- Plugin size menu: 25%, 50%, 75%, 100%, 125%, and 150%. Defaults to 100%
+  and remembers the user's choice separately from Robin Control.
+- A translucent white, 180 ms flash on the triggered sample row for MIDI,
+  Trigger, and sample audition playback.
+
+### Fixed
+- Updated font measurement calls for compatibility with newer local JUCE builds.
+
+### Changed
+- Header button accents match Robin Control: green Size, orange Load, muted red
+  Save, and amber Trigger.
+- Preparing universal macOS VST3, AU, and AAX builds. AAX distribution remains
+  gated on verified PACE signing and retail Pro Tools testing.
+
+---
+
 ## v1.0.1 — 2026-06-14
 
 ### Added

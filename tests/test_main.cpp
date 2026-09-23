@@ -104,9 +104,10 @@ namespace rcltest
     // Used to exercise SampleSlot::loadFromFile's decoded-length guard without
     // allocating (or OOM-ing on) the claimed size.
     inline juce::File writeWavWithClaimedFrames (juce::int64 claimedFrames,
-                                                 int actualDataBytes, double sr = 44100.0)
+                                                 int actualDataBytes, double sr = 44100.0,
+                                                 int channels = 1, int bits = 16, int format = 1)
     {
-        const int blockAlign = 2;   // 1 channel * 16-bit
+        const int blockAlign = channels * (bits / 8);
         const juce::int64 claimedData = claimedFrames * blockAlign;
 
         juce::MemoryOutputStream mo;
@@ -115,12 +116,12 @@ namespace rcltest
         mo.write ("WAVE", 4);
         mo.write ("fmt ", 4);
         mo.writeInt (16);
-        mo.writeShort (1);                            // PCM
-        mo.writeShort (1);                            // mono
+        mo.writeShort ((short) format);
+        mo.writeShort ((short) channels);
         mo.writeInt ((int) sr);
         mo.writeInt ((int) sr * blockAlign);          // byte rate
         mo.writeShort ((short) blockAlign);
-        mo.writeShort (16);                           // bits
+        mo.writeShort ((short) bits);
         mo.write ("data", 4);
         mo.writeInt ((int) claimedData);              // the lie: claimed data size
         if (actualDataBytes > 0)
@@ -802,6 +803,53 @@ public:
             f.deleteFile();
         }
 
+        beginTest ("multichannel decoded allocation is bounded before reading");
+        {
+            auto f = rcltest::writeWavWithClaimedFrames (10000000, 32, 44100.0, 8);
+            expect (! proc->sampleLoader.loadSample (0, f), "80M decoded floats must be rejected");
+            f.deleteFile();
+            f = rcltest::writeWavWithClaimedFrames (1, 256, 44100.0, 128);
+            expect (! proc->sampleLoader.loadSample (0, f), "excessive channel count must be rejected");
+            f.deleteFile();
+        }
+
+        beginTest ("non-finite floating-point audio is rejected before DSP");
+        {
+            auto f = rcltest::writeWavWithClaimedFrames (1, 4, 44100.0, 1, 32, 3);
+            juce::MemoryBlock bytes;
+            f.loadFileAsData(bytes);
+            juce::MemoryOutputStream nan;
+            nan.writeInt(0x7fc00000);
+            std::memcpy(static_cast<char*>(bytes.getData()) + 44, nan.getData(), 4);
+            f.replaceWithData(bytes.getData(), bytes.getSize());
+            expect (! proc->sampleLoader.loadSample (0, f), "NaN audio must be rejected");
+            f.deleteFile();
+        }
+
+        beginTest ("tiny files resample safely at fractional boundary ratios");
+        {
+            for (int length = 1; length < 32; ++length)
+            {
+                auto f = rcltest::writeTempWav(rng, length, 44100.0);
+                proc->prepareToPlay(192000.0, 256);
+                expect(proc->sampleLoader.loadSample(0, f));
+                expect(proc->sampleSlots[0].audioBuffer.getNumSamples() > 0);
+                proc->prepareToPlay(22050.0, 256);
+                renderABit();
+                f.deleteFile();
+            }
+            proc->prepareToPlay(48000.0, 256);
+        }
+
+        beginTest ("oversized state is rejected before parsing its memory");
+        {
+            const char dummy = 0;
+            proc->setStateInformation(&dummy, 8 * 1024 * 1024 + 1);
+            proc->setStateInformation(nullptr, 100);
+            proc->setStateInformation(&dummy, -1);
+            renderABit();
+        }
+
         beginTest ("odd-but-valid formats fold to mono, resample, and play");
         {
             // Generation is WAV/AIFF only (JUCE's own uncompressed writers). We do
@@ -855,7 +903,89 @@ public:
 };
 
 //==============================================================================
+// Playback notifications cross from audio to UI without reading mutable pool state.
+class PlaybackEventTests : public juce::UnitTest
+{
+public:
+    PlaybackEventTests() : juce::UnitTest("Playback events") {}
+
+    void runTest() override
+    {
+        NewProjectAudioProcessor proc;
+        proc.prepareToPlay(44100.0, 128);
+        juce::AudioBuffer<float> buffer(2, 128);
+        juce::MidiBuffer midi;
+        auto render = [&]
+        {
+            const juce::ScopedLock lock(proc.getCallbackLock());
+            proc.processBlock(buffer, midi);
+            midi.clear();
+        };
+
+        beginTest("Empty pool does not report playback");
+        expectEquals(NewProjectAudioProcessor::getPlaybackEventSlot(proc.getPlaybackEvent()), -1);
+        proc.requestTrigger();
+        render();
+        expect(proc.getPlaybackEvent() == 0);
+
+        juce::Random rng(1234);
+        const auto wav = rcltest::writeTempWav(rng, 4096);
+        expect(proc.sampleLoader.loadSample(3, wav));
+        proc.rebuildLoadedIndices();
+
+        beginTest("MIDI and repeated Trigger hits publish distinct events for the same slot");
+        midi.addEvent(juce::MidiMessage::noteOn(1, 72, 0.8f), 0);
+        render();
+        auto previous = proc.getPlaybackEvent();
+        expectEquals(NewProjectAudioProcessor::getPlaybackEventSlot(previous), 3);
+        proc.requestTrigger();
+        render();
+        expect(proc.getPlaybackEvent() != previous);
+        expectEquals(NewProjectAudioProcessor::getPlaybackEventSlot(proc.getPlaybackEvent()), 3);
+
+        beginTest("Idle, note-off, and Panic do not flash");
+        previous = proc.getPlaybackEvent();
+        render();
+        expect(proc.getPlaybackEvent() == previous);
+        midi.addEvent(juce::MidiMessage::noteOff(1, 72), 0);
+        render();
+        expect(proc.getPlaybackEvent() == previous);
+        proc.requestTrigger();
+        proc.requestPanic();
+        render();
+        expect(proc.getPlaybackEvent() == previous);
+
+        beginTest("Audition reports the selected row and ignores empty or invalid slots");
+        expect(proc.sampleLoader.loadSample(12, wav));
+        proc.rebuildLoadedIndices();
+        proc.auditionSample(12);
+        expect(proc.getPlaybackEvent() != previous);
+        expectEquals(NewProjectAudioProcessor::getPlaybackEventSlot(proc.getPlaybackEvent()), 12);
+        previous = proc.getPlaybackEvent();
+        proc.auditionSample(-1);
+        proc.auditionSample(20);
+        proc.auditionSample(0);
+        expect(proc.getPlaybackEvent() == previous);
+
+        beginTest("Series reports the slot actually selected, including gaps in the pool");
+        auto* mode = proc.apvts.getParameter(ParameterIDs::playbackMode);
+        mode->setValueNotifyingHost(0.0f);
+        proc.resetPlaybackPosition();
+        for (int expectedSlot : { 3, 12, 3 })
+        {
+            proc.requestTrigger();
+            render();
+            expectEquals(NewProjectAudioProcessor::getPlaybackEventSlot(proc.getPlaybackEvent()),
+                         expectedSlot);
+        }
+
+        proc.releaseResources();
+        wav.deleteFile();
+    }
+};
+
 // Auto-registering instances.
+static PlaybackEventTests        playbackEventTests;
 static RandomizationEngineTests randomizationEngineTests;
 static MidiMapperTests          midiMapperTests;
 static ProcessorFuzzTests        processorFuzzTests;

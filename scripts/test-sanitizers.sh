@@ -17,10 +17,8 @@
 # NOTE: these are Clang/GCC tools — NOT MSVC. Run on macOS or Linux. Most defects
 # they find are cross-platform, so catching them here also fixes Windows.
 #
-# COVERAGE: today the test target compiles the pure-logic units. As the target
-# grows to instantiate NewProjectAudioProcessor and hammer processBlock /
-# setStateInformation (the crash-class paths), this script's coverage extends to
-# them automatically — no script changes needed.
+# COVERAGE: engine/state/decode fuzz plus DRM-enabled processor, synthetic signed
+# licenses, storage and activation-controller lifecycle. No real license issued.
 
 set -euo pipefail
 
@@ -40,14 +38,19 @@ run_pass() {
 
     cmake -S "${SRC}" -B "${build_dir}" \
         -DRCL_BUILD_TESTS=ON \
+        -DRCL_ENABLE_MOONBASE=ON \
+        -DRCL_COPY_PLUGIN_AFTER_BUILD=OFF \
+        "-DFETCHCONTENT_SOURCE_DIR_MOONBASE_CPP=${RCL_MOONBASE_SOURCE:-}" \
         -DCMAKE_BUILD_TYPE=Debug \
         -DJUCE_AAX_SDK_PATH=/nonexistent \
         -DCMAKE_C_FLAGS="${san_flags} -fno-omit-frame-pointer -g" \
         -DCMAKE_CXX_FLAGS="${san_flags} -fno-omit-frame-pointer -g" \
+        -DCMAKE_OBJC_FLAGS="${san_flags} -fno-omit-frame-pointer -g" \
+        -DCMAKE_OBJCXX_FLAGS="${san_flags} -fno-omit-frame-pointer -g" \
         -DCMAKE_EXE_LINKER_FLAGS="${san_flags}" \
-        > "${build_dir}.cfg.log" 2>&1
+        > "${build_dir}.cfg.log" 2>&1 || return 1
 
-    cmake --build "${build_dir}" --target "${TARGET}" -j3 > "${build_dir}.build.log" 2>&1
+    cmake --build "${build_dir}" --target "${TARGET}" RobinControlLiteLicensingTests -j3 > "${build_dir}.build.log" 2>&1 || return 1
 
     local exe
     exe="$(find "${build_dir}/tests" -name "${TARGET}" -type f -perm +111 | head -1)"
@@ -55,7 +58,8 @@ run_pass() {
         red "  build produced no executable (see ${build_dir}.build.log)"
         return 1
     fi
-    "${exe}"
+    "${exe}" || return 1
+    "${build_dir}/tests/RobinControlLiteLicensingTests_artefacts/Debug/RobinControlLiteLicensingTests" || return 1
 }
 
 failures=0

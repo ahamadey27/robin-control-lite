@@ -20,6 +20,7 @@
     <choices-outline>
         <line choice="vst3" />
         <line choice="au" />
+        <line choice="aax" />
     </choices-outline>
 
     <choice id="vst3" title="VST3"
@@ -32,6 +33,12 @@
         <pkg-ref id="dsp.conduit.RobinControlLite.au" />
     </choice>
 
+    <choice id="aax" title="AAX (Pro Tools)"
+            description="Universal AAX Native plugin for Pro Tools. Installs to /Library/Application Support/Avid/Audio/Plug-Ins.">
+        <pkg-ref id="dsp.conduit.RobinControlLite.aax" />
+    </choice>
+
+    <pkg-ref id="dsp.conduit.RobinControlLite.aax" version="@VERSION@" auth="Root">RobinControlLite-AAX.pkg</pkg-ref>
     <pkg-ref id="dsp.conduit.RobinControlLite.vst3" version="@VERSION@" auth="Root">RobinControlLite-VST3.pkg</pkg-ref>
     <pkg-ref id="dsp.conduit.RobinControlLite.au"   version="@VERSION@" auth="Root">RobinControlLite-AU.pkg</pkg-ref>
 </installer-gui-script>
