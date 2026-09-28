@@ -1,16 +1,18 @@
 # Windows clone, build, and AAX handoff
 
-Last updated: 2026-09-24. Product: **Robin Control Lite 2.0.0**.
+Last updated: 2026-09-28. Product: **Robin Control Lite 2.0.0**.
 
 September 24 Windows beta evidence and DigiShell automation requirements are in
-`WINDOWS_BETA_2.0.0.md`. Final Windows builds, signing and retail-host acceptance
-remain separate checkpoints. The final-build instructions below are unchanged.
+`WINDOWS_BETA_2.0.0.md`. September 28 final VST3 build/test/signing and installer
+evidence is in `WINDOWS_FINAL_2.0.0.md`. Its later AAX + VST3 section records
+the final Windows AAX build and successful PACE/Azure signing. Retail-host
+acceptance remains a separate checkpoint.
 
 Read this on the Windows machine before configuring. These are preparation
-instructions derived from the repository and tool documentation, **not a record
-of a successful Windows 2.0.0 AAX build**. The macOS AAX has been signed, validated,
-installed, and reported working in regular Pro Tools / Intro. Windows AAX build,
-signing, validation, and retail-host acceptance remain to be established.
+instructions derived from the repository and tool documentation; actual Windows
+results are in `WINDOWS_FINAL_2.0.0.md`. The macOS AAX has been signed, validated,
+installed, and reported working in regular Pro Tools / Intro. Windows retail
+Pro Tools acceptance must be established separately.
 
 ## 1. Clone the right repository
 
@@ -158,11 +160,12 @@ For the first Windows AAX pass:
    authorized; a missing Windows cache is not evidence that a new product or
    signing certificate is needed. Do not place passwords in scripts or Git.
 3. Establish Windows platform signing requirements from that installed tool's
-   documentation. No Windows Authenticode certificate has been verified in this
-   session. The current PACE help describes Windows `--signid` as a certificate
+   documentation. The September 28 final build verified Conduit DSP LLC's Azure
+   Authenticode integration; use `scripts/sign-windows-aax.ps1` with the existing
+   Azure tooling and metadata. The current PACE help describes Windows `--signid` as a certificate
    thumbprint; the Mac Developer ID string is **not** a Windows signing identity.
-   Confirm the applicable certificate/signing arrangement before issuing a
-   command; do not claim this machine is signing-ready from the Mac results.
+   Azure instead uses `--signtool` and
+   `--explicitsigningoptions`. On a new machine, confirm its signing arrangement.
 4. Use the Windows-capable validator runner or invoke Windows DigiShell manually. Discover
    tests with `listtests`, inspect the actual descriptor, and run **every
    applicable** test before and after signing. Confirm the Windows toolkit's
@@ -175,6 +178,9 @@ For the first Windows AAX pass:
    Verify PACE's output identifies Conduit DSP LLC / Robin Control Lite and says
    **signed, not wrapped**. Verify the platform signature as required by the
    selected Windows signing workflow. Do not alter the signed payload afterward.
+   Windows PACE requires identical input/output paths: the signing script copies
+   to fresh staging first, then signs in place. Verify the inner x64 binary,
+   not the directory. Never run the signer over an existing signed output.
 6. Run Windows pluginval strictness 10 on the VST3 separately. That pass does not
    validate AAX. See the existing Windows CI job for its pluginval invocation.
 
@@ -239,8 +245,10 @@ audition while allowing sample/preset editing. Never log customer tokens.
 
 PACE is developer AAX signing only; no customer iLok/PACE DRM. Re-sign and
 revalidate Windows binaries; Mac validation is not Windows evidence. The Windows
-installer still needs review for these final DRM artifacts and optional AAX;
-the macOS installer guard does not protect Windows packaging.
+installer's `build-final.ps1` now guards final DRM VST3 artifacts and signs setup
+and uninstall through Azure. Its optional AAX packaging was validated with the
+signed final AAX and includes PACE/Authenticode checks; see
+`WINDOWS_FINAL_2.0.0.md`.
 
 For another plugin, follow the reuse section in `AAX_BUILD_AND_SIGNING.md` and
 substitute that product's identities, page table, targets, and PACE configuration.

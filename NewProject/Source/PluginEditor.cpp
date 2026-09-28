@@ -983,65 +983,69 @@ void NewProjectAudioProcessorEditor::paint(juce::Graphics& g)
     //      padding top/bottom, so drawing at N px actually gives N px of
     //      glyph, not N/2).
     //   3. 1-pixel morphological dilate + alpha ×1.4 boost for final bold.
-    static const juce::Image logo = [] {
-        auto src = juce::ImageCache::getFromMemory(
-            BinaryData::FULLLOGOemailwhite_png,
-            BinaryData::FULLLOGOemailwhite_pngSize);
-        const int W0 = src.getWidth(), H0 = src.getHeight();
+    // A static native image can retain Direct2D resources until DLL teardown,
+    // deadlocking the graphics driver under the Windows loader lock. Cache this
+    // per editor and perform the pixel processing in software.
+    if (logo.isNull())
+        logo = [] {
+            auto src = juce::ImageCache::getFromMemory(
+                BinaryData::FULLLOGOemailwhite_png,
+                BinaryData::FULLLOGOemailwhite_pngSize);
+            const int W0 = src.getWidth(), H0 = src.getHeight();
 
-        juce::Image keyed(juce::Image::ARGB, W0, H0, true);
-        for (int y = 0; y < H0; ++y)
-            for (int x = 0; x < W0; ++x)
-            {
-                const auto p = src.getPixelAt(x, y);
-                const int r = p.getRed(), g = p.getGreen(), b = p.getBlue();
-                const int whiteness = juce::jmin(juce::jmin(r, g), b);
-                const int a = 255 - whiteness;
-                if (a <= 0) continue;
-                const int nr = juce::jlimit(0, 255, (r - whiteness) * 255 / a);
-                const int ng = juce::jlimit(0, 255, (g - whiteness) * 255 / a);
-                const int nb = juce::jlimit(0, 255, (b - whiteness) * 255 / a);
-                keyed.setPixelAt(x, y, juce::Colour::fromRGBA(
-                    (juce::uint8)nr, (juce::uint8)ng, (juce::uint8)nb, (juce::uint8)a));
-            }
-
-        int minX = W0, minY = H0, maxX = -1, maxY = -1;
-        for (int y = 0; y < H0; ++y)
-            for (int x = 0; x < W0; ++x)
-                if (keyed.getPixelAt(x, y).getAlpha() > 8)
+            juce::Image keyed(juce::Image::ARGB, W0, H0, true, juce::SoftwareImageType());
+            for (int y = 0; y < H0; ++y)
+                for (int x = 0; x < W0; ++x)
                 {
-                    minX = juce::jmin(minX, x); minY = juce::jmin(minY, y);
-                    maxX = juce::jmax(maxX, x); maxY = juce::jmax(maxY, y);
+                    const auto p = src.getPixelAt(x, y);
+                    const int r = p.getRed(), g = p.getGreen(), b = p.getBlue();
+                    const int whiteness = juce::jmin(juce::jmin(r, g), b);
+                    const int a = 255 - whiteness;
+                    if (a <= 0) continue;
+                    const int nr = juce::jlimit(0, 255, (r - whiteness) * 255 / a);
+                    const int ng = juce::jlimit(0, 255, (g - whiteness) * 255 / a);
+                    const int nb = juce::jlimit(0, 255, (b - whiteness) * 255 / a);
+                    keyed.setPixelAt(x, y, juce::Colour::fromRGBA(
+                        (juce::uint8)nr, (juce::uint8)ng, (juce::uint8)nb, (juce::uint8)a));
                 }
-        if (maxX < minX) { minX = 0; maxX = W0 - 1; minY = 0; maxY = H0 - 1; }
 
-        minX = juce::jmax(0, minX - 1);
-        minY = juce::jmax(0, minY - 1);
-        maxX = juce::jmin(W0 - 1, maxX + 1);
-        maxY = juce::jmin(H0 - 1, maxY + 1);
-        auto cropped = keyed.getClippedImage({ minX, minY, maxX - minX + 1, maxY - minY + 1 });
-
-        const int W = cropped.getWidth(), H = cropped.getHeight();
-        juce::Image out(juce::Image::ARGB, W, H, true);
-        constexpr int dilateRadius = 3;    // wider neighborhood = thicker strokes
-        for (int y = 0; y < H; ++y)
-            for (int x = 0; x < W; ++x)
-            {
-                juce::Colour best;
-                juce::uint8 maxA = 0;
-                for (int dy = -dilateRadius; dy <= dilateRadius; ++dy)
-                    for (int dx = -dilateRadius; dx <= dilateRadius; ++dx)
+            int minX = W0, minY = H0, maxX = -1, maxY = -1;
+            for (int y = 0; y < H0; ++y)
+                for (int x = 0; x < W0; ++x)
+                    if (keyed.getPixelAt(x, y).getAlpha() > 8)
                     {
-                        const int nx = juce::jlimit(0, W - 1, x + dx);
-                        const int ny = juce::jlimit(0, H - 1, y + dy);
-                        const auto c = cropped.getPixelAt(nx, ny);
-                        if (c.getAlpha() > maxA) { maxA = c.getAlpha(); best = c; }
+                        minX = juce::jmin(minX, x); minY = juce::jmin(minY, y);
+                        maxX = juce::jmax(maxX, x); maxY = juce::jmax(maxY, y);
                     }
-                const int boosted = juce::jmin(255, (int)(maxA * 3.0f));
-                out.setPixelAt(x, y, best.withAlpha((juce::uint8)boosted));
-            }
-        return out;
-    }();
+            if (maxX < minX) { minX = 0; maxX = W0 - 1; minY = 0; maxY = H0 - 1; }
+
+            minX = juce::jmax(0, minX - 1);
+            minY = juce::jmax(0, minY - 1);
+            maxX = juce::jmin(W0 - 1, maxX + 1);
+            maxY = juce::jmin(H0 - 1, maxY + 1);
+            auto cropped = keyed.getClippedImage({ minX, minY, maxX - minX + 1, maxY - minY + 1 });
+
+            const int W = cropped.getWidth(), H = cropped.getHeight();
+            juce::Image out(juce::Image::ARGB, W, H, true, juce::SoftwareImageType());
+            constexpr int dilateRadius = 3;    // wider neighborhood = thicker strokes
+            for (int y = 0; y < H; ++y)
+                for (int x = 0; x < W; ++x)
+                {
+                    juce::Colour best;
+                    juce::uint8 maxA = 0;
+                    for (int dy = -dilateRadius; dy <= dilateRadius; ++dy)
+                        for (int dx = -dilateRadius; dx <= dilateRadius; ++dx)
+                        {
+                            const int nx = juce::jlimit(0, W - 1, x + dx);
+                            const int ny = juce::jlimit(0, H - 1, y + dy);
+                            const auto c = cropped.getPixelAt(nx, ny);
+                            if (c.getAlpha() > maxA) { maxA = c.getAlpha(); best = c; }
+                        }
+                    const int boosted = juce::jmin(255, (int)(maxA * 3.0f));
+                    out.setPixelAt(x, y, best.withAlpha((juce::uint8)boosted));
+                }
+            return out;
+        }();
 
     constexpr int logoH = 16;                                      // 10% smaller; fits 22-px footer with 3 px padding top/bottom
     const int logoW = juce::roundToInt(logoH * (float)logo.getWidth()

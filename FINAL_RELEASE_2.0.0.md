@@ -10,6 +10,13 @@ DRM-free Beta 1 plan. `MOONBASE_BETA_1.md` remains historical private-beta evide
 Read `WINDOWS_BUILD_AND_AAX.md` before moving to Windows and
 `ROBIN_CONTROL_AGENT_HANDOFF.md` for premium-product reuse.
 
+**Windows update, 2026-09-28:** [WINDOWS_FINAL_2.0.0.md](WINDOWS_FINAL_2.0.0.md)
+records the local final Moonbase VST3 build, Windows graphics-unload correction,
+passing engine/licensing and full GUI pluginval tests, Azure signatures and
+signed installer. The later AAX + VST3 section records PACE/Azure AAX signing,
+passing validation before and after signing, and the combined installer.
+Combined installation and manual licensed-host checks remain pending.
+
 ## Deliverables and identity
 
 - Installer: `Releases/Installers/Robin Control Lite 2.0.0.pkg`
@@ -130,9 +137,14 @@ Do not identify a remote HEAD alone as the source of these binaries.
 - [ ] Real permanent offline request/response exchange, disconnected restart,
   deactivation/revocation and network failures. Do not change the production
   machine's clock or delete a real license to test grace boundaries.
-- [ ] Windows x64 final build/tests, VST3 validation, Windows AAX signing/validation
-  and retail Pro Tools acceptance, then Windows packaging. Mac results do not
-  satisfy these checks; Windows compiler/runtime is not available here.
+- [x] Windows x64 final VST3 build/tests, full GUI validation, Azure signing and
+  signed installer build. See `WINDOWS_FINAL_2.0.0.md` for installation evidence
+  and the source difference from the macOS artifacts above.
+- [x] Windows AAX final build, PACE/Azure signing, all 13 applicable validator
+  checks before/after signing, and signed AAX + VST3 installer. See the later
+  September 28 section in `WINDOWS_FINAL_2.0.0.md`.
+- [ ] Install the combined Windows AAX + VST3 package and confirm retail
+  Pro Tools acceptance/playback.
 - [ ] Reconcile the website privacy/EULA/download flow with the updated repository
   disclosures. The website was not edited or published by this task.
 - [ ] Set up public free-license acquisition/existing-user migration. Current

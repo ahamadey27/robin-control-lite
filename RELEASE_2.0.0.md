@@ -1,5 +1,12 @@
 # Robin Control Lite 2.0.0 release checkpoints
 
+> **Windows update (2026-09-28):** [WINDOWS_FINAL_2.0.0.md](WINDOWS_FINAL_2.0.0.md)
+> records the final Windows Moonbase VST3, GUI-unload fix, passing automated
+> validation, Azure signing and signed installer. Its later section records final
+> Windows AAX PACE signing, unsigned/signed validation, and the combined AAX + VST3
+> installer. Combined installation and manual host
+> checks remain separate.
+
 > **Current final v2.0.0 handoff (2026-09-22):** Read [FINAL_RELEASE_2.0.0.md](FINAL_RELEASE_2.0.0.md) first. It supersedes earlier candidate/beta build status below. Final binaries require Moonbase ON and FINAL_RELEASE ON, use 90-day online offline grace, and retain version 2.0.0. The older DRM-free beta and unsigned/package-pending notes below are historical. Windows compilation follows [WINDOWS_BUILD_AND_AAX.md](WINDOWS_BUILD_AND_AAX.md); premium reuse follows [ROBIN_CONTROL_AGENT_HANDOFF.md](ROBIN_CONTROL_AGENT_HANDOFF.md).
 
 Started 2026-09-20. **Release candidate; not published.** This file is the current

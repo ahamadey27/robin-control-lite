@@ -29,6 +29,8 @@ public:
 
 private:
     NewProjectAudioProcessor& audioProcessor;
+    // Release image resources with the editor, before the host unloads the DLL.
+    juce::Image logo;
 
 #if RCL_ENABLE_MOONBASE
     juce::TextButton licenseButton { "License" };

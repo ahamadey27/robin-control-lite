@@ -1,61 +1,48 @@
-; Inno Setup script for Robin Control Lite v1.0.1 (Windows VST3-only, Path B).
-; Build the installer with:
-;   iscc installer\windows\RobinControlLite.iss
-; Output: Releases\Installers\RobinControlLite-1.0.1-Windows.exe
-;
-; AAX remains deferred (Path B). When AAX returns, uncomment the AAX [Files]
-; entry below.
-
-#define MyAppName       "Robin Control Lite"
-#define MyAppVersion    "1.0.1"
-#define MyAppPublisher  "Conduit DSP LLC"
-#define MyAppURL        "https://conduitdsp.com"
-; Build dir under NewProject/. release-spec §8.1 uses "build-release" for the
-; official release pipeline; "build" is the dev configure dir from §5.3. Switch
-; here to point the installer at whichever tree you want to package.
-#define MyBuildDir      "build-release"
+; Final Windows x64 VST3 and optional AAX installer. Invoke through build-final.ps1, which checks
+; the DRM/final markers, notices, publisher signature and overwrite protection.
+#define MyAppVersion "2.0.0"
+#ifndef MyBundle
+  #error Use build-final.ps1 with a validated signed final VST3 bundle.
+#endif
 
 [Setup]
-; Stable AppId — never change this between versions, or upgrades won't replace
-; the prior install.
+; Preserve the product AppId for upgrades from existing releases/betas.
 AppId={{8E1F12C7-3D4F-4E2A-A2D6-E5C92F4C7B3A}
-AppName={#MyAppName}
+AppName=Robin Control Lite
 AppVersion={#MyAppVersion}
-AppVerName={#MyAppName} {#MyAppVersion}
-AppPublisher={#MyAppPublisher}
-AppPublisherURL={#MyAppURL}
-AppSupportURL={#MyAppURL}
-AppUpdatesURL={#MyAppURL}
+AppVerName=Robin Control Lite {#MyAppVersion}
+AppPublisher=Conduit DSP LLC
+AppPublisherURL=https://conduitdsp.com
+AppSupportURL=https://conduitdsp.com
+AppUpdatesURL=https://conduitdsp.com
 DefaultDirName={autopf}\Common Files\VST3
 DisableDirPage=yes
 DisableProgramGroupPage=yes
 OutputDir=..\..\Releases\Installers
 OutputBaseFilename=RobinControlLite-{#MyAppVersion}-Windows
 PrivilegesRequired=admin
-UninstallDisplayName={#MyAppName}
+UninstallDisplayName=Robin Control Lite
 WizardStyle=modern
 Compression=lzma2
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 LicenseFile=..\..\EULA.md
+SignTool=azure
+SignedUninstaller=yes
+SignToolRunMinimized=yes
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-; VST3 bundle → C:\Program Files\Common Files\VST3\Robin Control Lite.vst3\
-Source: "..\..\NewProject\{#MyBuildDir}\RobinControlLite_artefacts\Release\VST3\Robin Control Lite.vst3\*"; \
-  DestDir: "{commoncf}\VST3\Robin Control Lite.vst3"; \
-  Flags: recursesubdirs createallsubdirs ignoreversion
-
-; AAX (commented for v1.0; un-comment for v1.0.1 once PACE-signed):
-; Source: "..\..\NewProject\{#MyBuildDir}\RobinControlLite_artefacts\Release\AAX\Robin Control Lite.aaxplugin\*"; \
-;   DestDir: "{commoncf}\Avid\Audio\Plug-Ins\Robin Control Lite.aaxplugin"; \
-;   Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "{#MyBundle}\*"; DestDir: "{commoncf}\VST3\Robin Control Lite.vst3"; Flags: recursesubdirs createallsubdirs ignoreversion
+#ifdef MyAaxBundle
+Source: "{#MyAaxBundle}\*"; DestDir: "{commoncf}\Avid\Audio\Plug-Ins\Robin Control Lite.aaxplugin"; Flags: recursesubdirs createallsubdirs ignoreversion
+#endif
 
 [UninstallDelete]
-; Defensive cleanup — removes the bundle dir even if something inside it was
-; created post-install (e.g. a regenerated moduleinfo.json) and isn't tracked
-; by Inno's per-file uninstall log.
 Type: filesandordirs; Name: "{commoncf}\VST3\Robin Control Lite.vst3"
+#ifdef MyAaxBundle
+Type: filesandordirs; Name: "{commoncf}\Avid\Audio\Plug-Ins\Robin Control Lite.aaxplugin"
+#endif
