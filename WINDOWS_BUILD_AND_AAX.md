@@ -1,6 +1,10 @@
 # Windows clone, build, and AAX handoff
 
-Last updated: 2026-09-22. Product: **Robin Control Lite 2.0.0**.
+Last updated: 2026-09-24. Product: **Robin Control Lite 2.0.0**.
+
+September 24 Windows beta evidence and DigiShell automation requirements are in
+`WINDOWS_BETA_2.0.0.md`. Final Windows builds, signing and retail-host acceptance
+remain separate checkpoints. The final-build instructions below are unchanged.
 
 Read this on the Windows machine before configuring. These are preparation
 instructions derived from the repository and tool documentation, **not a record
@@ -139,7 +143,7 @@ The existing scripts have platform limits:
 | Script | Windows status |
 | --- | --- |
 | `scripts/setup-pace-signing.py` | macOS-only tool path and Keychain setup; do not run unchanged |
-| `scripts/test-aax-native.py` | macOS executable path, SDK path, and POSIX process handling; port/test before using on Windows |
+| `scripts/test-aax-native.py` | Windows support added September 24: pass `--dsh`; requires the DTT configuration corrections documented in `WINDOWS_BETA_2.0.0.md` |
 | `scripts/test-plugin.sh` / `scripts/test-sanitizers.sh` | macOS workflows; not Windows AAX evidence |
 | `.github/workflows/validate.yml` | Existing Windows VST3 build/pluginval job; no AAX SDK, signing, or AAX validation |
 
@@ -159,7 +163,7 @@ For the first Windows AAX pass:
    thumbprint; the Mac Developer ID string is **not** a Windows signing identity.
    Confirm the applicable certificate/signing arrangement before issuing a
    command; do not claim this machine is signing-ready from the Mac results.
-4. Port the validator runner or invoke Windows DigiShell manually. Discover
+4. Use the Windows-capable validator runner or invoke Windows DigiShell manually. Discover
    tests with `listtests`, inspect the actual descriptor, and run **every
    applicable** test before and after signing. Confirm the Windows toolkit's
    definition of `test.cycle_counts` and Native-only descriptor before recording
@@ -175,20 +179,23 @@ For the first Windows AAX pass:
    validate AAX. See the existing Windows CI job for its pluginval invocation.
 
 For an individual diagnostic after assigning the verified Windows DigiShell
-path to `$rclDsh`, the documented stdin interface is:
+path to `$rclDsh`, use its automation interface. Windows console mode hangs on
+ordinary piped command lines; `-a` requires a command followed by a YAML document.
+Use native backslash paths in YAML single quotes (forward slashes fail AAXHost
+loading in this toolkit):
 
 ```powershell
 $rclAaxBundle = (Resolve-Path "NewProject/build-windows-aax/RobinControlLite_artefacts/Release/AAX/Robin Control Lite.aaxplugin").Path
 @(
-  "load_dish aaxval"
-  "listtests"
-  "runtest [test.page_table.load, `"$rclAaxBundle`"]"
-  "exit"
-) | & $rclDsh
+  'load_dish', '--- aaxval', '...'
+  'listtests', '--- null', '...'
+  'runtest', "--- [test.page_table.load, '$rclAaxBundle']", '...'
+  'exit', '--- null', '...'
+) | & $rclDsh -a
 ```
 
 This example runs only the page-table diagnostic, **not the full release gate**.
-Confirm the installed Windows toolkit accepts the same interface. For signed
+For signed
 testing, point it at signed staging. DigiShell takes quoted paths with spaces
 but does not support character escaping inside its own command syntax.
 

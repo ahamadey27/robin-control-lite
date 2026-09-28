@@ -1,0 +1,10 @@
+Robin Control Lite 2.0.0 - Moonbase Windows Beta 1
+
+This private beta installs the Windows x64 VST3 plugin.
+
+After installation, rescan plugins in your DAW and open Robin Control Lite.
+Use Activate to sign in with a Moonbase account that owns Robin Control Lite,
+or use the supported offline activation flow. Playback requires activation.
+
+This is a test build, not the final public release. Please test sample loading,
+MIDI playback, Trigger/Panic, and saving and reopening a DAW session.

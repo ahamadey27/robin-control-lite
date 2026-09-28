@@ -189,8 +189,9 @@ NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioPr
                              juce::String(juce::roundToInt(s * 100)) + "%",
                              true, isCurrent);
             }
+            const juce::Component::SafePointer<NewProjectAudioProcessorEditor> safeThis(this);
             menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(sizeButton),
-                [safeThis = juce::Component::SafePointer<NewProjectAudioProcessorEditor>(this)](int result)
+                [safeThis](int result)
                 {
                     if (safeThis == nullptr || result <= 0) return;
                     const size_t idx = (size_t) (result - 1);
