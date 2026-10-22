@@ -92,6 +92,27 @@ juce_add_plugin(RobinControlLite
 # Generate JuceHeader.h (required because source files use #include <JuceHeader.h>)
 juce_generate_juce_header(RobinControlLite)
 
+# JUCE's C/C++ visibility settings do not cover its macOS .mm translation units.
+# Keep each plug-in's JUCE/Moonbase implementation private to its own binary so
+# another plug-in in Pro Tools cannot interpose incompatible runtime symbols.
+# Explicit SDK entry points retain their default-visibility annotations.
+set_target_properties(RobinControlLite PROPERTIES
+    C_VISIBILITY_PRESET hidden
+    CXX_VISIBILITY_PRESET hidden
+    OBJC_VISIBILITY_PRESET hidden
+    OBJCXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN TRUE)
+foreach(format IN LISTS PLUGIN_FORMATS)
+    if(TARGET RobinControlLite_${format})
+        set_target_properties(RobinControlLite_${format} PROPERTIES
+            C_VISIBILITY_PRESET hidden
+            CXX_VISIBILITY_PRESET hidden
+            OBJC_VISIBILITY_PRESET hidden
+            OBJCXX_VISIBILITY_PRESET hidden
+            VISIBILITY_INLINES_HIDDEN TRUE)
+    endif()
+endforeach()
+
 # Unlicensed builds are for engine development / historical beta reproduction.
 option(RCL_ENABLE_MOONBASE "Enable Moonbase customer licensing (required for final release)" OFF)
 option(RCL_FINAL_RELEASE "Enforce final-release customer licensing requirements" OFF)
@@ -208,6 +229,7 @@ set(SOURCE_DATA
     Source/Data/SampleLoader.cpp
     Source/Data/SampleLoader.h
     Source/Data/SampleSlot.h
+    Source/Data/StateInput.h
 )
 
 set(SOURCE_DSP

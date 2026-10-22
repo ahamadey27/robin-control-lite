@@ -434,3 +434,6 @@ DerivedData/
 *.vst3
 *.component
 *.app
+
+# Customer crash dumps can contain private process memory and diagnostics.
+/crash-reports/

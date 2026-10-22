@@ -1,5 +1,15 @@
 # TESTING.md — Formal plugin testing for Robin Control Lite
 
+> **Pro Tools crash work — 2026-10-22:** Follow
+> [PRO_TOOLS_RELIABILITY_PLAN_2026-10-22.md](PRO_TOOLS_RELIABILITY_PLAN_2026-10-22.md)
+> for current candidate status. Before and after signing each macOS build, run
+> `python3 scripts/check-macos-exports.py <VST3-bundle> <AU-bundle> <AAX-bundle> --expect-architecture arm64 --expect-architecture x86_64 --output <new-report.json>`.
+> The checker reads bundles without loading them, rejects internal JUCE/Moonbase
+> exports and checks required host entry points in every slice. Local validation
+> proved the old Lite AAX fails and the new universal visibility candidate passes.
+> Mac CI now runs it on its built VST3/AU and uploads the JSON; no hosted run is
+> claimed. Native GUI validation does not replace Pro Tools/PatchWork acceptance.
+
 > **v2.0.0 final audit — 2026-09-22:** `FINAL_RELEASE_2.0.0.md` records current final artifacts and validation. `scripts/test-sanitizers.sh` now enables Moonbase and runs both the engine/processor suite and synthetic signed-license suite under ASan/UBSan and TSan. Windows CI runs both test executables; AAX remains outside CI. Preserve the sample-allocation/interpolation, state-input, cache-size and Unicode-path regressions. Older coverage notes below describe their date, not the current ceiling.
 
 This is the testing playbook for Robin Control Lite (and, by design, any future

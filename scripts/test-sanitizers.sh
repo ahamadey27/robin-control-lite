@@ -25,6 +25,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC="${REPO_ROOT}/NewProject"
 TARGET="RobinControlLiteTests"
+SANITIZER_ROOT="${RCL_SANITIZER_BUILD_ROOT:-${REPO_ROOT}}"
+mkdir -p "${SANITIZER_ROOT}"
 
 bold() { printf "\033[1m%s\033[0m\n" "$1"; }
 green() { printf "\033[32m%s\033[0m\n" "$1"; }
@@ -32,12 +34,16 @@ red() { printf "\033[31m%s\033[0m\n" "$1"; }
 
 run_pass() {
     local label="$1" build_dir="$2" san_flags="$3"
+    # Keep the array nonempty for macOS's Bash 3.2 with set -u.
+    local platform_args=("-DRCL_BUILD_TESTS=ON")
+    if [[ -n "${RCL_MACOS_SYSROOT:-}" ]]; then
+        platform_args+=("-DCMAKE_OSX_SYSROOT=${RCL_MACOS_SYSROOT}")
+    fi
     bold "──────────────────────────────────────────────────"
     bold " ${label}"
     bold "──────────────────────────────────────────────────"
 
     cmake -S "${SRC}" -B "${build_dir}" \
-        -DRCL_BUILD_TESTS=ON \
         -DRCL_ENABLE_MOONBASE=ON \
         -DRCL_COPY_PLUGIN_AFTER_BUILD=OFF \
         "-DFETCHCONTENT_SOURCE_DIR_MOONBASE_CPP=${RCL_MOONBASE_SOURCE:-}" \
@@ -48,6 +54,7 @@ run_pass() {
         -DCMAKE_OBJC_FLAGS="${san_flags} -fno-omit-frame-pointer -g" \
         -DCMAKE_OBJCXX_FLAGS="${san_flags} -fno-omit-frame-pointer -g" \
         -DCMAKE_EXE_LINKER_FLAGS="${san_flags}" \
+        "${platform_args[@]}" \
         > "${build_dir}.cfg.log" 2>&1 || return 1
 
     cmake --build "${build_dir}" --target "${TARGET}" RobinControlLiteLicensingTests -j3 > "${build_dir}.build.log" 2>&1 || return 1
@@ -68,14 +75,14 @@ failures=0
 ASAN_OPTIONS="halt_on_error=1:abort_on_error=1:detect_leaks=0" \
 UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" \
 run_pass "AddressSanitizer + UndefinedBehaviorSanitizer" \
-         "${REPO_ROOT}/build-asan" \
+         "${SANITIZER_ROOT}/build-asan" \
          "-fsanitize=address,undefined -fno-sanitize-recover=all" \
     || failures=$((failures+1))
 
 # Pass 2 — TSan
 TSAN_OPTIONS="halt_on_error=1" \
 run_pass "ThreadSanitizer" \
-         "${REPO_ROOT}/build-tsan" \
+         "${SANITIZER_ROOT}/build-tsan" \
          "-fsanitize=thread" \
     || failures=$((failures+1))
 

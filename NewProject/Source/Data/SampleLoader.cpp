@@ -21,6 +21,12 @@ bool SampleLoader::loadSample(int slotIndex, const juce::File& file)
         return false;
     }
 
+    SampleSlot pending;
+    return prepareSample(file, pending) && commitSample(slotIndex, pending);
+}
+
+bool SampleLoader::prepareSample(const juce::File& file, SampleSlot& pending)
+{
     // --- Error Check 1: File existence ---
     if (!file.existsAsFile())
     {
@@ -74,7 +80,6 @@ bool SampleLoader::loadSample(int slotIndex, const juce::File& file)
 
     // Decode + resample on the calling thread without holding the audio lock —
     // big files can take tens of ms and we don't want to stall processBlock.
-    SampleSlot pending;
     bool success = pending.loadFromFile(file, formatManager);
 
     if (success)
@@ -99,32 +104,29 @@ bool SampleLoader::loadSample(int slotIndex, const juce::File& file)
         }
         pending.sampleRate = targetSampleRate;
 
-        // Hand the prepared slot to the audio side under the callback lock.
-        {
-            const juce::ScopedLock sl(callbackLock);
-            if (! juce::exactlyEqual(targetSampleRate, currentSampleRate))
-            {
-                lastErrorMessage = "Playback rate changed while loading; please load the sample again.";
-                return false;
-            }
-            slots[slotIndex] = std::move(pending);
-        }
-
         lastErrorMessage.clear();
-        DBG("Slot " + juce::String(slotIndex) + " loaded: " + file.getFileName());
     }
     else
     {
-        // loadFromFile failed - fallback: ensure slot is clean
-        {
-            const juce::ScopedLock sl(callbackLock);
-            slots[slotIndex].clear();
-        }
         lastErrorMessage = "Failed to load: " + file.getFileName();
-        DBG("Slot " + juce::String(slotIndex) + " failed to load: " + file.getFullPathName());
     }
 
     return success;
+}
+
+bool SampleLoader::commitSample(int slotIndex, SampleSlot& pending)
+{
+    const juce::ScopedLock sl(callbackLock);
+    if (slotIndex < 0 || slotIndex >= numSlots || ! pending.isLoaded)
+        return false;
+    if (! juce::exactlyEqual(pending.sampleRate, currentSampleRate))
+    {
+        lastErrorMessage = "Playback rate changed while loading; please load the sample again.";
+        return false;
+    }
+    slots[slotIndex] = std::move(pending);
+    lastErrorMessage.clear();
+    return true;
 }
 
 void SampleLoader::clearSlot(int slotIndex)

@@ -19,12 +19,19 @@ public:
     const juce::String& getLastError() const { return lastErrorMessage; }
 
     /**
-     * Loads a file into the given slot index and refreshes synthesiser sounds.
+     * Low-level slot-only load. UI callers use the processor's pool APIs so
+     * playback metadata is committed in the same callback-lock transaction.
      * @return true on success
      */
     bool loadSample(int slotIndex, const juce::File& file);
 
-    /** Clears a slot and refreshes synthesiser sounds. */
+    /** Decode/resample without changing live slots; safe to do outside the callback lock. */
+    bool prepareSample(const juce::File& file, SampleSlot& pending);
+
+    /** Slot-only commit if the rate is current; caller coordinates pool metadata. */
+    bool commitSample(int slotIndex, SampleSlot& pending);
+
+    /** Low-level slot-only clear; caller coordinates pool metadata. */
     void clearSlot(int slotIndex);
 
     /** Rebuilds all synthesiser sounds from current slot state. */

@@ -6,6 +6,27 @@ For company-level brand, business, marketing, commerce, privacy, product-portfol
 
 ## Project
 
+**Pro Tools reliability work (2026-10-22):** Alex authorized the phased RCL/RC
+plan in `PRO_TOOLS_RELIABILITY_PLAN_2026-10-22.md`; read it before continuing.
+The customer dump confirms a static `juce::emptyString` invalid free during
+VST3 editor construction inside PatchWork / Pro Tools. The focused visibility
+candidate is in `NewProject/build-pt-visibility-20261022`, version still 2.0.0,
+Moonbase/final ON and auto-copy OFF. All three universal formats build; every
+slice passes the new internal-export/entry-point gate, and native VST3 pluginval
+strictness 10 including GUI passes. Intel execution is unavailable on this Mac,
+so Rosetta and Intel-dependent Avid checks remain incomplete. No corrected
+candidate has Developer ID/PACE release signing, installation, packaging,
+customer acceptance or publication.
+Evidence is under `Releases/Testing/2.0.0/pro-tools-audit-20261022/` (ignored).
+Preserve the F1-only candidate. Pool locking and XML preflight are now implemented
+in the separate `NewProject/build-pt-reliability-20261022` combined candidate;
+all universal export checks and native strictness-10 VST3 GUI tests pass. Fresh
+engine/licensing tests and ASan/UBSan/TSan pass with the new pool-operation and
+malformed-state regressions. Historical-session, full AAX/Intel and real-host
+acceptance remain pending. RC prevention verification has its own build/profile.
+Company context records public Mac/Windows Lite 2.0.0 downloads; the older
+release-preparation/public-format statements below predate that release.
+
 **Robin Control Lite** is a free monophonic sampler plugin by `conduit.dsp`, built with JUCE 8+ and C++17. Current code version: **2.0.0 (release preparation; not yet published)**. Existing public formats are macOS VST3/AU and Windows VST3. The macOS AAX candidate is PACE-signed, passed all 13 applicable validator checks, and was reported working in regular Pro Tools / Intro by Alex on 2026-09-22. This is basic host acceptance, not evidence that every manual release test passed. For the latest final macOS build, packaging and notarization evidence, read `FINAL_RELEASE_2.0.0.md`. Windows final builds/AAX signing and the full manual host matrix remain pending. Standalone is for local testing only.
 
 For current final-release work, read **`FINAL_RELEASE_2.0.0.md`** first, then **`RELEASE_2.0.0.md`** (build commands, artifact paths, evidence, and open checkpoints) and **`AAX_BUILD_AND_SIGNING.md`** (AAX/PACE handoff for future agents). These take precedence over historical v1.0 signing instructions in `release-spec.md` for the 2.0.0 release. Do not infer AAX authorization from an installed SDK or WrapTool.

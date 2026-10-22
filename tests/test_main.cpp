@@ -24,6 +24,7 @@
 #include "RandomizationEngine.h"
 #include "MidiMapper.h"
 #include "PluginProcessor.h"
+#include "Data/StateInput.h"
 
 //==============================================================================
 // Shared helpers for the processor-level harnesses below.
@@ -661,7 +662,7 @@ public:
                 if (auto* p = params[rng.nextInt (params.size())])
                     p->setValueNotifyingHost (rng.nextFloat());
 
-                switch (rng.nextInt (8))
+                switch (rng.nextInt (12))
                 {
                     case 0: proc->setStateInformation (saved.getData(), (int) saved.getSize()); break;
                     case 1: proc->swapSamples   (rng.nextInt (4), rng.nextInt (4)); break;
@@ -670,6 +671,10 @@ public:
                     case 4: proc->resetPlaybackPosition(); break;
                     case 5: proc->requestTrigger(); break;
                     case 6: proc->requestPanic(); break;
+                    case 8: proc->addPoolSamples(juce::Array<juce::File> { wav }); break;
+                    case 9: proc->replacePoolSample(rng.nextInt(20), wav); break;
+                    case 10: proc->deletePoolSample(rng.nextInt(20)); break;
+                    case 11: proc->clearSamplePool(); break;
                     default: break;
                 }
                 juce::ignoreUnused (i);
@@ -987,6 +992,151 @@ public:
 // Auto-registering instances.
 static PlaybackEventTests        playbackEventTests;
 static RandomizationEngineTests randomizationEngineTests;
+class PoolMutationTests : public juce::UnitTest
+{
+public:
+    PoolMutationTests() : juce::UnitTest("PoolMutationTransactions") {}
+    void runTest() override
+    {
+        juce::Random rng(0x20261022);
+        auto a = rcltest::writeTempWav(rng, 1024);
+        auto b = rcltest::writeTempWav(rng, 2048);
+        auto invalid = rcltest::writeGarbage(rng, ".wav", 64);
+        auto proc = std::make_unique<NewProjectAudioProcessor>();
+        proc->prepareToPlay(44100.0, 128);
+
+        beginTest("Add appends successful files and refreshes both playback lists");
+        expectEquals(proc->addPoolSamples(juce::Array<juce::File> { a, invalid, b }), 2);
+        expectEquals((int) proc->loadedSlotIndices.size(), 2);
+        expectEquals((int) proc->shuffledIndices.size(), 2);
+        expect(proc->sampleSlots[0].sourceFile == a && proc->sampleSlots[1].sourceFile == b);
+        expectEquals(proc->maxSampleLength, 2048);
+        proc->advanceRoundRobin();
+        expectEquals(proc->roundRobinIndex, 1);
+        expectEquals(proc->addPoolSamples(juce::Array<juce::File> { a }), 1);
+        expect(proc->sampleSlots[1].sourceFile == b);
+        expectEquals(proc->roundRobinIndex, 1);
+
+        beginTest("Failed or invalid replacement preserves the existing sample");
+        expect(! proc->replacePoolSample(0, invalid));
+        expect(! proc->replacePoolSample(-1, b));
+        expect(! proc->replacePoolSample(20, b));
+        expect(proc->sampleSlots[0].sourceFile == a);
+        expect(proc->replacePoolSample(0, b));
+        expectEquals(proc->sampleSlots[0].audioBuffer.getNumSamples(), 2048);
+        expectEquals(proc->roundRobinIndex, 1);
+
+        beginTest("Delete compacts a contiguous run and validates indices");
+        expect(proc->deletePoolSample(1));
+        expect(proc->sampleSlots[1].sourceFile == a && ! proc->sampleSlots[2].isLoaded);
+        expectEquals((int) proc->loadedSlotIndices.size(), 2);
+        expect(! proc->deletePoolSample(-1) && ! proc->deletePoolSample(20));
+        expect(! proc->deletePoolSample(19));
+
+        beginTest("Clear is repeatable, sparse deletion preserves later islands, refill is bounded");
+        proc->clearSamplePool();
+        proc->clearSamplePool();
+        expect(proc->loadedSlotIndices.empty() && proc->shuffledIndices.empty());
+        expectEquals(proc->maxSampleLength, 0);
+        expect(proc->replacePoolSample(0, a) && proc->replacePoolSample(2, b));
+        expect(proc->deletePoolSample(0));
+        expect(proc->sampleSlots[2].sourceFile == b);
+        juce::Array<juce::File> many;
+        for (int i = 0; i < 25; ++i) many.add(a);
+        expectEquals(proc->addPoolSamples(many), 19);
+        expectEquals(proc->addPoolSamples(many), 0);
+        expect(proc->sampleSlots[2].sourceFile == b);
+        expectEquals((int) proc->loadedSlotIndices.size(), 20);
+
+        beginTest("A playback-rate change rejects a prepared replacement");
+        SampleSlot pending;
+        expect(proc->sampleLoader.prepareSample(a, pending));
+        proc->prepareToPlay(48000.0, 128);
+        expect(! proc->sampleLoader.commitSample(2, pending));
+        expect(proc->sampleSlots[2].sourceFile == b);
+        proc->releaseResources();
+        a.deleteFile(); b.deleteFile(); invalid.deleteFile();
+    }
+};
+
+class StateInputTests : public juce::UnitTest
+{
+public:
+    StateInputTests() : juce::UnitTest("StateInputPreflight") {}
+
+    static juce::MemoryBlock binary(const std::string& text, int claimedLength = -1)
+    {
+        juce::MemoryOutputStream stream;
+        stream.writeInt(0x21324356);
+        stream.writeInt(claimedLength < 0 ? (int) text.size() : claimedLength);
+        stream.write(text.data(), text.size());
+        stream.writeByte(0);
+        return stream.getMemoryBlock();
+    }
+
+    void runTest() override
+    {
+        juce::Random rng(0xAABBCC);
+        auto wav = rcltest::writeTempWav(rng, 512);
+        auto proc = std::make_unique<NewProjectAudioProcessor>();
+        proc->prepareToPlay(44100.0, 128);
+        expect(proc->replacePoolSample(0, wav));
+        proc->apvts.getParameter(ParameterIDs::volume)->setValueNotifyingHost(0.23f);
+        juce::MemoryBlock original;
+        proc->getStateInformation(original);
+        auto rejectWithoutMutation = [&](const juce::MemoryBlock& data)
+        {
+            proc->setStateInformation(data.getData(), (int) data.getSize());
+            juce::MemoryBlock after;
+            proc->getStateInformation(after);
+            expect(after == original, "Rejected state changed parameters or sample pool");
+        };
+
+        beginTest("Excessively nested XML is rejected before recursive parsing");
+        std::string deep = "<Parameters>";
+        for (int i = 0; i < 50000; ++i) deep += "<x>";
+        for (int i = 0; i < 50000; ++i) deep += "</x>";
+        deep += "</Parameters>";
+        rejectWithoutMutation(binary(deep));
+
+        beginTest("DTD/entities and excessive element/attribute counts are rejected");
+        rejectWithoutMutation(binary("<!DOCTYPE Parameters [<!ENTITY x 'bad'>]><Parameters>&x;</Parameters>"));
+        std::string wide = "<Parameters>";
+        for (int i = 0; i < 8193; ++i) wide += "<x/>";
+        rejectWithoutMutation(binary(wide + "</Parameters>"));
+        std::string attributes = "<Parameters";
+        for (int i = 0; i < 8193; ++i) attributes += " a" + std::to_string(i) + "='x'";
+        rejectWithoutMutation(binary(attributes + "/>"));
+
+        beginTest("Malformed binary length/magic, NUL and invalid UTF-8 preserve live state");
+        rejectWithoutMutation(binary("<Parameters/>", 0));
+        rejectWithoutMutation(binary("<Parameters/>", 0x7fffffff));
+        auto badMagic = binary("<Parameters/>");
+        static_cast<char*>(badMagic.getData())[0] = 0;
+        rejectWithoutMutation(badMagic);
+        rejectWithoutMutation(binary(std::string("<Parameters/>") + '\0' + "ignored"));
+        rejectWithoutMutation(binary(std::string("<Parameters name='") + '\xff' + "'/>"));
+
+        beginTest("Preset loading uses the same guard and ordinary state still round-trips");
+        auto preset = juce::File::createTempFile(".rclpreset");
+        auto malicious = binary(deep);
+        expect(preset.replaceWithData(malicious.getData(), malicious.getSize()));
+        proc->loadPreset(preset);
+        juce::MemoryBlock after;
+        proc->getStateInformation(after);
+        expect(after == original);
+        proc->setStateInformation(original.getData(), (int) original.getSize());
+        proc->getStateInformation(after);
+        expect(after == original);
+        auto validText = binary("<?xml version='1.0'?><Parameters><!--ok--><x><![CDATA[<ok>]]></x></Parameters>");
+        expect(rcl::StateInput::xmlFromBinary(validText.getData(), (int) validText.getSize()) != nullptr);
+        proc->releaseResources();
+        preset.deleteFile(); wav.deleteFile();
+    }
+};
+
+static PoolMutationTests        poolMutationTests;
+static StateInputTests          stateInputTests;
 static MidiMapperTests          midiMapperTests;
 static ProcessorFuzzTests        processorFuzzTests;
 static ProcessorAutomationTests  processorAutomationTests;
