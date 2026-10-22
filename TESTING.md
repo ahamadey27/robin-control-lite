@@ -9,6 +9,11 @@
 > proved the old Lite AAX fails and the new universal visibility candidate passes.
 > Mac CI now runs it on its built VST3/AU and uploads the JSON; no hosted run is
 > claimed. Native GUI validation does not replace Pro Tools/PatchWork acceptance.
+> Continuation: Rosetta is installed and signed RCL VST3/AU pass native/Intel
+> GUI validation; exact AU path/hash evidence and verified prior-install
+> restoration are recorded. Combined RCL AAX passes all 13 applicable checks
+> before/after PACE signing, with Apple/PACE and export verification. Read the
+> tracker for exact artifacts and pending real-host/customer/Windows gates.
 
 > **v2.0.0 final audit — 2026-09-22:** `FINAL_RELEASE_2.0.0.md` records current final artifacts and validation. `scripts/test-sanitizers.sh` now enables Moonbase and runs both the engine/processor suite and synthetic signed-license suite under ASan/UBSan and TSan. Windows CI runs both test executables; AAX remains outside CI. Preserve the sample-allocation/interpolation, state-input, cache-size and Unicode-path regressions. Older coverage notes below describe their date, not the current ceiling.
 

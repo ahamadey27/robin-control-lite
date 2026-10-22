@@ -13,17 +13,23 @@ VST3 editor construction inside PatchWork / Pro Tools. The focused visibility
 candidate is in `NewProject/build-pt-visibility-20261022`, version still 2.0.0,
 Moonbase/final ON and auto-copy OFF. All three universal formats build; every
 slice passes the new internal-export/entry-point gate, and native VST3 pluginval
-strictness 10 including GUI passes. Intel execution is unavailable on this Mac,
-so Rosetta and Intel-dependent Avid checks remain incomplete. No corrected
-candidate has Developer ID/PACE release signing, installation, packaging,
-customer acceptance or publication.
+strictness 10 including GUI passes. The continuation installed Apple Rosetta 2;
+Intel execution works again. Fresh signed combined-candidate VST3/AU pass native
+and Intel validation including GUI, with exact AU identification and verified
+restoration of all prior user/system AUs. RCL AAX passes all 13 applicable tests
+before/after its own PACE Signing Only; Apple/PACE signatures and both-slice
+exports pass. No permanent plug-in replacement, package or hotfix publication.
 Evidence is under `Releases/Testing/2.0.0/pro-tools-audit-20261022/` (ignored).
 Preserve the F1-only candidate. Pool locking and XML preflight are now implemented
 in the separate `NewProject/build-pt-reliability-20261022` combined candidate;
 all universal export checks and native strictness-10 VST3 GUI tests pass. Fresh
 engine/licensing tests and ASan/UBSan/TSan pass with the new pool-operation and
-malformed-state regressions. Historical-session, full AAX/Intel and real-host
-acceptance remain pending. RC prevention verification has its own build/profile.
+malformed-state regressions. Source/artifact hashes match committed `65dc245`.
+Historical-session, Windows, retail Pro Tools/PatchWork and affected-customer
+acceptance remain pending. The next checkpoint is a reversible real-host test
+of `reliability-signed/AAX/Robin Control Lite.aaxplugin` under the evidence root;
+read the tracker before installing. RC prevention has its own build/profile,
+PACE configuration and separate validation evidence.
 Company context records public Mac/Windows Lite 2.0.0 downloads; the older
 release-preparation/public-format statements below predate that release.
 

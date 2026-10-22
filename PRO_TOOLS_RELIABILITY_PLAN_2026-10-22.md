@@ -9,14 +9,20 @@ Resolve the Lite 2.0.0 interface crash reported inside Pro Tools / Blue Cat's
 PatchWork, investigate the separately reported startup crash, and prevent the
 same build and lifecycle risks in Robin Control premium.
 
-**Current checkpoint: RCL fixes and RC prevention have passed the local checks
-below; real-host/platform/release gates remain open.** Pool mutation APIs and XML preflight are
-implemented; native Debug engine/licensing tests, ASan/UBSan and TSan pass.
-The combined universal Release candidate passes export checks and native
-strictness-10 VST3 validation with GUI tests. Intel execution is unavailable on this
-Mac (`Bad CPU type` even for an Intel system executable), affecting Rosetta
-pluginval and some Avid validator helpers. No corrected candidate has yet been
-accepted by the affected customer. No hotfix is published.
+**Current checkpoint: automated macOS validation passes for both products'
+signed diagnostic candidates. Real-host/platform/release gates remain open.** Pool
+mutation APIs and XML preflight are implemented; native Debug engine/licensing
+tests, ASan/UBSan and TSan pass. The combined RCL candidate matches committed
+source `65dc245`; all previously recorded source and binary hashes still match.
+Apple Rosetta 2 was installed on macOS 27.0.1, resolving the earlier `Bad CPU
+type` failures. Both products' new signed VST3 copies pass strictness 10 with GUI
+tests on ARM64 and Intel. RCL unsigned and PACE-signed AAX each pass all 13
+applicable checks. Both products' signed AUs pass native and Intel auval plus
+strictness-10 GUI pluginval with exact candidate identification. All temporarily
+changed AU installations are restored and verified. RC unsigned and signed AAX
+each pass all 13 applicable checks, plus Apple/PACE/export verification.
+No corrected candidate has yet been accepted by the affected customer. No
+hotfix is published.
 The original signed 2.0.0 artifacts and installed plug-ins must remain intact.
 
 The authoritative tracker is this file in `robin-control-redesign`. A matching
@@ -111,12 +117,13 @@ This verifies the build defect, not the customer's outcome.
 ### 1.3 Validate and reproduce the original trigger
 
 - [x] VST3 pluginval strictness 10 with GUI tests, native ARM64.
-- [ ] VST3 pluginval strictness 10 with GUI tests, Rosetta Intel.
-- [ ] AU candidate validation with conclusive candidate path/version evidence;
+- [x] VST3 pluginval strictness 10 with GUI tests, Rosetta Intel.
+- [x] AU candidate validation with conclusive candidate path/version evidence;
   preserve/restore any installed AU temporarily needed by the registry.
-- [ ] Applicable AAX Native checks on the new unsigned candidate.
-- [ ] Stage fresh signed binaries; independently verify Apple/PACE and exports
-  after signing, then repeat applicable AAX checks.
+- [x] Applicable AAX Native checks on the new unsigned candidate.
+- [x] Stage fresh RCL signed binaries; independently verify Apple/PACE and
+  exports after signing.
+- [x] Repeat applicable AAX checks against the exact signed RCL candidate.
 - [ ] Retail Pro Tools: scan/launch, instantiate native AAX, open/close editor
   repeatedly on mono/stereo instrument tracks.
 - [ ] PatchWork inside Pro Tools: load candidate VST3, open/close editor, unload
@@ -125,15 +132,15 @@ This verifies the build defect, not the customer's outcome.
   for load-order diagnosis. Restore each test setup.
 - [ ] Affected customer retests the exact identified candidate; record result.
 
-Native evidence: `visibility-pluginval-native.log` and its output directory;
+Initial F1-only evidence: `visibility-pluginval-native.log` and its output directory;
 Editor, Open editor whilst processing and Editor Automation all execute and pass.
-Rosetta launch fails before loading the candidate; `/usr/bin/true` also cannot
-execute as Intel, confirming an environment limitation. Do not count this as
-successful Intel validation. The Avid helper's bundled Intel Ruby also cannot
-start; keep aborted AAX tests visible and rerun the complete suite on a machine
-with working Intel translation before signing/retail-host acceptance.
+The initial Rosetta launch failed before loading the candidate; `/usr/bin/true`
+also could not execute as Intel. The Avid helper's bundled Intel Ruby could not
+start either. These initial runs predated Rosetta installation. Keep their
+aborts visible; the successful complete combined-candidate reruns are separate
+evidence below.
 
-The completed unsigned AAX run records **10 PASS / 3 aborted FAIL**:
+The initial F1-only unsigned AAX run records **10 PASS / 3 aborted FAIL**:
 `info.productids`, `info.support.general` and `test.data_model` cannot start the
 bundled Intel Ruby. Loading/unloading, description, page tables, all three
 parameter traversals, parameter behavior and the other native checks pass.
@@ -144,6 +151,90 @@ If exports are clean but the same invalid free persists, preserve the new dump
 and investigate actual cross-module `var`/String function selection. Do not mark
 the issue fixed solely because a validator passed. No separate startup claim is
 closed until its report/reproduction has been evaluated.
+
+### October 22 continuation — restored Intel execution and signed staging
+
+The initial environmental aborts above are preserved as historical results.
+Apple Rosetta 2 installation succeeded; Intel `/usr/bin/true` now exits 0.
+`validation-environment-continued.json` records macOS 27.0.1 (26A434), the
+Rosetta receipt and committed Lite source `65dc245`. All candidate source/binary
+hashes were checked before further validation; neither build was regenerated.
+Apple documents Rosetta installation and availability through macOS 27:
+[Using Intel-based apps on a Mac with Apple silicon](https://support.apple.com/en-us/102527).
+
+`reliability-pluginval-rosetta.log` and
+`rc-visibility-pluginval-rosetta.log` record successful Intel strictness-10 GUI
+runs on the unsigned candidates. Fresh Developer ID staging is under
+`reliability-signed/` and `rc-visibility-signed/` in the audit evidence folder.
+VST3/AU in both products pass strict Apple verification, expected identity /
+timestamp / hardened-runtime checks, both-slice export checks and resource
+preservation. `signed-vst3-validation-summary.json` records **4/4 PASS**, native
+and Intel strictness-10 GUI validation of these exact signed VST3 copies.
+
+`reliability-aax-unsigned/summary.json` records **13/13 PASS** for the combined
+RCL candidate; only the Native-inapplicable HDX cycle test is N/A. The new RCL
+signed AAX independently passes PACE and Apple verification and both-slice
+export checks. PACE identifies Robin Control Lite and **signed, not wrapped**.
+Its signing log includes the previously observed input-signature diagnostic;
+acceptance is based on both independent verifiers of the output, not that
+diagnostic. All unsigned build outputs remain unchanged.
+`reliability-aax-signed/summary.json` separately records **13/13 PASS** for the
+exact signed output, executable SHA-256
+`e8530e7784491f78e84b5af347f41b26421564fc90b2e0b1cb334ba8d4f351c1`.
+Both summaries' hashes were rechecked against their respective executable.
+
+The first AU attempt (`combined-au-validation/`) correctly records overall
+failure of candidate identification: native auval selected the original system
+AU, and native pluginval mapped both system and candidate copies. These are
+**inconclusive candidate results**, not proved AU compatibility failures.
+Intel auval/pluginval mapped only the candidate and passed for each product.
+Both prior user copies were restored with matching file hashes/modes/symlinks;
+system copies were unchanged. Do not erase or relabel the first attempt.
+
+With temporary system-copy isolation, RC passes all **4/4** exact-candidate AU
+checks in `combined-au-isolated-validation/summary.json`; prior user/system
+copies were restored and verified in `au-system-isolation-summary.json`.
+That attempt retains an overall failure because Lite's registry still selected
+the removed system path and could not instantiate it. A subsequent privileged
+copy attempt was blocked from reading Documents; its rollback also restored the
+original system AU, and no validation result was claimed for that attempt.
+
+The final Lite run temporarily placed identical, inventory-verified signed
+copies at both registered user/system paths, using verified temporary staging
+for privileged file access. `rcl-au-matched-copies-validation/summary.json`
+records **4/4 PASS**: auval and strictness-10 GUI pluginval on ARM64 and Intel.
+Every mapped path resolves to the verified candidate bytes, with no original
+release mixed into the process. `rcl-au-system-isolation-v2-summary.json`
+records overall success and restoration of the original system bundle; the
+validation summary verifies prior user restoration. File hashes, modes and
+symlink targets match the original inventories. No AU cache/preferences were
+deleted, and no permanent plug-in replacement was retained.
+
+`signed-candidate-metadata.json` rechecks all 12 signed format/architecture
+combinations: expected universal slices, Lite minimum macOS 11.0, RC minimum
+13.0, SDK 26.5 and unchanged signed executable hashes. The consolidated
+`validation-checkpoint-summary.json` ties the four complete AAX runs, four
+signed VST3 GUI runs and eight exact AU checks to their evidence. It explicitly
+records real-host/customer/Windows checks as not run and publication as not
+performed. Failed/environmental attempts remain preserved separately.
+
+| Signed candidate | ARM64 auval | ARM64 GUI pluginval 10 | Intel auval | Intel GUI pluginval 10 | Prior installations restored |
+| --- | --- | --- | --- | --- | --- |
+| RCL 2.0.0 combined diagnostic | PASS | PASS | PASS | PASS | Verified |
+| RC 1.0.2 prevention diagnostic | PASS | PASS | PASS | PASS | Verified |
+
+**Next real-host checkpoint for Lite:** the automated Lite gates above pass; use
+`reliability-signed/AAX/Robin Control Lite.aaxplugin` for a reversible retail
+Pro Tools test. The local retail host is **26.4.1.179**, different from the
+customer's **24.6.0 build 149**. Close Pro Tools first, inventory/back up the
+installed whole AAX outside the scanned directory, install only this signed
+bundle, then verify every file/mode/symlink, Apple/PACE signatures and loaded
+ARM64 UUID `3BBFF262-DB0B-3E37-A892-0079AD3A45B9`. Use a new disposable session
+for native AAX cold launch, mono/stereo insertion and repeated editor open/
+close, then the Phase 5 playback matrix. Restore and verify the prior installed
+bundle after the diagnostic run. No PatchWork installation was found in the
+local AAX folder, so native Pro Tools success alone cannot close the original
+PatchWork VST3 trigger or establish affected-customer acceptance.
 
 ## Phase 2 — RCL F2: make pool mutations atomic with respect to playback
 
@@ -218,6 +309,12 @@ activation policy or release version into premium.
   without weakening cache integrity, entitlement or offline usability.
 - [x] Build RC separately with its own identity and run local engine/audio,
   licensing and native VST3 GUI validation.
+- [x] Validate RC signed VST3/AU on native ARM64 and Intel, including GUI tests,
+  with exact AU candidate identification and verified install restoration.
+- [x] Run RC's own full unsigned AAX suite: 13 applicable checks pass.
+- [x] Sign fresh RC staging with its own PACE configuration; verify Apple/PACE,
+  correct product identity, resources and clean exports on both slices.
+- [x] Run RC's own full AAX suite against that exact signed staging.
 - [ ] Complete RC's exact-artifact retail-host/platform/signing checks before
   distributing a changed RC build. A new RC release is justified by verified
   changes, not automatically by the Lite version bump.
@@ -236,6 +333,20 @@ minimum OS is 13.0 / SDK 26.5 in both slices. Native VST3 strictness 10 includin
 GUI tests passes; CTest engine/audio and licensing suites pass **2/2**. RC's
 existing untrusted XML/JSON host/preset regressions execute successfully.
 RC DSP/licensing/UI source was not modified by this prevention change.
+
+Continuation: Rosetta execution is restored. New signed VST3/AU outputs pass
+the same native/Intel checks recorded above. RC unsigned AAX passes **13/13**
+in `rc-visibility-aax-unsigned/summary.json`; HDX cycle counts remain N/A.
+Fresh `rc-visibility-signed/` staging uses RC's own Signing Only Wrap GUID
+`8917B2B0-BED1-11F1-8E61-00505692C25A`. Independent PACE verification names
+**Robin Control**, reports **signed, not wrapped**, and Apple verification
+confirms Developer ID team `QS378YGT2W`, timestamp and hardened runtime.
+Both-slice export gates pass for VST3/AU/AAX after signing.
+`rc-visibility-aax-signed/summary.json` independently records **13/13 PASS**
+against the exact signed RC executable; its hash was rechecked after the run.
+These results use RC's own runner/descriptor and signing configuration. No RC
+runtime source or activation policy was changed. The remaining host/platform/
+customer/release checkpoints above still apply to a changed RC release.
 
 Source review confirms RC's Add/Replace/Clear/Delete use `performPoolMutation`,
 which takes the callback lock around the mutation/snapshots. Undo restores take
@@ -392,6 +503,11 @@ to repeat those suites with normal cache/GUI access.
 | 2026-10-22 | F1 native VST3 | Strictness 10 including GUI/editor-while-processing tests passes. Intel execution unavailable; some Avid tests abort on their bundled Intel Ruby. Full AAX/Intel/retail-host/customer gates remain pending. |
 | 2026-10-22 | RCL F2/F3 | Processor-owned pool mutations and bounded state XML implemented; expanded native engine/licensing and ASan/UBSan/TSan pass. Combined universal Release formats retain clean exports; native strictness-10 GUI validation passes. |
 | 2026-10-22 | RC prevention | Explicit language visibility and the common checker added to source/CI. New universal build, six export checks, native strictness-10 GUI validation and CTest 2/2 pass; installation OFF. |
+| 2026-10-22 | Intel execution / signed VST3 | Installed Apple Rosetta 2; source/artifact hashes still match. Both signed products pass native/Intel strictness-10 GUI validation (4/4). |
+| 2026-10-22 | RCL signed AAX | All 13 applicable checks pass before and after PACE signing; independent Apple/PACE verification and both-slice export gates pass. HDX cycle counts N/A. |
+| 2026-10-22 | Exact signed AU validation | Both products pass native/Intel auval and strictness-10 GUI pluginval (8/8); failed registration attempts preserved separately. All prior user/system bundles restored and inventory-verified. |
+| 2026-10-22 | RC AAX continuation | Own unsigned and signed suites each pass 13/13; RC-specific PACE signing and independent Apple/PACE/export checks pass. |
+| 2026-10-22 | Automated Mac checkpoint | Both signed candidates pass their applicable automated format gates; metadata/hashes and restoration verified. Next: reversible retail Pro Tools / PatchWork testing and affected-customer retest. No hotfix published. |
 
 When resuming: read this tracker, the crash audit, current git diff and latest
 evidence first. Continue from the first pending dependency; do not overwrite old
