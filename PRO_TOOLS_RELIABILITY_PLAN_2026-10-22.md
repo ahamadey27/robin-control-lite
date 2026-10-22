@@ -10,7 +10,9 @@ PatchWork, investigate the separately reported startup crash, and prevent the
 same build and lifecycle risks in Robin Control premium.
 
 **Current checkpoint: automated macOS validation passes for both products'
-signed diagnostic candidates. Real-host/platform/release gates remain open.** Pool
+signed diagnostic candidates; RCL native AAX and VST3-in-PatchWork smoke tests
+pass in retail Pro Tools on this Mac. Customer/remaining host, platform and
+release gates remain open.** Pool
 mutation APIs and XML preflight are implemented; native Debug engine/licensing
 tests, ASan/UBSan and TSan pass. The combined RCL candidate matches committed
 source `65dc245`; all previously recorded source and binary hashes still match.
@@ -21,6 +23,34 @@ applicable checks. Both products' signed AUs pass native and Intel auval plus
 strictness-10 GUI pluginval with exact candidate identification. All temporarily
 changed AU installations are restored and verified. RC unsigned and signed AAX
 each pass all 13 applicable checks, plus Apple/PACE/export verification.
+The exact RCL candidate was cold-scanned by ARM64 Pro Tools 26.4.1.179 and
+instantiated successfully; Alex confirmed mono/stereo editor cycles, sample
+loading, Trigger and Panic worked without a crash. Alex also confirmed that the
+saved session reopened with both Lite tracks and their samples restored.
+The temporary AAX test is complete: the original installed bundle has been
+restored and its complete file/mode/symlink inventory plus Apple/PACE signatures
+verified. The corrected Lite VST3 also passes the requested PatchWork Synth
+2.78 playback, editor-cycle and remove/reload sequence, confirmed by Alex and
+live mapped-path/inode/hash/UUID evidence. MIDI playback, Add/Replace/Delete/
+Clear/reload during playback, Series/Random, and about one minute of editor-
+closed playback followed by reopen also pass (Alex's manual confirmation).
+Wrapper session restoration also passes: Alex confirmed samples, order,
+parameter settings and MIDI playback return after a full host quit/reopen;
+the fresh process maps the same identified candidate. The 48 kHz offline WAV
+render passes file/decode inspection and Alex confirms it sounds normal.
+MIDI playback at 64 and 512 samples also passes (user-confirmed), corroborated
+by Avid buffer-change records and return to 256. An extra 128-sample setting
+change was observed but is not separately claimed as a playback test.
+The actual **48 → 96 kHz session switch and 96 kHz offline render now pass**:
+regular Pro Tools' trace records 96,000 Hz / 256 samples, the exact corrected
+VST3 remains mapped, and the new stereo/24-bit/96 kHz WAV decodes with signal.
+Alex confirms the corrected session and bounce succeeded. The first misnamed
+48 kHz attempt is preserved separately; it is not counted as 96 kHz evidence.
+`host-validation-checkpoint-summary.json` records this local Mac milestone and
+the remaining customer/native-host/Windows/licensing/package/release gates.
+This covers the tested local setup;
+the combined candidate and newer host/OS/wrapper do not isolate which change
+prevents the customer's crash.
 No corrected candidate has yet been accepted by the affected customer. No
 hotfix is published.
 The original signed 2.0.0 artifacts and installed plug-ins must remain intact.
@@ -124,12 +154,14 @@ This verifies the build defect, not the customer's outcome.
 - [x] Stage fresh RCL signed binaries; independently verify Apple/PACE and
   exports after signing.
 - [x] Repeat applicable AAX checks against the exact signed RCL candidate.
-- [ ] Retail Pro Tools: scan/launch, instantiate native AAX, open/close editor
+- [x] Retail Pro Tools: scan/launch, instantiate native AAX, open/close editor
   repeatedly on mono/stereo instrument tracks.
-- [ ] PatchWork inside Pro Tools: load candidate VST3, open/close editor, unload
+- [x] PatchWork inside Pro Tools: load candidate VST3, open/close editor, remove
   and reload; record PatchWork and host versions and exact loaded binary UUID.
-- [ ] Repeat with normal plug-in collection and a reduced collection if useful
-  for load-order diagnosis. Restore each test setup.
+  Removal/reload is user-confirmed; actual Mach-O unloading was not measured.
+- [x] Test with the normal installed plug-in collection; restore temporary AAX.
+- [ ] Use a reduced collection if needed for load-order diagnosis after a
+  reproducible failure. No reduced-collection result is claimed.
 - [ ] Affected customer retests the exact identified candidate; record result.
 
 Initial F1-only evidence: `visibility-pluginval-native.log` and its output directory;
@@ -235,6 +267,94 @@ close, then the Phase 5 playback matrix. Restore and verify the prior installed
 bundle after the diagnostic run. No PatchWork installation was found in the
 local AAX folder, so native Pro Tools success alone cannot close the original
 PatchWork VST3 trigger or establish affected-customer acceptance.
+
+### October 22 native retail host checkpoint
+
+RC work was committed locally as `529b680` on `agent/windows-vst3-ci`, including
+the export safeguards, investigation and this tracker. The unrelated
+`generated_images/` folder was excluded. No push or hosted CI run was performed.
+
+The first unprivileged AAX move was denied before any bundle moved; its record
+verifies that the original remained intact. The subsequent administrator swap
+installed the exact signed RCL diagnostic AAX and verified every file hash,
+mode and symlink plus independent Apple/PACE signatures. Evidence is in
+`pro-tools-native-host-admin-20261022/`; `install-state.json` records the original
+inventory, verified preservation copy and protected whole-bundle backup at
+`/Library/Application Support/Avid/Audio/Conduit-RCL-Host-Test-20261022/Robin Control Lite.aaxplugin`.
+The local evidence helper `test-retail-aax-privileged.py restore` subsequently
+completed with Pro Tools closed. The original bundle is back at its installed
+path; its full file/mode/symlink inventory and independent Apple/PACE signatures
+pass. The protected backup directory was removed after the move, and a copy of
+the tested installed candidate remains in evidence. `restoration-verification.json`
+records a separate inventory check. The temporary AAX swap is finished.
+
+Observed: retail Pro Tools **26.4.1.179**, **ARM64**, macOS **27.0.1**, normal
+installed AAX collection. Avid's startup trace regenerates the Lite AAX cache
+and reaches a new session without crashing. Native-control timeouts during
+startup were not host crashes; the application subsequently became ready.
+`loaded-aax-identity.json` records the loaded path/inode and executable SHA-256
+`e8530e7784491f78e84b5af347f41b26421564fc90b2e0b1cb334ba8d4f351c1`, matching
+signed staging. The process sample records ARM64 and the actual host version;
+the matching ARM64 plug-in UUID is `3BBFF262-DB0B-3E37-A892-0079AD3A45B9`.
+The editor was observed on an AAX Native instrument insert.
+
+**User-confirmed:** Alex reported both mono/stereo instrument tracks worked
+without a crash after the requested repeated editor open/close cycles (about
+10 each), sample loading, Trigger and Panic checks. These are manual results,
+not an automated event count or independent listening measurement. The session
+is `~/Documents/RCL AAX Reliability 20261022/RCL AAX Reliability 20261022.ptx`.
+Alex separately confirmed: **saved session reopened with both Lite tracks and
+samples restored**. The second startup trace is `Pro_Tools_2026_10_22_18_26_00.txt`;
+the diagnostic AAX remained installed until the subsequent restoration. No live
+module mapping was captured for this second launch. This is a manual session-
+restoration pass, not a PatchWork VST3 result. MIDI playback, explicit unload and
+the remaining Phase 5 scenarios retain their separate status.
+
+PatchWork was initially absent from both system/user AAX trees. The official
+**2.78** demo was downloaded and inspected read-only; its installer verifies as
+**Blue Cat Audio (FR28HR7442)** with trusted Apple notarization.
+`patchwork-demo-preflight.json` records artifact hashes and both AAX identities.
+Alex handled the installer locally. Both `BC PatchWork AAX.aaxplugin` and
+`BC PatchWork Synth AAX.aaxplugin` are now present as version 2.78, and the
+second Avid startup trace records scanning them. Agent acceptance of third-party
+terms or agent installation is not claimed.
+The [official product page](https://www.bluecataudio.com/Products/Product_PatchWork/)
+identifies 2.78 and describes changes to VST3 editor loading; earlier 2.76 notes
+also mention editor/unload fixes. The customer's actual wrapper version remains
+unknown; these release notes do not establish the customer's root cause.
+For convenient manual loading, a complete inventory-matching copy of the new
+signed Lite VST3 is prepared at:
+
+`/private/tmp/RCL-PatchWork-Test-20261022/Robin Control Lite.vst3`
+
+`patchwork-manual-candidate.json` records its source, signature verification,
+SHA-256 `d8edf3cbd5165c8788a9a4524389e6adf798dd573fae8c3a905b393f4232d821`
+and expected ARM64 UUID `7C9E0BEA-2949-3E07-905E-9F9F418E89F6`.
+The installed system VST3 was not replaced. Select this explicit temporary path
+with PatchWork's **Load VST3** command; the same version label on another copy
+cannot establish its identity. Requested manual sequence: PatchWork Synth on a
+stereo instrument track, load the candidate, load samples, Trigger/Panic and
+about ten editor cycles, then remove/reload and try playback. Leave the host
+open for a live mapped-path/inode/hash check. This requested sequence now
+**passes (user-confirmed)**. Alex confirmed that the VST3 loaded into PatchWork
+and all requested checks worked.
+
+`pro-tools-native-host-admin-20261022/wrapper-pass-summary.json` records Pro Tools
+PID 55415 mapping the exact temporary VST3 path, inode **156115002**, matching
+executable SHA-256 and ARM64 UUID above, alongside **BC PatchWork Synth AAX
+2.78**. A brief Apple process sample independently confirms **ARM64 Pro Tools
+26.4.1.179 on macOS 27.0.1**. The restored original Lite AAX is also mapped in
+this process; it is not the diagnostic native AAX. The tested corrected VST3
+coexisted successfully with that original AAX and the normal plug-in collection.
+Do not infer exact editor cycle counts or physical module unloading from the
+manual remove/reload result. The customer used Pro Tools 24.6 / macOS 14.2 with
+an unknown PatchWork version and an effect-wrapper module in the dump; this
+Synth 2.78 pass does not establish acceptance on that configuration.
+
+A restricted-sandbox signature check returned an invalid-signature error even
+though the copy's complete inventory and executable hash matched signed staging.
+Independent verification with access to macOS signing services passed. Preserve
+the distinction; no re-signing or binary modification was needed.
 
 ## Phase 2 — RCL F2: make pool mutations atomic with respect to playback
 
@@ -364,6 +484,16 @@ on the message loop can strand a headless render in an unlicensed state. Review
 atomic snapshot storage or a bounded bootstrap plus message-loop-independent
 retry with synthetic cross-process fixtures before changing production DRM.
 
+October 22 Windows source/artifact readiness check: Lite's current
+`PluginEditor.cpp` still has the function-static `logo` and default-backend keyed/
+output images; RC's editor-owned `SharedResourcePointer<BrandImages>` and
+`SoftwareImageType` conversion remain present. `windows-f5-readiness.json` records
+source hashes and local installer hashes. Only Lite 1.0.0 was found in the
+checked local Windows installer locations; RC 1.0.2 is present in Downloads.
+These names/hashes do not establish the public Windows build's source or actual
+GUI/unload behavior. No Windows binary was executed, no artwork was changed,
+and the distributed-source/lifetime checkpoint remains open.
+
 ## Phase 5 — Broader real-host regression matrix
 
 Run on the final combined RCL candidate after F1–F3. Record platform/CPU/OS/host,
@@ -372,19 +502,204 @@ Keep automated, manual, customer-reported and not-run results distinct.
 
 | Scenario | Mac native | Mac Rosetta | Windows x64 |
 | --- | --- | --- | --- |
-| Native AAX cold scan and repeat startup | Pending | Pending | Pending |
-| AAX editor repeated open/close and unload | Pending | Pending | Pending |
-| Lite VST3 in PatchWork inside Pro Tools | Pending | Pending | Pending |
-| Mono/stereo instrument tracks and MIDI/Trigger/Panic | Pending | Pending | Pending |
-| Add/Replace/Delete/Clear while playing | Pending | Pending | Pending |
-| Save/reopen, editor closed and multiple instances | Pending | Pending | Pending |
-| Host rate/block-size changes and offline bounce | Pending | Pending | Pending |
+| Native AAX cold scan and repeat startup | Cold scan observed PASS; saved-session reopen PASS (user) | Pending | Pending |
+| AAX editor repeated open/close and unload | Editor cycles PASS (user); unload pending | Pending | Pending |
+| Lite VST3 in PatchWork inside Pro Tools | PASS (user + mapped identity), PatchWork Synth 2.78 | Pending | Pending |
+| Native AAX mono/stereo instrument tracks and Trigger/Panic | PASS (user); native AAX MIDI coverage pending | Pending | Pending |
+| Wrapper MIDI playback and Series/Random | PASS (user), corrected VST3 in PatchWork | Pending | Pending |
+| Add/Replace/Delete/Clear while playing | PASS (user), corrected VST3 in PatchWork | Pending | Pending |
+| Save/reopen, editor closed and multiple instances | Native AAX two instances/session restore PASS; wrapper editor-closed playback and full session/sample/settings/MIDI restore PASS (user + fresh-process identity) | Pending | Pending |
+| Wrapper session sample-rate changes | PASS: actual 48 → 96 kHz session switch at 256 samples, correct VST3 + offline render verified | Pending | Pending |
+| Wrapper host buffer-size changes | PASS at 64/512 (user + trace), restored 256 at 48 kHz; 128 setting change observed only | Pending | Pending |
+| Wrapper offline bounce | 48 kHz PASS (user listening + trace/WAV); corrected 96 kHz render PASS (user report + actual host/Offline trace + WAV) | Pending | Pending |
 | Activated/unactivated and synthetic network failures | Pending | Pending | Pending |
-| Normal host exit and explicit plug-in unload | Pending | Pending | Pending |
+| Normal host exit and explicit plug-in unload | Wrapper remove/reload PASS (user); native AAX unload/exit assessment pending | Pending | Pending |
 
 If a row is inapplicable to an installed host configuration, record N/A with a
 reason. Mac results do not establish Windows success. Do not change the real
 machine clock or delete real licenses to simulate time/grace boundaries.
+
+### Documented Mac wrapper regression run — corrected VST3
+
+Use the disposable test session and the already verified temporary VST3 above.
+The system native AAX is now the original release; further candidate-native AAX
+checks require a separately recorded reversible install or a later identified
+2.0.1 installer. Do not attribute tests of the restored AAX to the candidate.
+Keep the temporary VST3 available until saved wrapper sessions are finished;
+`/private/tmp` is not a permanent plug-in installation or archival location.
+
+Run preparation (October 22): the corrected candidate still maps in Pro Tools
+PID 55415 alongside PatchWork Synth. Avid trace
+`Pro_Tools_2026_10_22_18_31_07.txt` records an initial **48 kHz / 256-sample** engine
+configuration; later rate/block changes need their own evidence. The fixture
+`/private/tmp/RCL-PatchWork-Test-20261022/RCL-MIDI-120bpm-16bars.mid` contains
+16 bars of quarter-note triggers at 120 BPM (SMF type 0, MIDI note 60, velocity
+80). Import it onto the wrapper instrument track or use an existing disposable
+MIDI loop. `mac-manual-regression-20261022/results.json` tracks every requested
+operation separately. The first four steps now pass (user-confirmed): MIDI,
+all requested pool operations, Series/Random, editor-closed playback/reopen and
+full wrapper-session restoration.
+`playback-pool-pass-mappings.json` records the still-live PID 55415 mapping the
+same temporary VST3 inode **156115002** and expected signed SHA-256 alongside
+PatchWork Synth. Alex subsequently confirmed the full wrapper restoration step
+passes. `wrapper-restoration-mappings.json` records a new Pro Tools PID **67404**
+(previously 55415) with the same VST3 mapped path/inode/hash and ARM64 UUID.
+`wrapper-restoration-process-sample.txt` independently confirms ARM64 Pro Tools
+26.4.1.179 / macOS 27.0.1. The saved disposable `.ptx` changed before the new
+launch; its metadata/hash are retained privately. Avid's new
+`Pro_Tools_2026_10_22_18_52_23.txt` trace still records **48 kHz / 256 samples**.
+The manual result covers samples, order, two parameter settings and MIDI playback;
+it is not an automated state-field comparison. Later evidence confirms the
+buffer changes and completed offline render described below. Playback at 64/512
+and WAV listening are now user-confirmed PASS. The corrected actual 96 kHz
+host-session switch and offline render also pass with rate/identity/WAV evidence
+below; the earlier setup mismatch remains historical. The prepared
+`/private/tmp/RCL-PatchWork-Test-20261022/Bounces/` folder can hold later test
+exports. Creating fixtures/folders does not establish a playback/bounce pass.
+
+1. On the PatchWork Synth instrument track, loop a short MIDI region with notes
+   that trigger Lite. Verify actual MIDI playback separately from the Trigger
+   button; record the host rate/block size and output behavior.
+2. While the loop runs, exercise additive **Load Samples**, Replace, Delete and
+   Clear, then reload the pool. Try Series and Random. Clearing intentionally
+   leaves an empty/silent pool; check for crashes, freezes and corrupted order.
+   Use small disposable samples and preserve existing personal sample files.
+3. Close Lite's editor and let MIDI playback continue for about a minute. Reopen
+   it and confirm that playback and controls still work.
+4. Save the disposable session with the wrapper/sample pool, quit Pro Tools and
+   reopen it. Confirm the VST3 still loads from the identified temporary path,
+   and that samples, order, parameter settings and playback restore. The earlier
+   native AAX restore pass does not cover this wrapper-state test.
+5. If the playback engine supports it, test another sample rate (for example
+   96 kHz) and small/large block sizes, recording the actual values and any
+   unsupported choices. Use a copy of the disposable session where necessary.
+6. Bounce a short section **offline** to WAV; listen to it and compare its
+   audible behavior with live playback. Random mode need not produce identical
+   sample choices. Record missing/truncated audio, crashes or freezes.
+
+Completed 48 kHz procedure: stop playback before selecting **64** and
+**512** samples in **Setup → Playback Engine**, test MIDI at each, then return
+to **256**; report actual alternatives if those values are unavailable.
+For the bounce, solo the PatchWork instrument track, select a short passage
+including sample tails, then use **File → Bounce Mix**, **Offline** enabled,
+WAV/interleaved/24-bit/48 kHz. Save
+`/private/tmp/RCL-PatchWork-Test-20261022/Bounces/RCL-offline-48k.wav` and listen
+for missing/truncated/distorted audio. Soloing identifies the wrapper output
+separately from the restored original native-AAX tracks. The separate session-
+sample-rate check was subsequently completed with actual 96 kHz host-rate
+and 96 kHz output evidence below; a different export rate alone is insufficient.
+[Avid buffer instructions](https://www.avid.com/pro-tools/user-guide/change-buffer-size)
+and [Bounce Mix instructions](https://kb.avid.com/pkb/articles/en_US/Knowledge/Bounce-Mix-a-Session).
+
+October 22 bounce evidence: Alex reports the WAV bounced with no errors.
+The actual default filename is
+`/private/tmp/RCL-PatchWork-Test-20261022/Bounces/RCL AAX Reliability 20261022.wav`;
+no rename was required. Inspection confirms **48,000 Hz, 2 channels, 24-bit PCM,
+32.362646 seconds**, successful complete decode, peak **−9.282601 dBFS** and RMS
+**−32.577570 dBFS**. The file contains signal; this does not establish expected
+musical content or tail integrity. SHA-256:
+`62e0e4fc0ef08f641b66d796a3ab9294c77807fc236c640950d29e636d64b025`.
+An identical verified copy is preserved as
+`mac-manual-regression-20261022/offline-48k-output.wav`, with ffprobe/astats and
+`offline-48k-file-inspection.json` alongside it. These raw artifacts stay ignored.
+Avid's trace explicitly records offline bounce preparation/completion/finalization;
+`offline-bounce-trace-extract.txt` preserves those lines. The trace also records
+**64 → 512 → 128 → 256** hardware-buffer changes at 48 kHz. Live mappings still
+match the corrected VST3 and PatchWork Synth. Alex explicitly confirmed:
+**the WAV and MIDI playback at both 64 and 512 samples sounded normal**.
+Those manual fields are now PASS. The trace's extra 128-sample setting change
+is retained as an observation, not a separately confirmed playback test.
+
+The higher-rate procedure uses an actual **96 kHz session copy** via **File → Save
+Copy In** (called Save Session Copy In in Avid's guide), then open that copy.
+Changing only the bounce export rate does not change the host rate. Preserve
+the original 48 kHz disposable session. Verify actual host rate via Session
+Setup/Avid trace, play the same MIDI with the restored pool/settings and listen
+for changed pitch, shortened/missing tails or a freeze/crash. If supported,
+make a separate 96 kHz offline WAV for inspection. The corrected host-session/
+render run is now verified below. Originally suggested copy name/location:
+`/private/tmp/RCL-PatchWork-Test-20261022/Sessions/RCL-96k-Reliability`.
+Use a 256-sample buffer, verify Session Setup really shows 96 kHz, then test
+MIDI pitch/duration/tails and editor close/reopen. Save the separate Offline
+WAV as `RCL-offline-96k.wav` in the existing Bounces folder, listen, and leave
+the 96 kHz copy open for actual engine-rate and candidate-identity verification. [Avid sample-rate instructions](https://www.avid.com/pro-tools/user-guide/change-sample-rate-bit-depth).
+
+First purported 96 kHz run — verification mismatch: Alex reported the test
+passed and the bounced audio sounded good, but `RCL-offline-96k.wav` has **48,000
+Hz**, stereo 24-bit PCM and **32.362646 s** duration. It decodes successfully;
+this is another valid 48 kHz output, not higher-rate evidence. Its SHA-256 is
+`b6bf8940b822e9bceffa858c65f465db5f0d982ff04312021c028f1915aa4ac8`.
+A verified preservation copy, metadata, decode log and summary are saved as
+`mac-manual-regression-20261022/rate-96k-attempt-48k-*`.
+`rate-96k-host-context.json` still shows 48 kHz and the same correct candidate.
+A read-only native UI inspection confirmed the active window/path was the
+original `RCL AAX Reliability 20261022` session in Documents.
+
+The actual saved copy was
+`/private/tmp/RCL-PatchWork-Test-20261022/Sessions/RCL-96k-Reliabilit.ptx`
+(the filename lacks the final `y`). Initial native Pro Tools/Finder navigation
+did not confirm a switch away from the original session; the copy was selected
+in Finder. Alex reported the copied session was open at 96 kHz, but a subsequent
+direct native **Setup → Session** inspection in regular Pro Tools still showed
+**Sample Rate: 48 kHz** in the original session. This discrepancy is retained;
+the report alone does not override the observed rate. Alex then asked how to
+set 96 kHz, and received the following corrected procedure:
+
+1. Stop playback; choose **File → Save Session Copy In…** in regular Pro Tools.
+2. Explicitly set the dialog's **Sample Rate dropdown to 96 kHz**.
+3. Save a distinct new copy named **RCL-96k-Test**; preserve the existing files.
+4. Choose **File → Open → Session…** and open that new `.ptx`. Saving the copy
+   leaves the original open; do not infer a switch from completing the save.
+5. Check **Setup → Session → Sample Rate: 96 kHz**, then repeat MIDI pitch/
+   duration/tails and editor close/reopen at a 256-sample buffer.
+6. In **Bounce Mix**, explicitly select **96 kHz** as the export rate too, enable
+   Offline, write a separate WAV and listen. Leave that session open for evidence.
+
+Native-control attempts to choose Open Session were unreliable (one CUA timeout);
+no session switch was claimed. The user is operating the controls. Brief Developer
+startup logs also appeared during Finder-open attempts but ended before plug-in
+collection; no Developer process or new Pro Tools diagnostic report was found.
+They are not format validation or a reproduction of the customer crash.
+The copy's rate is not inferred from its name. This is a test-setup discrepancy,
+not a reproduced plug-in failure. It did not close the higher-rate checkpoint;
+the corrected run below supplies the actual host/output-rate evidence.
+
+**Corrected 96 kHz run — host/session/render verified.** Alex subsequently
+confirmed the session was at 96 kHz and successfully bounced. Regular Pro Tools
+PID **67404** opened the same `RCL-96k-Reliabilit.ptx` path after the copy was
+recreated/configured. The Avid trace records `PBEngine: sample rate = 96000`,
+`current buffer size 256`, `CAAXAutomationManager::SetSampleRate ... 96000` and
+completed Offline bounce preparation/finalization after that session switch.
+Live path/inode/hash/ARM64 UUID still match the corrected signed VST3. Evidence:
+`rate-96k-final-host-context.json` and `offline-96k-file-inspection.json`.
+
+The corrected `RCL-offline-96k.wav` is **96,000 Hz, 2 channels, 24-bit PCM,
+32.362646 seconds**; complete decode/astats pass with peak **−9.210014 dBFS**
+and RMS **−32.507355 dBFS**. Its duration matches the 48 kHz export (same timeline
+selection); that alone is not an automatic musical/tail comparison. SHA-256:
+`6854b04a13cd04fef56885988a61dd1676b84545d5737aaab0cfe49478a40570`.
+A verified copy is preserved as `mac-manual-regression-20261022/offline-96k-output.wav`.
+The earlier 48 kHz file with the same temporary filename remains preserved under
+`rate-96k-attempt-48k-output.wav`. Do not confuse their hashes. The final report
+confirms the corrected session/render succeeded; the earlier explicit “sounds
+good” report preceded the rate correction, and no automated audio inspection
+can establish expected pitch/timbre/tail behavior. Exact release-artifact host/
+listening checks remain part of the final package gate.
+
+`host-validation-checkpoint-summary.json` captures the completed documented
+Mac wrapper subset, not completion of Phase 5 or public-release approval.
+Remaining work includes affected-customer acceptance/separate startup evidence,
+historical-state fixtures, native AAX MIDI/unload scenarios, live licensing/
+contention checks, Windows/F5 provenance and native tests, RC host acceptance,
+and fresh versioned/signed/notarized 2.0.1 package verification. Publication
+still requires the user's release instruction. Keep the diagnostic staging
+unchanged while preparing any later candidate in a new build directory.
+
+Record each result separately. The operator's pass is manual evidence; a fresh
+live path/inode/hash check after reopen should confirm the same candidate.
+Remaining RC, Rosetta-host, Windows, activation/network, historical-session and
+affected-customer checks retain their own status. No publication is authorized
+by completing this local run.
 
 ## Phase 6 — Prepare and release RCL 2.0.1
 
@@ -508,6 +823,20 @@ to repeat those suites with normal cache/GUI access.
 | 2026-10-22 | Exact signed AU validation | Both products pass native/Intel auval and strictness-10 GUI pluginval (8/8); failed registration attempts preserved separately. All prior user/system bundles restored and inventory-verified. |
 | 2026-10-22 | RC AAX continuation | Own unsigned and signed suites each pass 13/13; RC-specific PACE signing and independent Apple/PACE/export checks pass. |
 | 2026-10-22 | Automated Mac checkpoint | Both signed candidates pass their applicable automated format gates; metadata/hashes and restoration verified. Next: reversible retail Pro Tools / PatchWork testing and affected-customer retest. No hotfix published. |
+| 2026-10-22 | RC commit | Local `529b680` records the reviewed changes and validation; unrelated generated images excluded, no push. |
+| 2026-10-22 | Native retail AAX | Exact signed RCL candidate loaded in ARM64 Pro Tools 26.4.1.179; cold startup observed PASS. Alex confirms mono/stereo editor cycles, sample loading, Trigger and Panic PASS. Original AAX subsequently restored and inventory/signature-verified. |
+| 2026-10-22 | Session restore / AAX rollback | Alex confirms both saved Lite tracks and samples restore. Original system AAX restored with complete inventory and Apple/PACE verification; protected backup removed. |
+| 2026-10-22 | Wrapper preparation | PatchWork AAX/Synth 2.78 installed locally by Alex and scanned by Pro Tools. Exact signed Lite VST3 copied to the short temporary path and verified; wrapper loading/cycles/unload test pending. |
+| 2026-10-22 | PatchWork local pass | Alex confirms corrected VST3 playback, editor cycles and remove/reload PASS. Live mapped path/inode/hash/UUID matches signed candidate; PatchWork Synth 2.78 and ARM64 Pro Tools 26.4.1.179 / macOS 27.0.1 verified. Customer configuration/retest remains pending. |
+| 2026-10-22 | Remaining Mac run started | Exact wrapper candidate still mapped; MIDI fixture and per-operation result record prepared. Initial Avid engine trace is 48 kHz / 256 samples. Playback/pool/editor-closed results requested; pending. |
+| 2026-10-22 | Windows F5 readiness | Static default-backend logo remains in Lite source; RC has editor-owned software artwork. Local installer/source hashes recorded; actual distributed Windows source and unload tests remain pending. |
+| 2026-10-22 | MIDI/pool/editor-closed pass | Alex reports no errors for MIDI playback, Add/Replace/Delete/Clear/reload during playback, Series/Random and a minute of editor-closed playback/reopen. Live candidate mapping/hash still matches. Wrapper save/reopen requested; pending. |
+| 2026-10-22 | Wrapper restoration pass | Alex confirms samples/order/settings/MIDI restore after full quit/reopen. New ARM64 Pro Tools PID 67404 maps the same corrected VST3 inode/hash/UUID; trace remains 48 kHz / 256. Buffer-size and offline-bounce checks requested; rate check remains separate. |
+| 2026-10-22 | 48 kHz bounce inspected | Alex reports error-free WAV bounce. Avid confirms offline rendering and 64/512/128 → 256 buffer changes; corrected candidate still mapped. Stereo 24-bit/48 kHz/32.36 s WAV decodes with signal (peak −9.28 dBFS); preserved/hash-verified. Listening/buffer-playback confirmation requested; 96 kHz session run pending. |
+| 2026-10-22 | 48 kHz listening/buffer pass | Alex explicitly confirms normal WAV listening and MIDI playback at both 64/512 samples. Those fields now PASS; 128 remains only an observed setting change. Actual 96 kHz session copy/playback/editor/bounce requested, not yet verified. |
+| 2026-10-22 | 96 kHz verification mismatch | User reports normal test/bounce, but named 96k WAV is 48 kHz and original session remained active. Output preserved/decoded/hash-verified. Saved session copy selected in Finder; operator checking actual Session Setup rate. Higher-rate checkpoint remains pending. |
+| 2026-10-22 | Higher-rate setup clarified | User's 96 kHz report was not corroborated: direct regular-host Session Setup showed 48 kHz. Explicit Sample Rate dropdown/save/new-session-open and export-rate steps supplied for RCL-96k-Test. User handles controls after unreliable native Open Session automation; no higher-rate pass claimed. |
+| 2026-10-22 | Corrected 96 kHz run verified | Regular-host trace proves actual 96 kHz / 256 session switch and Offline render; same corrected VST3 mapped. New stereo/24-bit/96 kHz/32.36 s WAV decodes with signal and is preserved/hash-verified. User confirms corrected session/render success; earlier setup mismatch retained separately. Broader release gates remain open. |
 
 When resuming: read this tracker, the crash audit, current git diff and latest
 evidence first. Continue from the first pending dependency; do not overwrite old

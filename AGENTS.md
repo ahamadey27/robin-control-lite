@@ -25,11 +25,36 @@ in the separate `NewProject/build-pt-reliability-20261022` combined candidate;
 all universal export checks and native strictness-10 VST3 GUI tests pass. Fresh
 engine/licensing tests and ASan/UBSan/TSan pass with the new pool-operation and
 malformed-state regressions. Source/artifact hashes match committed `65dc245`.
-Historical-session, Windows, retail Pro Tools/PatchWork and affected-customer
-acceptance remain pending. The next checkpoint is a reversible real-host test
-of `reliability-signed/AAX/Robin Control Lite.aaxplugin` under the evidence root;
-read the tracker before installing. RC prevention has its own build/profile,
-PACE configuration and separate validation evidence.
+ARM64 retail Pro Tools 26.4.1.179 cold launch and the mono/stereo editor/sample/
+Trigger/Panic test passed; Alex also confirms saved-session and sample restore.
+The temporary signed diagnostic AAX has been removed and the original system
+bundle restored with complete inventory and independent Apple/PACE verification.
+PatchWork AAX/Synth 2.78 is installed by Alex. Lite's corrected VST3 now passes
+sample/Trigger/Panic, editor cycles and remove/reload inside PatchWork Synth
+(user-confirmed). The live mapped path/inode/hash/ARM64 UUID matches the signed
+copy at `/private/tmp/RCL-PatchWork-Test-20261022/Robin Control Lite.vst3`;
+Pro Tools 26.4.1.179 ARM64 / macOS 27.0.1 are verified. System VST3 and restored
+native AAX remain the originals. This local combined-candidate pass does not
+establish the affected customer's outcome. Alex now also confirms MIDI playback,
+Add/Replace/Delete/Clear/reload during playback, Series/Random and a minute of
+editor-closed playback/reopen pass; live candidate path/inode/hash still matches.
+The full wrapper save/quit/reopen check now also passes (user-confirmed):
+samples/order/settings/MIDI restore, and fresh ARM64 Pro Tools PID 67404 maps
+the exact same corrected VST3. New startup trace still records 48 kHz / 256.
+The 48 kHz offline bounce now completes without errors; Avid's trace confirms
+Offline plus buffer changes 64/512/128 → 256. The stereo 24-bit 32.36 s WAV
+decodes with signal and is preserved/hash-verified in ignored evidence. Alex
+explicitly confirms the WAV and MIDI playback at both 64/512 sounded normal;
+those fields now pass. The initial 96k-named export/active session were still
+48 kHz; this setup mismatch is preserved. Alex corrected the session setup, and
+regular-host trace now verifies the actual 48 → 96 kHz switch at 256 samples
+and Offline bounce. The same corrected VST3 remains mapped; the new stereo/
+24-bit/96 kHz/32.36 s WAV decodes with signal and has a verified evidence copy.
+The corrected session/render is user-confirmed successful. Read the tracker and
+`host-validation-checkpoint-summary.json` for precise scope and remaining gates.
+Historical-session, Windows, remaining host scenarios and affected-customer
+acceptance remain pending; read the tracker for the precise scope. RC prevention
+has its own build/profile, PACE configuration and separate validation evidence.
 Company context records public Mac/Windows Lite 2.0.0 downloads; the older
 release-preparation/public-format statements below predate that release.
 

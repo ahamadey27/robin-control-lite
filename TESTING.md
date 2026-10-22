@@ -14,6 +14,25 @@
 > restoration are recorded. Combined RCL AAX passes all 13 applicable checks
 > before/after PACE signing, with Apple/PACE and export verification. Read the
 > tracker for exact artifacts and pending real-host/customer/Windows gates.
+> Native ARM64 retail Pro Tools now passes cold launch plus user-confirmed
+> mono/stereo editor/sample/Trigger/Panic and saved-session/sample restoration.
+> The temporary AAX was rolled back with full inventory and Apple/PACE checks.
+> The corrected VST3 also passes the requested PatchWork Synth 2.78 sample/
+> Trigger/Panic, editor-cycle and remove/reload test (user-confirmed), with live
+> mapped path/inode/hash/UUID verified in ARM64 Pro Tools 26.4.1.179. This does
+> not replace customer acceptance. MIDI/pool edits during playback, Series/Random
+> and a minute of editor-closed playback/reopen also pass (user-confirmed), with
+> the same corrected candidate still mapped. Full wrapper save/quit/reopen also
+> restores samples/order/settings/MIDI (user-confirmed), with the exact candidate
+> mapped in a fresh ARM64 Pro Tools process. An error-free 48 kHz offline WAV
+> now decodes with signal; Avid confirms Offline and 64/512/128 → 256 buffer
+> changes. Alex explicitly confirms normal WAV listening and MIDI playback at
+> both 64/512; these fields pass. The first 96k-named attempt was actually 48 kHz
+> and is preserved separately. The corrected run now proves an actual regular-
+> host 96 kHz / 256 session switch, same VST3 mapping and Offline rendering;
+> the stereo/24-bit/96 kHz WAV decodes with signal and is hash-preserved. User
+> confirms corrected session/render success. Remaining exact-release, customer,
+> licensing and platform gates are recorded in the tracker.
 
 > **v2.0.0 final audit — 2026-09-22:** `FINAL_RELEASE_2.0.0.md` records current final artifacts and validation. `scripts/test-sanitizers.sh` now enables Moonbase and runs both the engine/processor suite and synthetic signed-license suite under ASan/UBSan and TSan. Windows CI runs both test executables; AAX remains outside CI. Preserve the sample-allocation/interpolation, state-input, cache-size and Unicode-path regressions. Older coverage notes below describe their date, not the current ceiling.
 
