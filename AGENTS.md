@@ -13,10 +13,13 @@ universal VST3/AU/AAX installer and checksum. Fresh final-profile builds,
 engine/licensing tests, ASan/UBSan/TSan, both-slice exports, native/Intel signed
 VST3/AU GUI validation and 13/13 unsigned/signed AAX checks pass. The final
 extracted payload matches staging; Gatekeeper accepts it. Existing installed
-bundles and earlier signed artifacts are unchanged; temporary AU registration
-is restored and verified. No 2.0.1 installer execution, customer acceptance,
-Windows build or publication is claimed. Exact-package install/host acceptance
-and affected-customer VST3/PatchWork retest remain next.
+bundles were preserved during build validation; temporary AU registration
+was restored and verified. Alex subsequently installed 2.0.1 and confirms the
+PatchWork retest passed. All three installed system payloads independently
+match signed 2.0.1 staging. Pro Tools is closed; the actual wrapper-loaded path
+during that test was not independently observed. See `local-package-acceptance.json`.
+Affected-customer acceptance, remaining host/installer scenarios, Windows 2.0.1
+and publication remain pending. Do not repeat the completed local test by default.
 
 **October 23 native AAX continuation:** Alex confirms native mono/stereo MIDI,
 Series/Random, editor/playback, insert removal/reinsertion and save/quit/reopen

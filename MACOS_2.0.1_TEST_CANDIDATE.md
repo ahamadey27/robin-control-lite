@@ -6,16 +6,25 @@ Follow `PRO_TOOLS_RELIABILITY_PLAN_2026-10-22.md` for the underlying findings
 and diagnostic host evidence; this record does not replace customer acceptance.
 
 **Build result: all scoped automated macOS gates pass.** The complete test
-installer is signed, notarized, stapled and accepted by Gatekeeper. It has not
-been installed or published. All prior installed Lite bundles and preserved
-2.0.0 release/diagnostic executables remain unchanged.
+installer is signed, notarized, stapled and accepted by Gatekeeper. It remains
+unpublished. The build/validation workflow preserved prior installations and
+2.0.0 release/diagnostic executables. Alex subsequently installed the package
+and confirms repeating the PatchWork test successfully. All three installed
+system bundles independently match the signed 2.0.1 payloads, including hashes,
+modes and symlinks. Pro Tools was already closed, so the actual wrapper-loaded
+path during that reported test was not independently observed. Evidence:
+`local-package-acceptance.json`. Do not request the completed local test again
+as though no user result exists; affected-customer acceptance remains separate.
 
 ## Deliverable
 
-- Installer: `Releases/Installers/Testing/2.0.1/macos-candidate-20261023/Robin Control Lite 2.0.1.pkg`
+- Installer: `Releases/Installers/Robin Control Lite 2.0.1.pkg`
 - Size: **16,332,733 bytes**.
 - Final SHA-256: `db90cc547e83b141bc46a985db77db510306255915dfc517c5095957f0afae5b`.
 - Adjacent `.pkg.sha256` file records the same checksum.
+- At Alex's request, the package/checksum were moved into the standard installer
+  directory alongside 2.0.0. Contents and checksum are unchanged; this file move
+  does not publish a release. `artifact-relocation.json` preserves the old path.
 - Apple notarization: `91471210-5995-489c-a443-ae205523bb4f`, **Accepted**.
 - Signed staging: `Releases/Testing/2.0.1/macos-candidate-20261023/candidate-signed/`.
 - Consolidated evidence: `final-candidate-summary.json` in that evidence run.
@@ -88,7 +97,8 @@ checker attempts are preserved and are not classified as plug-in failures.
 Local 2.0.0 diagnostic host passes do not establish exact 2.0.1 package acceptance.
 The affected customer's VST3/PatchWork retest is the next crash-specific gate;
 their PatchWork version and separate startup-crash report remain outstanding.
-Exact-package install/upgrade and host playback/restore checks, historical
+The local package installation and PatchWork retest are user-confirmed. Remaining
+fresh-install/uninstall and broader host playback/restore checks, historical
 state/preset fixtures, broader activation/network/host/platform coverage and
 Windows builds retain their own status. Actual Mach-O unload was not measured
 by the manual insert removal/reinsertion checks. F4–F6 follow-up work is separate

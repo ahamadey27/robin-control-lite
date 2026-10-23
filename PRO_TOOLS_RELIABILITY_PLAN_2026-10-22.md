@@ -74,6 +74,16 @@ No 2.0.1 installation, affected-customer acceptance, Windows build or public
 release is claimed. Exact-package installation/host testing and the affected
 customer's VST3/PatchWork retest remain next.
 
+**Subsequent local package acceptance:** Alex reports the 2.0.1 installer was
+already installed and the PatchWork test repeated successfully. All three
+installed system bundles independently match the signed 2.0.1 payloads in full
+file/mode/symlink inventories. Pro Tools is closed, so the wrapper-loaded path
+during the reported test was not independently observed. The earlier diagnostic
+temporary VST3 remains a distinct artifact; on-disk install verification alone
+does not prove which wrapper path was used. Record the manual pass with that
+scope (`local-package-acceptance.json`), rather than asking Alex to redo the
+completed procedure. Affected-customer acceptance remains pending.
+
 The authoritative tracker is this file in `robin-control-redesign`. A matching
 handoff copy is kept in `round-robin-premium`; reconcile it from this file after
 updating progress. The earlier [crash audit](../round-robin-premium/PRO_TOOLS_CRASH_AUDIT_2026-10-22.md)
@@ -771,6 +781,9 @@ by completing this local run.
   hashes/modes/symlinks, installer signature and Mac notarization/stapling.
 - [ ] Test installer upgrade/fresh install/uninstall on appropriate test setup,
   preserving user samples/presets/licenses. Confirm actual loaded hashes.
+  Local 2.0.1 installation/PatchWork retest is now user-confirmed; all three
+  installed payloads match staging. Fresh install/uninstall and independently
+  observed wrapper-loaded identity retain separate status.
 - [x] Write draft candidate release notes with verified behavior and limitations.
 - [x] Review the complete Mac test package and automated evidence; manual/customer
   acceptance remains separate and no public distribution is performed.
@@ -897,6 +910,8 @@ to repeat those suites with normal cache/GUI access.
 | 2026-10-23 | Native AAX MIDI/lifecycle pass | Alex confirms all six requested steps completed without errors. Fresh ARM64 retail Pro Tools maps exact signed AAX candidate; corrected VST3 also mapped. Insert removal/reinsertion and normal quit/reopen pass manually; actual module unload unmeasured. Second temporary AAX installation remains active; privileged restoration prepared and pending. Historical fixture unavailable; customer acceptance remains pending. |
 | 2026-10-23 | Native AAX rollback complete | Alex ran restoration with host quit. Privileged pre-move original inventory and independent post-restore full inventory pass; Apple/PACE verification passes, protected backup directory removed, exact tested candidate archived. Pro Tools independently confirmed closed. No permanent replacement or publication; affected-customer retest remains the next crash-specific milestone. |
 | 2026-10-23 | Full macOS 2.0.1 test installer | Alex authorized fresh universal VST3/AU/AAX package. Version metadata updated; runtime source remains the tested F1–F3 correction. Engine/licensing, ASan/UBSan/TSan, all-slice exports, signed native/Intel VST3/AU GUI validation and 13/13 unsigned/signed AAX checks pass. Signed installer payloads match staging before/after stapling. Apple submission 91471210-5995-489c-a443-ae205523bb4f Accepted; stapler and Gatekeeper pass. All prior installations/artifacts preserved. Exact-package install/host/customer acceptance, Windows and publication remain pending. |
+
+| 2026-10-23 | User 2.0.1 package install/PatchWork retest | Alex confirms installing the delivered package and repeating PatchWork successfully. All three system bundles match exact signed 2.0.1 payload inventories. Pro Tools closed; actual wrapper-loaded path during the test not independently observed. Package remains unpublished; affected-customer acceptance pending. |
 
 When resuming: read this tracker, the crash audit, current git diff and latest
 evidence first. Continue from the first pending dependency; do not overwrite old
