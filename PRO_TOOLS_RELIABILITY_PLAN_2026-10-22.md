@@ -438,6 +438,17 @@ real historical session/preset fixtures still need explicit host verification.
 
 ## Phase 4 — RC verification and shared prevention
 
+**October 23 source/evidence review:** See
+`ROBIN_CONTROL_RELIABILITY_HANDOFF_2026-10-23.md` in both repositories.
+RC prevention-source hashes and all three signed diagnostic executables still
+match their recorded evidence; runtime/build/test/CI diff since `529b680` is
+empty. F1 prevention is already applied; F2 transaction locking and F3 guards
+already exist, as does RC's F5 software/editor-owned artwork. This review did
+not rerun unchanged binaries or modify RC runtime. Actual operation/bank
+concurrency coverage, exact audit-payload coverage, RC real-host scenarios and
+platform/release gates retain their specific pending scope below. Do not
+restart solved setup/investigation or transfer Lite manual passes to RC.
+
 RC changes belong in `round-robin-premium`, using its AGENTS.md, test scripts,
 product identities and licensing/PACE configuration. Do not import Lite's
 activation policy or release version into premium.

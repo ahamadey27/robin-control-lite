@@ -1,5 +1,12 @@
 # Windows clone, build, and AAX handoff
 
+> **Current 2.0.1 pickup:** Read `WINDOWS_2.0.1_AGENT_HANDOFF.md` first. It
+> supersedes the 2.0.0 version/build-status snapshot below for this update,
+> includes fresh x64 production build commands and the Windows artwork-lifetime
+> checkpoint, and requires preserving established Windows-only work. The dated
+> setup/reference material below remains useful; Mac-only runners are not
+> native Windows validation.
+
 Last updated: 2026-09-22. Product: **Robin Control Lite 2.0.0**.
 
 Read this on the Windows machine before configuring. These are preparation
