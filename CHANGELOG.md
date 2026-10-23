@@ -5,6 +5,20 @@ This project follows [semantic versioning](https://semver.org/).
 
 ---
 
+## v2.0.1 — macOS test candidate (not published)
+
+### Fixed
+- Hide internal JUCE and Moonbase symbols in every macOS plug-in format to
+  address the reported editor-opening crash in PatchWork inside Pro Tools.
+- Serialize sample-pool Add, Replace, Delete and Clear operations with playback.
+- Reject malformed and excessively nested saved state before recursive parsing.
+
+The corrected 2.0.0 diagnostic build passes the documented local Pro Tools and
+PatchWork checks. Affected-customer acceptance of the exact 2.0.1 installer and
+investigation of the separately reported startup crash remain pending.
+
+---
+
 ## v2.0.0 — release candidate (not yet published)
 
 ### Added

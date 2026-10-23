@@ -55,6 +55,25 @@ No corrected candidate has yet been accepted by the affected customer. No
 hotfix is published.
 The original signed 2.0.0 artifacts and installed plug-ins must remain intact.
 
+**October 23 update:** native AAX mono/stereo MIDI, Series/Random, editor/playback,
+insert removal/reinsertion and save/quit/reopen pass by Alex's confirmation,
+with the exact signed AAX mapped in fresh ARM64 Pro Tools. The second temporary
+AAX installation is finished: original restored, complete inventory and
+Apple/PACE signatures verified, tested candidate archived, Pro Tools closed.
+Actual module unloading remains unmeasured. See the dated continuation below;
+affected-customer exact-candidate retesting remains the next crash-specific
+milestone.
+
+**October 23 macOS 2.0.1 package:** Alex authorized the complete test installer.
+`MACOS_2.0.1_TEST_CANDIDATE.md` records the fresh universal, Moonbase/final ON
+VST3/AU/AAX build, all scoped automated gates, exact payload verification and
+Apple notarization/stapling/Gatekeeper acceptance. Installer SHA-256:
+`db90cc547e83b141bc46a985db77db510306255915dfc517c5095957f0afae5b`.
+All installed bundles and earlier signed releases/diagnostics are unchanged.
+No 2.0.1 installation, affected-customer acceptance, Windows build or public
+release is claimed. Exact-package installation/host testing and the affected
+customer's VST3/PatchWork retest remain next.
+
 The authoritative tracker is this file in `robin-control-redesign`. A matching
 handoff copy is kept in `round-robin-premium`; reconcile it from this file after
 updating progress. The earlier [crash audit](../round-robin-premium/PRO_TOOLS_CRASH_AUDIT_2026-10-22.md)
@@ -503,9 +522,9 @@ Keep automated, manual, customer-reported and not-run results distinct.
 | Scenario | Mac native | Mac Rosetta | Windows x64 |
 | --- | --- | --- | --- |
 | Native AAX cold scan and repeat startup | Cold scan observed PASS; saved-session reopen PASS (user) | Pending | Pending |
-| AAX editor repeated open/close and unload | Editor cycles PASS (user); unload pending | Pending | Pending |
+| AAX editor repeated open/close and unload | Editor cycles and insert removal/reinsertion PASS (user, Oct 23); actual module unload unmeasured | Pending | Pending |
 | Lite VST3 in PatchWork inside Pro Tools | PASS (user + mapped identity), PatchWork Synth 2.78 | Pending | Pending |
-| Native AAX mono/stereo instrument tracks and Trigger/Panic | PASS (user); native AAX MIDI coverage pending | Pending | Pending |
+| Native AAX mono/stereo instrument tracks and Trigger/Panic | PASS (user); native MIDI and Series/Random PASS (user, Oct 23 + mapped candidate identity) | Pending | Pending |
 | Wrapper MIDI playback and Series/Random | PASS (user), corrected VST3 in PatchWork | Pending | Pending |
 | Add/Replace/Delete/Clear while playing | PASS (user), corrected VST3 in PatchWork | Pending | Pending |
 | Save/reopen, editor closed and multiple instances | Native AAX two instances/session restore PASS; wrapper editor-closed playback and full session/sample/settings/MIDI restore PASS (user + fresh-process identity) | Pending | Pending |
@@ -513,11 +532,44 @@ Keep automated, manual, customer-reported and not-run results distinct.
 | Wrapper host buffer-size changes | PASS at 64/512 (user + trace), restored 256 at 48 kHz; 128 setting change observed only | Pending | Pending |
 | Wrapper offline bounce | 48 kHz PASS (user listening + trace/WAV); corrected 96 kHz render PASS (user report + actual host/Offline trace + WAV) | Pending | Pending |
 | Activated/unactivated and synthetic network failures | Pending | Pending | Pending |
-| Normal host exit and explicit plug-in unload | Wrapper remove/reload PASS (user); native AAX unload/exit assessment pending | Pending | Pending |
+| Normal host exit and explicit plug-in unload | Wrapper remove/reload PASS (user); native AAX remove/reinsert and normal quit/reopen PASS (user, Oct 23); actual module unload unmeasured | Pending | Pending |
 
 If a row is inapplicable to an installed host configuration, record N/A with a
 reason. Mac results do not establish Windows success. Do not change the real
 machine clock or delete real licenses to simulate time/grace boundaries.
+
+### October 23 native AAX MIDI and lifecycle continuation
+
+Alex reports **all six requested steps completed without errors**: direct native
+AAX mono/stereo MIDI playback, Series/Random, editor cycles during playback,
+editor-closed playback, Trigger/Panic, insert removal/reinsertion with sample
+reload and MIDI, and save/full-quit/reopen restoring samples/settings/MIDI.
+This is grouped manual confirmation, not an independently counted operation log.
+Pro Tools PID **72164**, ARM64 **26.4.1.179** on **macOS 27.0.1**, maps the exact
+signed diagnostic AAX: installed inode **156251123**, executable SHA-256
+`e8530e7784491f78e84b5af347f41b26421564fc90b2e0b1cb334ba8d4f351c1`, ARM64 UUID
+`3BBFF262-DB0B-3E37-A892-0079AD3A45B9`. The corrected diagnostic VST3 is also
+mapped; no native-only process claim is made. Removing an insert does not prove
+Mach-O unloading, which remains unmeasured. Evidence is in
+`pro-tools-native-midi-unload-20261023/manual-pass-summary.json` and
+`post-test-loaded-identity.json` under the audit evidence directory.
+
+**Temporary installation is finished; original restored and verified.** Installed
+candidate inventory and independent Apple/PACE signatures pass. The separately
+preserved original copy matches its pre-install full inventory. The moved
+original was preserved in the administrator-only directory
+`/Library/Application Support/Avid/Audio/Conduit-RCL-MIDI-Test-20261023/`;
+unprivileged inspection was denied, not counted as backup verification. A
+prepared administrator restoration script checked both complete inventories
+before moving anything, preserved the tested candidate, and checked the restored
+original. Alex ran the restoration command with Pro Tools closed. The privileged
+receipt confirms the protected original matched before the move; independent
+post-restore inventory and Apple/PACE checks pass. The tested candidate is
+archived with matching inventory, the protected backup directory is removed,
+and independent process inspection confirms Pro Tools is closed.
+`restoration-verification.json` records the completed cleanup.
+No historical fixture was available from Alex, so that separate gate remains
+pending. These local results do not establish affected-customer acceptance.
 
 ### Documented Mac wrapper regression run — corrected VST3
 
@@ -689,7 +741,7 @@ listening checks remain part of the final package gate.
 `host-validation-checkpoint-summary.json` captures the completed documented
 Mac wrapper subset, not completion of Phase 5 or public-release approval.
 Remaining work includes affected-customer acceptance/separate startup evidence,
-historical-state fixtures, native AAX MIDI/unload scenarios, live licensing/
+historical-state fixtures, actual native AAX module-unload observation, live licensing/
 contention checks, Windows/F5 provenance and native tests, RC host acceptance,
 and fresh versioned/signed/notarized 2.0.1 package verification. Publication
 still requires the user's release instruction. Keep the diagnostic staging
@@ -703,21 +755,25 @@ by completing this local run.
 
 ## Phase 6 — Prepare and release RCL 2.0.1
 
-- [ ] Confirm accepted source contains F1–F3 and all required regressions.
-- [ ] Set root/inner CMake, Projucer and relevant installer/release metadata to
+- [x] Confirm accepted source contains F1–F3 and all required regressions.
+- [x] Set root/inner CMake, Projucer and relevant installer/release metadata to
   2.0.1; keep product/format identities and existing preset compatibility.
-- [ ] Build fresh final-profile universal Mac and native Windows candidates.
-- [ ] Engine/licensing tests, sanitizers, export checks, strictness-10 format
-  validators and applicable unsigned/signed AAX checks pass for exact artifacts.
+- [x] Build fresh final-profile universal Mac candidate.
+- [ ] Build native Windows candidate and complete its separate validation.
+- [x] Mac engine/licensing tests, sanitizers, export checks, native/Intel
+  strictness-10 VST3/AU GUI validators and 13/13 applicable unsigned/signed AAX
+  checks pass for exact artifacts.
 - [ ] Complete the host matrix above and record affected-customer acceptance.
-- [ ] Sign using each product/platform's existing authorization; no customer
-  iLok DRM. Package only freshly verified staging, exclude Standalone.
-- [ ] Verify architecture/minimum OS, notices/build flags, page tables, payload
+- [x] Sign/package the Mac RCL candidate using existing Developer ID/PACE
+  Signing Only authorization, freshly verified staging, and no Standalone.
+- [ ] Complete separate Windows/product signing requirements as applicable.
+- [x] Verify Mac architecture/minimum OS, notices/build flags, page tables, payload
   hashes/modes/symlinks, installer signature and Mac notarization/stapling.
 - [ ] Test installer upgrade/fresh install/uninstall on appropriate test setup,
   preserving user samples/presets/licenses. Confirm actual loaded hashes.
-- [ ] Write release notes with verified behavior and remaining limitations.
-- [ ] Review the complete package/evidence before any upload/publication.
+- [x] Write draft candidate release notes with verified behavior and limitations.
+- [x] Review the complete Mac test package and automated evidence; manual/customer
+  acceptance remains separate and no public distribution is performed.
 - [ ] Publish/upload/update downloads only with the user's release instruction;
   keep superseded signed packages and rollback hashes available.
 
@@ -837,6 +893,10 @@ to repeat those suites with normal cache/GUI access.
 | 2026-10-22 | 96 kHz verification mismatch | User reports normal test/bounce, but named 96k WAV is 48 kHz and original session remained active. Output preserved/decoded/hash-verified. Saved session copy selected in Finder; operator checking actual Session Setup rate. Higher-rate checkpoint remains pending. |
 | 2026-10-22 | Higher-rate setup clarified | User's 96 kHz report was not corroborated: direct regular-host Session Setup showed 48 kHz. Explicit Sample Rate dropdown/save/new-session-open and export-rate steps supplied for RCL-96k-Test. User handles controls after unreliable native Open Session automation; no higher-rate pass claimed. |
 | 2026-10-22 | Corrected 96 kHz run verified | Regular-host trace proves actual 96 kHz / 256 session switch and Offline render; same corrected VST3 mapped. New stereo/24-bit/96 kHz/32.36 s WAV decodes with signal and is preserved/hash-verified. User confirms corrected session/render success; earlier setup mismatch retained separately. Broader release gates remain open. |
+
+| 2026-10-23 | Native AAX MIDI/lifecycle pass | Alex confirms all six requested steps completed without errors. Fresh ARM64 retail Pro Tools maps exact signed AAX candidate; corrected VST3 also mapped. Insert removal/reinsertion and normal quit/reopen pass manually; actual module unload unmeasured. Second temporary AAX installation remains active; privileged restoration prepared and pending. Historical fixture unavailable; customer acceptance remains pending. |
+| 2026-10-23 | Native AAX rollback complete | Alex ran restoration with host quit. Privileged pre-move original inventory and independent post-restore full inventory pass; Apple/PACE verification passes, protected backup directory removed, exact tested candidate archived. Pro Tools independently confirmed closed. No permanent replacement or publication; affected-customer retest remains the next crash-specific milestone. |
+| 2026-10-23 | Full macOS 2.0.1 test installer | Alex authorized fresh universal VST3/AU/AAX package. Version metadata updated; runtime source remains the tested F1–F3 correction. Engine/licensing, ASan/UBSan/TSan, all-slice exports, signed native/Intel VST3/AU GUI validation and 13/13 unsigned/signed AAX checks pass. Signed installer payloads match staging before/after stapling. Apple submission 91471210-5995-489c-a443-ae205523bb4f Accepted; stapler and Gatekeeper pass. All prior installations/artifacts preserved. Exact-package install/host/customer acceptance, Windows and publication remain pending. |
 
 When resuming: read this tracker, the crash audit, current git diff and latest
 evidence first. Continue from the first pending dependency; do not overwrite old

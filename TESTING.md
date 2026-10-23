@@ -1,5 +1,14 @@
 # TESTING.md — Formal plugin testing for Robin Control Lite
 
+> **macOS 2.0.1 test installer — October 23:** See
+> [MACOS_2.0.1_TEST_CANDIDATE.md](MACOS_2.0.1_TEST_CANDIDATE.md). Fresh universal
+> final-profile binaries pass engine/licensing tests, ASan/UBSan/TSan, all-slice
+> export checks, signed native/Intel VST3/AU GUI validation, and 13/13 unsigned/
+> signed AAX Native checks. Final installer payload inventories match staging;
+> Apple notarization, stapling and Gatekeeper pass. All prior installed bundles
+> are restored/unchanged. These exact-artifact automated results do not establish
+> installer execution or customer/real-host acceptance of 2.0.1. It is unpublished.
+
 > **Pro Tools crash work — 2026-10-22:** Follow
 > [PRO_TOOLS_RELIABILITY_PLAN_2026-10-22.md](PRO_TOOLS_RELIABILITY_PLAN_2026-10-22.md)
 > for current candidate status. Before and after signing each macOS build, run
@@ -33,6 +42,16 @@
 > the stereo/24-bit/96 kHz WAV decodes with signal and is hash-preserved. User
 > confirms corrected session/render success. Remaining exact-release, customer,
 > licensing and platform gates are recorded in the tracker.
+
+> **October 23 native AAX continuation:** Alex confirms the supplied mono/stereo
+> MIDI, Series/Random, editor/playback, removal/reinsertion and save/quit/reopen
+> procedure completed without errors. Live ARM64 Pro Tools maps the exact signed
+> diagnostic AAX; the corrected VST3 is also mapped. Actual Mach-O unloading is
+> unmeasured. This second temporary AAX installation is finished: original bundle
+> restored with matching full inventory and independent Apple/PACE verification,
+> tested candidate archived, protected backup directory removed, Pro Tools closed.
+> See the tracker and `pro-tools-native-midi-unload-20261023/` evidence. Customer
+> acceptance and separate startup evidence remain pending.
 
 > **v2.0.0 final audit — 2026-09-22:** `FINAL_RELEASE_2.0.0.md` records current final artifacts and validation. `scripts/test-sanitizers.sh` now enables Moonbase and runs both the engine/processor suite and synthetic signed-license suite under ASan/UBSan and TSan. Windows CI runs both test executables; AAX remains outside CI. Preserve the sample-allocation/interpolation, state-input, cache-size and Unicode-path regressions. Older coverage notes below describe their date, not the current ceiling.
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="BSkQsP" name="RobinControlLite" version="2.0.0" projectType="audioplug" useAppConfig="0"
+<JUCERPROJECT id="BSkQsP" name="RobinControlLite" version="2.0.1" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" companyName="conduit.dsp"
               pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn"
               pluginManufacturerCode="Cdsp" pluginCode="rcll" bundleIdentifier="dsp.conduit.RobinControlLite"

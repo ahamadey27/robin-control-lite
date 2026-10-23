@@ -6,6 +6,30 @@ For company-level brand, business, marketing, commerce, privacy, product-portfol
 
 ## Project
 
+**macOS 2.0.1 test installer — October 23:** Alex authorized a full Mac test
+package. Current source version is **2.0.1**, unpublished; public Lite remains
+2.0.0. Read `MACOS_2.0.1_TEST_CANDIDATE.md` for the signed/notarized/stapled
+universal VST3/AU/AAX installer and checksum. Fresh final-profile builds,
+engine/licensing tests, ASan/UBSan/TSan, both-slice exports, native/Intel signed
+VST3/AU GUI validation and 13/13 unsigned/signed AAX checks pass. The final
+extracted payload matches staging; Gatekeeper accepts it. Existing installed
+bundles and earlier signed artifacts are unchanged; temporary AU registration
+is restored and verified. No 2.0.1 installer execution, customer acceptance,
+Windows build or publication is claimed. Exact-package install/host acceptance
+and affected-customer VST3/PatchWork retest remain next.
+
+**October 23 native AAX continuation:** Alex confirms native mono/stereo MIDI,
+Series/Random, editor/playback, insert removal/reinsertion and save/quit/reopen
+all completed without errors. Fresh ARM64 Pro Tools PID 72164 maps the exact
+signed combined-candidate AAX; the corrected VST3 is also mapped. Actual module
+unloading is unmeasured. **The second temporary diagnostic AAX installation is
+finished; the original is restored.** Complete file hashes/modes/symlinks and
+independent Apple/PACE verification pass; the protected backup directory was
+removed and the tested candidate is archived in ignored evidence. Pro Tools is
+closed. Read the tracker and `pro-tools-native-midi-unload-20261023/` evidence.
+Affected-customer exact-candidate acceptance and separate startup evidence
+remain pending; this is local host evidence, not a published hotfix.
+
 **Pro Tools reliability work (2026-10-22):** Alex authorized the phased RCL/RC
 plan in `PRO_TOOLS_RELIABILITY_PLAN_2026-10-22.md`; read it before continuing.
 The customer dump confirms a static `juce::emptyString` invalid free during
@@ -58,7 +82,7 @@ has its own build/profile, PACE configuration and separate validation evidence.
 Company context records public Mac/Windows Lite 2.0.0 downloads; the older
 release-preparation/public-format statements below predate that release.
 
-**Robin Control Lite** is a free monophonic sampler plugin by `conduit.dsp`, built with JUCE 8+ and C++17. Current code version: **2.0.0 (release preparation; not yet published)**. Existing public formats are macOS VST3/AU and Windows VST3. The macOS AAX candidate is PACE-signed, passed all 13 applicable validator checks, and was reported working in regular Pro Tools / Intro by Alex on 2026-09-22. This is basic host acceptance, not evidence that every manual release test passed. For the latest final macOS build, packaging and notarization evidence, read `FINAL_RELEASE_2.0.0.md`. Windows final builds/AAX signing and the full manual host matrix remain pending. Standalone is for local testing only.
+**Robin Control Lite** is a free monophonic sampler plugin by `conduit.dsp`, built with JUCE 8+ and C++17. Current code version: **2.0.1 (unpublished macOS test candidate)**; public Mac/Windows Lite remains 2.0.0. Read `MACOS_2.0.1_TEST_CANDIDATE.md` for current Mac package evidence and `FINAL_RELEASE_2.0.0.md` for the historical 2.0.0 build. Public 2.0.0 downloads include Mac VST3/AU/AAX and Windows VST3/AAX; no Windows 2.0.1 build is claimed. Automated gates and the earlier diagnostic host passes do not establish exact 2.0.1 installer/customer acceptance. Standalone is for local testing only.
 
 For current final-release work, read **`FINAL_RELEASE_2.0.0.md`** first, then **`RELEASE_2.0.0.md`** (build commands, artifact paths, evidence, and open checkpoints) and **`AAX_BUILD_AND_SIGNING.md`** (AAX/PACE handoff for future agents). These take precedence over historical v1.0 signing instructions in `release-spec.md` for the 2.0.0 release. Do not infer AAX authorization from an installed SDK or WrapTool.
 
