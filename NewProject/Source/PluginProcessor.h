@@ -79,6 +79,13 @@ public:
     void resetPlaybackPosition();
     void rebuildLoadedIndices();
 
+    // UI pool operations decode outside the lock and commit playback metadata
+    // in the same callback-lock transaction as the slot changes.
+    int addPoolSamples(const juce::Array<juce::File>& files);
+    bool replacePoolSample(int slotIndex, const juce::File& file);
+    void clearSamplePool();
+    bool deletePoolSample(int slotIndex);
+
     void savePreset(const juce::File& file);
     void loadPreset(const juce::File& file);
     void auditionSample(int slotIndex);
@@ -137,6 +144,7 @@ private:
     std::atomic<bool> panicPending{ false };
     std::atomic<juce::uint64> playbackEvent { 0 };
     void publishPlaybackEvent(int slotIndex) noexcept;
+    void finishPoolMutation(bool resetSequence = true); // caller holds getCallbackLock()
 
     // Current global pitch values
     std::atomic<float> globalSemitones{ 0.0f };

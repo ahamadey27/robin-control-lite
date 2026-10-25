@@ -87,12 +87,7 @@ NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioPr
     sampleManagerPanel.onLoadSamplesClicked = [this]() { addMoreSamples(); };
     sampleManagerPanel.onClearSamplesClicked = [this]()
         {
-            for (int i = 0; i < NewProjectAudioProcessor::NUM_SAMPLE_SLOTS; ++i)
-                audioProcessor.sampleLoader.clearSlot(i);
-
-            audioProcessor.rebuildLoadedIndices();
-            audioProcessor.reshuffleIndices();
-            audioProcessor.sampleLoader.updateSynthesiserSounds();
+            audioProcessor.clearSamplePool();
             sampleManagerPanel.repaint();
         };
     sampleManagerPanel.onAddMoreClicked = [this]() { addMoreSamples(); };
@@ -107,8 +102,7 @@ NewProjectAudioProcessorEditor::NewProjectAudioProcessorEditor(NewProjectAudioPr
                     auto file = fc.getResult();
                     if (file.existsAsFile())
                     {
-                        audioProcessor.sampleLoader.loadSample(slotIndex, file);
-                        audioProcessor.rebuildLoadedIndices();
+                        audioProcessor.replacePoolSample(slotIndex, file);
                         sampleManagerPanel.repaint();
                     }
                 });
@@ -496,27 +490,7 @@ void NewProjectAudioProcessorEditor::addMoreSamples()
 // (filesDropped) so both entry points behave identically.
 void NewProjectAudioProcessorEditor::addSamplesFromFiles(const juce::Array<juce::File>& files)
 {
-    // Find first empty slot
-    int slot = 0;
-    for (; slot < NewProjectAudioProcessor::NUM_SAMPLE_SLOTS; ++slot)
-        if (!audioProcessor.sampleSlots[slot].isLoaded)
-            break;
-
-    for (const auto& file : files)
-    {
-        if (slot >= NewProjectAudioProcessor::NUM_SAMPLE_SLOTS) break;
-        if (file.existsAsFile())
-        {
-            audioProcessor.sampleLoader.loadSample(slot, file);
-            ++slot;
-            // Skip to next empty slot
-            while (slot < NewProjectAudioProcessor::NUM_SAMPLE_SLOTS &&
-                   audioProcessor.sampleSlots[slot].isLoaded)
-                ++slot;
-        }
-    }
-
-    audioProcessor.rebuildLoadedIndices();
+    audioProcessor.addPoolSamples(files);
     sampleManagerPanel.repaint();
 }
 

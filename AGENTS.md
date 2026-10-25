@@ -6,17 +6,98 @@ For company-level brand, business, marketing, commerce, privacy, product-portfol
 
 ## Project
 
-**Robin Control Lite** is a free monophonic sampler plugin by `conduit.dsp`, built with JUCE 8+ and C++17. Current code version: **2.0.0 (release preparation; not yet published)**. Existing public formats are macOS VST3/AU and Windows VST3. The macOS AAX candidate is PACE-signed, passed all 13 applicable validator checks, and was reported working in regular Pro Tools / Intro by Alex on 2026-09-22. This is basic host acceptance, not evidence that every manual release test passed. For the latest final macOS build, packaging and notarization evidence, read `FINAL_RELEASE_2.0.0.md`. Windows final AAX/VST3 builds, PACE/Azure signing, automated validation, and a signed combined installer are recorded in `WINDOWS_FINAL_2.0.0.md`. Combined installation and the full manual host matrix remain pending. Standalone is for local testing only.
+**macOS 2.0.1 test installer — October 23:** Alex authorized a full Mac test
+package. Current source version is **2.0.1**, unpublished; public Lite remains
+2.0.0. Read `MACOS_2.0.1_TEST_CANDIDATE.md` for the signed/notarized/stapled
+universal VST3/AU/AAX installer and checksum. Fresh final-profile builds,
+engine/licensing tests, ASan/UBSan/TSan, both-slice exports, native/Intel signed
+VST3/AU GUI validation and 13/13 unsigned/signed AAX checks pass. The final
+extracted payload matches staging; Gatekeeper accepts it. Existing installed
+bundles were preserved during build validation; temporary AU registration
+was restored and verified. Alex subsequently installed 2.0.1 and confirms the
+PatchWork retest passed. All three installed system payloads independently
+match signed 2.0.1 staging. Pro Tools is closed; the actual wrapper-loaded path
+during that test was not independently observed. See `local-package-acceptance.json`.
+Affected-customer acceptance, remaining host/installer scenarios, Windows 2.0.1
+and publication remain pending. Do not repeat the completed local test by default.
+
+**October 23 native AAX continuation:** Alex confirms native mono/stereo MIDI,
+Series/Random, editor/playback, insert removal/reinsertion and save/quit/reopen
+all completed without errors. Fresh ARM64 Pro Tools PID 72164 maps the exact
+signed combined-candidate AAX; the corrected VST3 is also mapped. Actual module
+unloading is unmeasured. **The second temporary diagnostic AAX installation is
+finished; the original is restored.** Complete file hashes/modes/symlinks and
+independent Apple/PACE verification pass; the protected backup directory was
+removed and the tested candidate is archived in ignored evidence. Pro Tools is
+closed. Read the tracker and `pro-tools-native-midi-unload-20261023/` evidence.
+Affected-customer exact-candidate acceptance and separate startup evidence
+remain pending; this is local host evidence, not a published hotfix.
+
+**Pro Tools reliability work (2026-10-22):** Alex authorized the phased RCL/RC
+plan in `PRO_TOOLS_RELIABILITY_PLAN_2026-10-22.md`; read it before continuing.
+The customer dump confirms a static `juce::emptyString` invalid free during
+VST3 editor construction inside PatchWork / Pro Tools. The focused visibility
+candidate is in `NewProject/build-pt-visibility-20261022`, version still 2.0.0,
+Moonbase/final ON and auto-copy OFF. All three universal formats build; every
+slice passes the new internal-export/entry-point gate, and native VST3 pluginval
+strictness 10 including GUI passes. The continuation installed Apple Rosetta 2;
+Intel execution works again. Fresh signed combined-candidate VST3/AU pass native
+and Intel validation including GUI, with exact AU identification and verified
+restoration of all prior user/system AUs. RCL AAX passes all 13 applicable tests
+before/after its own PACE Signing Only; Apple/PACE signatures and both-slice
+exports pass. No permanent plug-in replacement, package or hotfix publication.
+Evidence is under `Releases/Testing/2.0.0/pro-tools-audit-20261022/` (ignored).
+Preserve the F1-only candidate. Pool locking and XML preflight are now implemented
+in the separate `NewProject/build-pt-reliability-20261022` combined candidate;
+all universal export checks and native strictness-10 VST3 GUI tests pass. Fresh
+engine/licensing tests and ASan/UBSan/TSan pass with the new pool-operation and
+malformed-state regressions. Source/artifact hashes match committed `65dc245`.
+ARM64 retail Pro Tools 26.4.1.179 cold launch and the mono/stereo editor/sample/
+Trigger/Panic test passed; Alex also confirms saved-session and sample restore.
+The temporary signed diagnostic AAX has been removed and the original system
+bundle restored with complete inventory and independent Apple/PACE verification.
+PatchWork AAX/Synth 2.78 is installed by Alex. Lite's corrected VST3 now passes
+sample/Trigger/Panic, editor cycles and remove/reload inside PatchWork Synth
+(user-confirmed). The live mapped path/inode/hash/ARM64 UUID matches the signed
+copy at `/private/tmp/RCL-PatchWork-Test-20261022/Robin Control Lite.vst3`;
+Pro Tools 26.4.1.179 ARM64 / macOS 27.0.1 are verified. System VST3 and restored
+native AAX remain the originals. This local combined-candidate pass does not
+establish the affected customer's outcome. Alex now also confirms MIDI playback,
+Add/Replace/Delete/Clear/reload during playback, Series/Random and a minute of
+editor-closed playback/reopen pass; live candidate path/inode/hash still matches.
+The full wrapper save/quit/reopen check now also passes (user-confirmed):
+samples/order/settings/MIDI restore, and fresh ARM64 Pro Tools PID 67404 maps
+the exact same corrected VST3. New startup trace still records 48 kHz / 256.
+The 48 kHz offline bounce now completes without errors; Avid's trace confirms
+Offline plus buffer changes 64/512/128 → 256. The stereo 24-bit 32.36 s WAV
+decodes with signal and is preserved/hash-verified in ignored evidence. Alex
+explicitly confirms the WAV and MIDI playback at both 64/512 sounded normal;
+those fields now pass. The initial 96k-named export/active session were still
+48 kHz; this setup mismatch is preserved. Alex corrected the session setup, and
+regular-host trace now verifies the actual 48 → 96 kHz switch at 256 samples
+and Offline bounce. The same corrected VST3 remains mapped; the new stereo/
+24-bit/96 kHz/32.36 s WAV decodes with signal and has a verified evidence copy.
+The corrected session/render is user-confirmed successful. Read the tracker and
+`host-validation-checkpoint-summary.json` for precise scope and remaining gates.
+Historical-session, Windows, remaining host scenarios and affected-customer
+acceptance remain pending; read the tracker for the precise scope. RC prevention
+has its own build/profile, PACE configuration and separate validation evidence.
+Company context records public Mac/Windows Lite 2.0.0 downloads; the older
+release-preparation/public-format statements below predate that release.
+
+**Robin Control Lite** is a free monophonic sampler plugin by `conduit.dsp`, built with JUCE 8+ and C++17. Current code version: **2.0.1 (unpublished macOS test candidate)**; public Mac/Windows Lite remains 2.0.0. Read `MACOS_2.0.1_TEST_CANDIDATE.md` for current Mac package evidence and `FINAL_RELEASE_2.0.0.md` for the historical 2.0.0 build. Public 2.0.0 downloads include Mac VST3/AU/AAX and Windows VST3/AAX; no Windows 2.0.1 build is claimed. Automated gates and the earlier diagnostic host passes do not establish exact 2.0.1 installer/customer acceptance. Standalone is for local testing only.
 
 For current final-release work, read **`FINAL_RELEASE_2.0.0.md`** first, then **`RELEASE_2.0.0.md`** (build commands, artifact paths, evidence, and open checkpoints) and **`AAX_BUILD_AND_SIGNING.md`** (AAX/PACE handoff for future agents). These take precedence over historical v1.0 signing instructions in `release-spec.md` for the 2.0.0 release. Do not infer AAX authorization from an installed SDK or WrapTool.
 
-**When cloning onto Windows:** read **`WINDOWS_BUILD_AND_AAX.md`** before configuring. Clone the private `ahamadey27/robin-control-lite` repo, use a fresh Windows build directory and explicit JUCE/AAX SDK paths, and build x64 with MSVC. Mac binaries, CMake caches, signing credentials, and ignored `Releases/Testing` evidence do not transfer through Git. The AAX validator runner supports Windows with explicit `--dsh`; read `WINDOWS_BETA_2.0.0.md` for the Windows DigiShell/DTT configuration requirements and beta evidence. Windows signing now uses the verified scripts recorded in `WINDOWS_FINAL_2.0.0.md`; the Python PACE setup script is macOS-only. Do not treat existing Windows VST3 CI as AAX validation.
+**When cloning onto Windows:** read **`WINDOWS_2.0.1_AGENT_HANDOFF.md`** first, then **`WINDOWS_BUILD_AND_AAX.md`** before configuring. The current handoff records exact production-profile x64 build/test commands, source/dependency pins, Windows F5 artwork review and packaging/signing scope. Clone the private `ahamadey27/robin-control-lite` repo, preserve existing Windows-only work, use a fresh Windows build directory and explicit JUCE/AAX SDK paths, and build x64 with MSVC. Mac binaries, CMake caches, signing credentials, and ignored `Releases/Testing` evidence do not transfer through Git. The current AAX validator/setup scripts are macOS-only; use or deliberately adapt the established native Windows workflow. Do not treat existing Windows VST3 CI as AAX validation.
+
+Windows-specific implementation and signing evidence is preserved in WINDOWS_FINAL_2.0.0.md. The merged native Windows AAX runner supports --dsh; use WINDOWS_BETA_2.0.0.md for toolkit setup. The editor-owned software logo fix is retained.
 
 **Licensing direction, user-confirmed 2026-09-20:** Moonbase DRM is the chosen customer licensing system for this free product and all future products. It is required for the final v2.0.0 release but explicitly excluded from Beta 1 (the user's “beta v1”). PACE is for AAX digital signing only; no customer iLok/PACE DRM. This supersedes the provider choice in older custom-licensing plans, including the July company-context roadmap. Do not block Beta 1 on Moonbase integration or infer a binary version change from the beta label. That provider decision alone did not integrate licensing into any existing candidate. See the dated integration update below for current settings and build status.
 
 **Final-release direction, 2026-09-22:** Moonbase is integrated. Every final build must use `RCL_ENABLE_MOONBASE=ON` **and** `RCL_FINAL_RELEASE=ON`. Development defaults and Projucer remain DRM-free and must not be packaged as final. Alex chose **90 days** of offline grace for online licenses; permanent offline activation is separate. Dashboard: **10 activations**, offline activation ON, trials/auto-upgrade trials OFF. The private **Moonbase Beta 1** was signed/notarized and its Moonbase delivery email/download flow was user-confirmed; do not confuse it with the earlier DRM-free beta. `MOONBASE_INTEGRATION.md` records details. PACE supplies AAX signing only. Do not upload/publish or change commerce settings merely because final binaries are built.
 
-**Robin Control handoff:** `ROBIN_CONTROL_AGENT_HANDOFF.md` records reusable licensing/build/security work for the premium sibling. Its agent must use that product's own identities, Moonbase product, and PACE configuration; Lite's settings are not blanket authorization for premium activation policy.
+**Robin Control handoff:** `ROBIN_CONTROL_RELIABILITY_HANDOFF_2026-10-23.md` records the current F1–F6 comparison and which existing RC validations can be reused; a copy is in premium. Explicit visibility/export prevention is already applied, and RC already has transaction locking, guarded parsing and editor-owned software artwork. No new RC runtime patch or test rerun was performed by this review. `ROBIN_CONTROL_AGENT_HANDOFF.md` retains general licensing/build/security context. Use premium's own identities, Moonbase policy and PACE configuration; do not copy Lite's version/limits or claim Lite host passes as RC acceptance.
 
 As of 2026-04-25 this folder is the **authoritative project**. It was originally a UI-redesign sandbox forked from `../round-robin-lite`, but has been promoted to be the main codebase. The sibling folder `../round-robin-lite` is retired — kept on disk as read-only legacy reference, not built or installed.
 

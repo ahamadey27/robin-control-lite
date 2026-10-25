@@ -1,5 +1,11 @@
 # Robin Control agent handoff from Lite v2.0.0
 
+> **October 23 reliability pickup:** Read
+> `ROBIN_CONTROL_RELIABILITY_HANDOFF_2026-10-23.md` for the current source/evidence
+> comparison, protections already present in RC, reusable test results and
+> focused remaining host/operation coverage. The September context below is
+> historical and does not mean RC still needs the same changes copied again.
+
 Updated 2026-09-22. This document is in the authoritative **Robin Control Lite**
 repository, `ahamadey27/robin-control-lite`. Premium **Robin Control** is a separate
 product/repository at `/Users/alex/Documents/Github/round-robin-premium` on this Mac.

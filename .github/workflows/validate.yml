@@ -52,6 +52,10 @@ jobs:
           echo "Found VST3: $VST3"
           echo "Found AU:   $AU"
 
+      # Fail even when normal host validation misses cross-module collisions.
+      - name: Check macOS plug-in exports
+        run: python3 scripts/check-macos-exports.py "${{ steps.art.outputs.vst3 }}" "${{ steps.art.outputs.au }}" --output macos-exports.json
+
       - name: Download pluginval
         run: |
           curl -sL https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_macOS.zip -o pluginval.zip
@@ -72,6 +76,7 @@ jobs:
           path: |
             NewProject/build/RobinControlLite_artefacts/**/*.vst3
             NewProject/build/RobinControlLite_artefacts/**/*.component
+            macos-exports.json
 
   # ==========================================================================
   windows:

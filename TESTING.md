@@ -1,5 +1,58 @@
 # TESTING.md — Formal plugin testing for Robin Control Lite
 
+> **macOS 2.0.1 test installer — October 23:** See
+> [MACOS_2.0.1_TEST_CANDIDATE.md](MACOS_2.0.1_TEST_CANDIDATE.md). Fresh universal
+> final-profile binaries pass engine/licensing tests, ASan/UBSan/TSan, all-slice
+> export checks, signed native/Intel VST3/AU GUI validation, and 13/13 unsigned/
+> signed AAX Native checks. Final installer payload inventories match staging;
+> Apple notarization, stapling and Gatekeeper pass. All prior installed bundles
+> are restored/unchanged. These exact-artifact automated results do not establish
+> installer execution or customer/real-host acceptance of 2.0.1. It is unpublished.
+
+> **Pro Tools crash work — 2026-10-22:** Follow
+> [PRO_TOOLS_RELIABILITY_PLAN_2026-10-22.md](PRO_TOOLS_RELIABILITY_PLAN_2026-10-22.md)
+> for current candidate status. Before and after signing each macOS build, run
+> `python3 scripts/check-macos-exports.py <VST3-bundle> <AU-bundle> <AAX-bundle> --expect-architecture arm64 --expect-architecture x86_64 --output <new-report.json>`.
+> The checker reads bundles without loading them, rejects internal JUCE/Moonbase
+> exports and checks required host entry points in every slice. Local validation
+> proved the old Lite AAX fails and the new universal visibility candidate passes.
+> Mac CI now runs it on its built VST3/AU and uploads the JSON; no hosted run is
+> claimed. Native GUI validation does not replace Pro Tools/PatchWork acceptance.
+> Continuation: Rosetta is installed and signed RCL VST3/AU pass native/Intel
+> GUI validation; exact AU path/hash evidence and verified prior-install
+> restoration are recorded. Combined RCL AAX passes all 13 applicable checks
+> before/after PACE signing, with Apple/PACE and export verification. Read the
+> tracker for exact artifacts and pending real-host/customer/Windows gates.
+> Native ARM64 retail Pro Tools now passes cold launch plus user-confirmed
+> mono/stereo editor/sample/Trigger/Panic and saved-session/sample restoration.
+> The temporary AAX was rolled back with full inventory and Apple/PACE checks.
+> The corrected VST3 also passes the requested PatchWork Synth 2.78 sample/
+> Trigger/Panic, editor-cycle and remove/reload test (user-confirmed), with live
+> mapped path/inode/hash/UUID verified in ARM64 Pro Tools 26.4.1.179. This does
+> not replace customer acceptance. MIDI/pool edits during playback, Series/Random
+> and a minute of editor-closed playback/reopen also pass (user-confirmed), with
+> the same corrected candidate still mapped. Full wrapper save/quit/reopen also
+> restores samples/order/settings/MIDI (user-confirmed), with the exact candidate
+> mapped in a fresh ARM64 Pro Tools process. An error-free 48 kHz offline WAV
+> now decodes with signal; Avid confirms Offline and 64/512/128 → 256 buffer
+> changes. Alex explicitly confirms normal WAV listening and MIDI playback at
+> both 64/512; these fields pass. The first 96k-named attempt was actually 48 kHz
+> and is preserved separately. The corrected run now proves an actual regular-
+> host 96 kHz / 256 session switch, same VST3 mapping and Offline rendering;
+> the stereo/24-bit/96 kHz WAV decodes with signal and is hash-preserved. User
+> confirms corrected session/render success. Remaining exact-release, customer,
+> licensing and platform gates are recorded in the tracker.
+
+> **October 23 native AAX continuation:** Alex confirms the supplied mono/stereo
+> MIDI, Series/Random, editor/playback, removal/reinsertion and save/quit/reopen
+> procedure completed without errors. Live ARM64 Pro Tools maps the exact signed
+> diagnostic AAX; the corrected VST3 is also mapped. Actual Mach-O unloading is
+> unmeasured. This second temporary AAX installation is finished: original bundle
+> restored with matching full inventory and independent Apple/PACE verification,
+> tested candidate archived, protected backup directory removed, Pro Tools closed.
+> See the tracker and `pro-tools-native-midi-unload-20261023/` evidence. Customer
+> acceptance and separate startup evidence remain pending.
+
 > **v2.0.0 final audit — 2026-09-22:** `FINAL_RELEASE_2.0.0.md` records current final artifacts and validation. `scripts/test-sanitizers.sh` now enables Moonbase and runs both the engine/processor suite and synthetic signed-license suite under ASan/UBSan and TSan. Windows CI runs both test executables; AAX remains outside CI. Preserve the sample-allocation/interpolation, state-input, cache-size and Unicode-path regressions. Older coverage notes below describe their date, not the current ceiling.
 
 This is the testing playbook for Robin Control Lite (and, by design, any future

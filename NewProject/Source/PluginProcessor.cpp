@@ -11,6 +11,7 @@
 #include "Audio/MidiMapper.h" 
 #include "Parameters/ParametersIDs.h"
 #include "DSP/TransientShaper.h"
+#include "Data/StateInput.h"
 
 //==============================================================================
 NewProjectAudioProcessor::NewProjectAudioProcessor()
@@ -505,11 +506,11 @@ void NewProjectAudioProcessor::setStateInformation(const void* data, int sizeInB
 {
     // Presets store paths and parameters, not audio. Refuse oversized input
     // before XML parsing or signed-to-unsigned size conversions.
-    if (data == nullptr || sizeInBytes <= 0 || sizeInBytes > 8 * 1024 * 1024)
+    if (data == nullptr || sizeInBytes <= 0 || sizeInBytes > rcl::StateInput::maxBytes)
         return;
     DBG("=== LOADING PLUGIN STATE ===");
 
-    std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+    auto xmlState = rcl::StateInput::xmlFromBinary(data, sizeInBytes);
 
     if (xmlState == nullptr)
     {
@@ -981,6 +982,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout NewProjectAudioProcessor::cr
 //==============================================================================
 void NewProjectAudioProcessor::rebuildLoadedIndices()
 {
+    const juce::ScopedLock sl(getCallbackLock());
     loadedSlotIndices.clear();
     maxSampleLength = 0;
 
@@ -1002,6 +1004,7 @@ void NewProjectAudioProcessor::rebuildLoadedIndices()
 
 void NewProjectAudioProcessor::reshuffleIndices()
 {
+    const juce::ScopedLock sl(getCallbackLock());
     shuffledIndices = loadedSlotIndices;  // copy ordered list
 
     juce::Random rng;
@@ -1018,6 +1021,89 @@ void NewProjectAudioProcessor::reshuffleIndices()
         std::swap(shuffledIndices[0], shuffledIndices[swapWith]);
     }
     roundRobinIndex = 0;
+}
+
+void NewProjectAudioProcessor::finishPoolMutation(bool resetSequence)
+{
+    const int previousIndex = roundRobinIndex;
+    rebuildLoadedIndices();
+    reshuffleIndices();
+    if (! resetSequence && ! loadedSlotIndices.empty()
+        && apvts.getRawParameterValue(ParameterIDs::playbackMode)->load() <= 0.5f)
+        roundRobinIndex = previousIndex % static_cast<int>(loadedSlotIndices.size());
+    sampleLoader.updateSynthesiserSounds();
+}
+
+int NewProjectAudioProcessor::addPoolSamples(const juce::Array<juce::File>& files)
+{
+    int added = 0;
+    for (const auto& file : files)
+    {
+        {
+            const juce::ScopedLock sl(getCallbackLock());
+            if (loadedSlotIndices.size() >= NUM_SAMPLE_SLOTS)
+                break;
+        }
+        SampleSlot pending;
+        if (! sampleLoader.prepareSample(file, pending))
+            continue;
+
+        const juce::ScopedLock sl(getCallbackLock());
+        // Pick the empty slot after decoding: session restore may have changed
+        // the pool while the calling thread was preparing the file.
+        for (int slot = 0; slot < NUM_SAMPLE_SLOTS; ++slot)
+        {
+            if (! sampleSlots[slot].isLoaded)
+            {
+                if (sampleLoader.commitSample(slot, pending))
+                {
+                    finishPoolMutation(false);
+                    ++added;
+                }
+                break;
+            }
+        }
+    }
+    return added;
+}
+
+bool NewProjectAudioProcessor::replacePoolSample(int slotIndex, const juce::File& file)
+{
+    if (slotIndex < 0 || slotIndex >= NUM_SAMPLE_SLOTS)
+        return false;
+    SampleSlot pending;
+    if (! sampleLoader.prepareSample(file, pending))
+        return false;
+
+    const juce::ScopedLock sl(getCallbackLock());
+    if (! sampleLoader.commitSample(slotIndex, pending))
+        return false;
+    finishPoolMutation(false);
+    return true;
+}
+
+void NewProjectAudioProcessor::clearSamplePool()
+{
+    const juce::ScopedLock sl(getCallbackLock());
+    for (auto& slot : sampleSlots)
+        slot.clear();
+    finishPoolMutation();
+}
+
+bool NewProjectAudioProcessor::deletePoolSample(int slotIndex)
+{
+    const juce::ScopedLock sl(getCallbackLock());
+    if (slotIndex < 0 || slotIndex >= NUM_SAMPLE_SLOTS || ! sampleSlots[slotIndex].isLoaded)
+        return false;
+    sampleSlots[slotIndex].clear();
+    // Preserve existing compaction: shift the following contiguous loaded run.
+    for (int i = slotIndex; i < NUM_SAMPLE_SLOTS - 1 && sampleSlots[i + 1].isLoaded; ++i)
+    {
+        sampleSlots[i] = std::move(sampleSlots[i + 1]);
+        sampleSlots[i + 1].clear();
+    }
+    finishPoolMutation();
+    return true;
 }
 
 void NewProjectAudioProcessor::resetPlaybackPosition()
@@ -1166,7 +1252,7 @@ void NewProjectAudioProcessor::savePreset(const juce::File& file)
 
 void NewProjectAudioProcessor::loadPreset(const juce::File& file)
 {
-    if (!file.existsAsFile() || file.getSize() > 8 * 1024 * 1024)
+    if (!file.existsAsFile() || file.getSize() > rcl::StateInput::maxBytes)
     {
         DBG("ERROR: Preset file not found: " + file.getFullPathName());
         return;

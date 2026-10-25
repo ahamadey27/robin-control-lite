@@ -475,23 +475,6 @@ void SampleManagerPanel::mouseExit(const juce::MouseEvent&)
 
 void SampleManagerPanel::deleteSample(int slotIndex)
 {
-    processor.sampleLoader.clearSlot(slotIndex);
-
-    for (int i = slotIndex; i < NewProjectAudioProcessor::NUM_SAMPLE_SLOTS - 1; ++i)
-    {
-        if (processor.sampleSlots[i + 1].isLoaded)
-        {
-            processor.sampleSlots[i] = processor.sampleSlots[i + 1];
-            processor.sampleSlots[i + 1].clear();
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    processor.rebuildLoadedIndices();
-    processor.reshuffleIndices();
-    processor.sampleLoader.updateSynthesiserSounds();
+    processor.deletePoolSample(slotIndex);
     repaint();
 }

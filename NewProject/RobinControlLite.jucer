@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="BSkQsP" name="RobinControlLite" version="2.0.0" projectType="audioplug" useAppConfig="0"
+<JUCERPROJECT id="BSkQsP" name="RobinControlLite" version="2.0.1" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" companyName="conduit.dsp"
               pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn"
               pluginManufacturerCode="Cdsp" pluginCode="rcll" bundleIdentifier="dsp.conduit.RobinControlLite"
@@ -37,6 +37,7 @@
               file="Source/Data/SampleLoader.cpp"/>
         <FILE id="djXge6" name="SampleLoader.h" compile="0" resource="0" file="Source/Data/SampleLoader.h"/>
         <FILE id="ZD14EG" name="SampleSlot.h" compile="0" resource="0" file="Source/Data/SampleSlot.h"/>
+        <FILE id="RclStateGuard" name="StateInput.h" compile="0" resource="0" file="Source/Data/StateInput.h"/>
       </GROUP>
       <GROUP id="{BE5F3C22-AB0D-49FF-90E9-8DCE18E735F3}" name="UI">
         <FILE id="bwjEB7" name="RRLookAndFeel.cpp" compile="1" resource="0"
