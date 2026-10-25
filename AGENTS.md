@@ -6,6 +6,14 @@ For company-level brand, business, marketing, commerce, privacy, product-portfol
 
 ## Project
 
+**Windows 2.0.1 continuation — October 25:** GitHub main was merged with the
+existing Windows release history, preserving installer/signing tools and the
+editor-owned software logo correction. Read `WINDOWS_2.0.1_BUILD.md` for native
+build, validation, signing, packaging and remaining manual checkpoints. The
+merged `scripts/test-aax-native.py` supports Windows with explicit `--dsh`;
+use `WINDOWS_BETA_2.0.0.md` for the preference-preserving toolkit configuration.
+Later Mac-only script descriptions below reflect that checkout's history.
+
 **macOS 2.0.1 test installer — October 23:** Alex authorized a full Mac test
 package. Current source version is **2.0.1**, unpublished; public Lite remains
 2.0.0. Read `MACOS_2.0.1_TEST_CANDIDATE.md` for the signed/notarized/stapled

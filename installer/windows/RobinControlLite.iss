@@ -1,6 +1,6 @@
 ; Final Windows x64 VST3 and optional AAX installer. Invoke through build-final.ps1, which checks
 ; the DRM/final markers, notices, publisher signature and overwrite protection.
-#define MyAppVersion "2.0.0"
+#define MyAppVersion "2.0.1"
 #ifndef MyBundle
   #error Use build-final.ps1 with a validated signed final VST3 bundle.
 #endif

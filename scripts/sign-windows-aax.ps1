@@ -24,13 +24,13 @@ foreach ($path in @($Dlib, $Metadata)) {
 }
 if (-not (Test-Path -LiteralPath (Join-Path $AzureCliBin 'az.cmd'))) { throw 'Azure CLI not found.' }
 $profile = Get-Content -LiteralPath (Join-Path $Bundle 'Contents/Resources/RCLBuildConfig.txt')
-foreach ($line in @('version=2.0.0', 'moonbase=ON', 'final=ON', 'moonbase_sdk=4.4.0-rcl-hardening-1')) {
+foreach ($line in @('version=2.0.1', 'moonbase=ON', 'final=ON', 'moonbase_sdk=4.4.0-rcl-hardening-1')) {
     if ($profile -cnotcontains $line) { throw "Final build marker missing: $line" }
 }
 $inputBinary = Join-Path $Bundle 'Contents/x64/Robin Control Lite.aaxplugin'
 $version = (Get-Item -LiteralPath $inputBinary).VersionInfo
-if ($version.ProductVersion -ne '2.0.0' -or $version.ProductName -ne 'Robin Control Lite') {
-    throw 'This signing configuration is only for Robin Control Lite 2.0.0.'
+if ($version.ProductVersion -ne '2.0.1' -or $version.ProductName -ne 'Robin Control Lite') {
+    throw 'This signing configuration is only for Robin Control Lite 2.0.1.'
 }
 New-Item -ItemType Directory -Path (Split-Path -Parent $OutputBundle) -Force | Out-Null
 # Windows PACE requires identical input/output paths. Sign only a fresh copy.

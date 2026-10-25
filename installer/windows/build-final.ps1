@@ -14,10 +14,10 @@ param(
 $ErrorActionPreference = 'Stop'
 $Bundle = (Resolve-Path -LiteralPath $Bundle).Path
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
-$output = Join-Path $OutputDirectory 'RobinControlLite-2.0.0-Windows.exe'
+$output = Join-Path $OutputDirectory 'RobinControlLite-2.0.1-Windows.exe'
 if (Test-Path -LiteralPath $output) { throw "Refusing to overwrite $output" }
 $profile = Get-Content -LiteralPath (Join-Path $Bundle 'Contents/Resources/RCLBuildConfig.txt')
-foreach ($line in @('version=2.0.0', 'moonbase=ON', 'final=ON', 'moonbase_sdk=4.4.0-rcl-hardening-1')) {
+foreach ($line in @('version=2.0.1', 'moonbase=ON', 'final=ON', 'moonbase_sdk=4.4.0-rcl-hardening-1')) {
     if ($profile -cnotcontains $line) { throw "Final build marker missing: $line" }
 }
 $notices = Join-Path $Bundle 'Contents/Resources/MoonbaseNotices.txt'
@@ -26,7 +26,7 @@ if (-not (Test-Path -LiteralPath $notices) -or (Get-Item -LiteralPath $notices).
 }
 $binary = Join-Path $Bundle 'Contents/x86_64-win/Robin Control Lite.vst3'
 $version = (Get-Item -LiteralPath $binary).VersionInfo
-if ($version.ProductVersion -ne '2.0.0' -or $version.ProductName -ne 'Robin Control Lite') {
+if ($version.ProductVersion -ne '2.0.1' -or $version.ProductName -ne 'Robin Control Lite') {
     throw 'VST3 executable identity/version does not match the installer.'
 }
 $signature = Get-AuthenticodeSignature -LiteralPath $binary
@@ -44,7 +44,7 @@ if ($AaxBundle) {
         throw 'AAX packaging requires WrapTool for signature verification.'
     }
     $aaxProfile = Get-Content -LiteralPath (Join-Path $AaxBundle 'Contents/Resources/RCLBuildConfig.txt')
-    foreach ($line in @('version=2.0.0', 'moonbase=ON', 'final=ON', 'moonbase_sdk=4.4.0-rcl-hardening-1')) {
+    foreach ($line in @('version=2.0.1', 'moonbase=ON', 'final=ON', 'moonbase_sdk=4.4.0-rcl-hardening-1')) {
         if ($aaxProfile -cnotcontains $line) { throw "AAX final build marker missing: $line" }
     }
     foreach ($resource in @('MoonbaseNotices.txt', 'RobinControlLitePages.xml')) {
@@ -55,7 +55,7 @@ if ($AaxBundle) {
     }
     $aaxBinary = Join-Path $AaxBundle 'Contents/x64/Robin Control Lite.aaxplugin'
     $aaxVersion = (Get-Item -LiteralPath $aaxBinary).VersionInfo
-    if ($aaxVersion.ProductVersion -ne '2.0.0' -or $aaxVersion.ProductName -ne 'Robin Control Lite') {
+    if ($aaxVersion.ProductVersion -ne '2.0.1' -or $aaxVersion.ProductName -ne 'Robin Control Lite') {
         throw 'AAX executable identity/version does not match the installer.'
     }
     & $WrapTool verify --in $aaxBinary
